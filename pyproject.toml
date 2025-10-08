@@ -1,0 +1,48 @@
+[tool.black]
+line-length = 127
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  migrations
+  | __pycache__
+  | venv
+  | node_modules
+)/
+'''
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+warn_return_any = false
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_optional = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "chatbot_saas.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+testpaths = ["tests", "apps"]
+addopts = "--reuse-db --nomigrations"
+
+[tool.coverage.run]
+source = ["apps", "chatbot_saas"]
+omit = [
+    "*/migrations/*",
+    "*/venv/*",
+    "*/tests/*",
+    "manage.py",
+    "*/settings/*",
+    "*/__pycache__/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError"
+]
