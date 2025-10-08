@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ chatbot.name }} - Chat Widget</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background: {{ chatbot.theme_color }};
+            color: white;
+            padding: 16px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .chat-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .chat-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            overflow: hidden;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .message.bot .message-avatar {
+            background: {{ chatbot.theme_color }};
+            color: white;
+        }
+        
+        .message.user .message-avatar {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .message.user .message-content {
+            background: {{ chatbot.theme_color }};
+            color: white;
+        }
+        
+        .message-sources {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .source-link {
+            display: inline-block;
+            margin-right: 8px;
+            color: {{ chatbot.theme_color }};
+            text-decoration: none;
+            border: 1px solid {{ chatbot.theme_color }};
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        .source-link:hover {
+            background: {{ chatbot.theme_color }};
+            color: white;
+        }
+        
+        .chat-input {
+            padding: 16px 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        
+        .input-field {
+            flex: 1;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            padding: 12px 16px;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            max-height: 100px;
+            min-height: 44px;
+        }
+        
+        .input-field:focus {
+            border-color: {{ chatbot.theme_color }};
+            box-shadow: 0 0 0 2px {{ chatbot.theme_color }}20;
+        }
+        
+        .send-button {
+            background: {{ chatbot.theme_color }};
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .send-button:hover:not(:disabled) {
+            background: {{ chatbot.theme_color }}dd;
+        }
+        
+        .send-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 18px;
+            margin-bottom: 16px;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6c757d;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        .welcome-message {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+        
+        .powered-by {
+            text-align: center;
+            font-size: 11px;
+            color: #6c757d;
+            padding: 8px;
+            background: #f8f9fa;
+        }
+        
+        .powered-by a {
+            color: {{ chatbot.theme_color }};
+            text-decoration: none;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px 16px;
+            border-radius: 18px;
+            margin-bottom: 16px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .lead-capture-form {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 20px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .lead-capture-form h3 {
+            color: {{ chatbot.theme_color }};
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+            color: #495057;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: {{ chatbot.theme_color }};
+            box-shadow: 0 0 0 2px {{ chatbot.theme_color }}20;
+        }
+        
+        .submit-lead-btn {
+            background: {{ chatbot.theme_color }};
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+        
+        .submit-lead-btn:hover {
+            background: {{ chatbot.theme_color }}dd;
+        }
+        
+        {{ chatbot.settings.custom_css|safe }}
+    </style>
+</head>
+<body>
+    <div class="chat-header">
+        <h1>{{ chatbot.name }}</h1>
+        {% if chatbot.description %}
+        <p>{{ chatbot.description }}</p>
+        {% endif %}
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                {{ chatbot.welcome_message }}
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <div class="input-container">
+                <textarea 
+                    id="messageInput" 
+                    class="input-field" 
+                    placeholder="{{ chatbot.placeholder_text }}"
+                    rows="1"
+                ></textarea>
+                <button id="sendButton" class="send-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    {% if chatbot.settings.show_powered_by %}
+    <div class="powered-by">
+        Powered by <a href="https://yourdomain.com" target="_blank">Your Platform</a>
+    </div>
+    {% endif %}
+
+    <script>
+        class ChatWidget {
+            constructor() {
+                this.apiUrl = '/api/v1/chat/{{ chatbot.public_url_slug }}';
+                this.sessionId = this.getOrCreateSessionId();
+                this.messageCount = 0;
+                this.isLoading = false;
+                
+                this.messageInput = document.getElementById('messageInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.messagesContainer = document.getElementById('chatMessages');
+                
+                this.bindEvents();
+                this.autoResize();
+                
+                // Check for lead capture trigger
+                this.checkLeadCapture();
+            }
+            
+            bindEvents() {
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+                
+                this.messageInput.addEventListener('input', () => {
+                    this.autoResize();
+                });
+            }
+            
+            autoResize() {
+                this.messageInput.style.height = 'auto';
+                this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 100) + 'px';
+            }
+            
+            getOrCreateSessionId() {
+                let sessionId = localStorage.getItem('chatbot_session_{{ chatbot.public_url_slug }}');
+                if (!sessionId) {
+                    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('chatbot_session_{{ chatbot.public_url_slug }}', sessionId);
+                }
+                return sessionId;
+            }
+            
+            async sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message || this.isLoading) return;
+                
+                // Add user message to UI
+                this.addMessage('user', message);
+                this.messageInput.value = '';
+                this.autoResize();
+                
+                // Show typing indicator
+                this.showTypingIndicator();
+                
+                this.isLoading = true;
+                this.sendButton.disabled = true;
+                
+                try {
+                    const response = await fetch(`${this.apiUrl}/message/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            session_id: this.sessionId
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.sessionId = data.session_id;
+                        this.addMessage('bot', data.message, data.sources);
+                        this.messageCount++;
+                        
+                        // Check for lead capture
+                        this.checkLeadCapture();
+                    } else {
+                        this.addErrorMessage(data.error || 'Something went wrong. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    this.addErrorMessage('Connection error. Please check your internet and try again.');
+                } finally {
+                    this.hideTypingIndicator();
+                    this.isLoading = false;
+                    this.sendButton.disabled = false;
+                    this.messageInput.focus();
+                }
+            }
+            
+            addMessage(role, content, sources = []) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${role}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = role === 'user' ? 'U' : 'AI';
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                messageContent.textContent = content;
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(messageContent);
+                
+                // Add sources if available and citations enabled
+                if (sources && sources.length > 0 && {{ chatbot.enable_citations|yesno:"true,false" }}) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.className = 'message-sources';
+                    sourcesDiv.innerHTML = 'Sources: ' + sources.map(source => 
+                        `<span class="source-link">${source.name}</span>`
+                    ).join('');
+                    messageContent.appendChild(sourcesDiv);
+                }
+                
+                this.messagesContainer.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+            
+            addErrorMessage(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = message;
+                this.messagesContainer.appendChild(errorDiv);
+                this.scrollToBottom();
+            }
+            
+            showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message bot';
+                typingDiv.id = 'typingIndicator';
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = 'AI';
+                
+                const typingContent = document.createElement('div');
+                typingContent.className = 'typing-indicator';
+                typingContent.style.display = 'block';
+                typingContent.innerHTML = `
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+                
+                typingDiv.appendChild(avatar);
+                typingDiv.appendChild(typingContent);
+                this.messagesContainer.appendChild(typingDiv);
+                this.scrollToBottom();
+            }
+            
+            hideTypingIndicator() {
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+            
+            scrollToBottom() {
+                this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            }
+            
+            checkLeadCapture() {
+                const settings = {{ chatbot.settings|safe }};
+                
+                if (!settings.enable_lead_capture) return;
+                
+                // Check if lead already captured
+                if (localStorage.getItem('lead_captured_{{ chatbot.public_url_slug }}')) return;
+                
+                let shouldShow = false;
+                
+                switch (settings.lead_capture_trigger) {
+                    case 'immediate':
+                        shouldShow = this.messageCount === 0;
+                        break;
+                    case 'after_messages':
+                        shouldShow = this.messageCount >= 3;
+                        break;
+                    // Add more trigger logic as needed
+                }
+                
+                if (shouldShow) {
+                    this.showLeadCaptureForm();
+                }
+            }
+            
+            showLeadCaptureForm() {
+                const settings = {{ chatbot.settings|safe }};
+                
+                const formDiv = document.createElement('div');
+                formDiv.className = 'lead-capture-form';
+                formDiv.innerHTML = `
+                    <h3>Get in Touch</h3>
+                    <p>${settings.lead_capture_message}</p>
+                    <form id="leadForm">
+                        <div class="form-group">
+                            <label for="leadEmail">Email *</label>
+                            <input type="email" id="leadEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="leadName">Name</label>
+                            <input type="text" id="leadName">
+                        </div>
+                        <div class="form-group">
+                            <label for="leadPhone">Phone</label>
+                            <input type="tel" id="leadPhone">
+                        </div>
+                        <button type="submit" class="submit-lead-btn">Submit</button>
+                    </form>
+                `;
+                
+                this.messagesContainer.appendChild(formDiv);
+                this.scrollToBottom();
+                
+                // Bind form submission
+                document.getElementById('leadForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.submitLead();
+                });
+            }
+            
+            async submitLead() {
+                const email = document.getElementById('leadEmail').value;
+                const name = document.getElementById('leadName').value;
+                const phone = document.getElementById('leadPhone').value;
+                
+                try {
+                    const response = await fetch(`${this.apiUrl}/lead/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            email: email,
+                            name: name,
+                            phone: phone,
+                            session_id: this.sessionId
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        localStorage.setItem('lead_captured_{{ chatbot.public_url_slug }}', 'true');
+                        
+                        // Replace form with success message
+                        const formDiv = document.querySelector('.lead-capture-form');
+                        formDiv.innerHTML = `
+                            <h3>Thank You!</h3>
+                            <p>We'll get back to you soon.</p>
+                        `;
+                        
+                        setTimeout(() => {
+                            formDiv.remove();
+                        }, 3000);
+                    }
+                } catch (error) {
+                    console.error('Error submitting lead:', error);
+                    alert('Sorry, there was an error submitting your information. Please try again.');
+                }
+            }
+        }
+        
+        // Initialize chat widget
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatWidget();
+        });
+    </script>
+</body>
+</html>
