@@ -8,7 +8,6 @@ from typing import Dict, Optional, Tuple, Any
 from datetime import datetime, timedelta
 from rest_framework.throttling import BaseThrottle
 from rest_framework.request import Request
-from rest_framework.views import APIView
 from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -82,7 +81,7 @@ class EndpointSpecificThrottle(BaseThrottle):
         super().__init__()
         self.rate_limiter = AdaptiveRateLimiter()
     
-    def allow_request(self, request: Request, view: APIView) -> bool:
+    def allow_request(self, request: Request, view: "APIView") -> bool:
         """
         Determine if the request should be allowed based on rate limits.
         
@@ -346,7 +345,7 @@ class PlanBasedUserThrottle(BaseThrottle):
         'enterprise': 20000
     }
     
-    def allow_request(self, request: Request, view: APIView) -> bool:
+    def allow_request(self, request: Request, view: "APIView") -> bool:
         """Allow request based on user's plan limits."""
         if not request.user or not request.user.is_authenticated:
             return True  # Let EndpointSpecificThrottle handle anonymous
@@ -394,7 +393,7 @@ class AbuseDetectionThrottle(BaseThrottle):
     Throttle that detects and blocks abusive behavior patterns.
     """
     
-    def allow_request(self, request: Request, view: APIView) -> bool:
+    def allow_request(self, request: Request, view: "APIView") -> bool:
         """Detect and block abusive patterns."""
         ip_address = self._get_client_ip(request)
         

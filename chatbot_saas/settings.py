@@ -48,6 +48,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "corsheaders",
+    "channels",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -146,6 +147,26 @@ else:
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_COOKIE_SECURE = not config.is_development
 SESSION_COOKIE_HTTPONLY = True
+
+# Channel layers configuration for WebSocket support
+if config.ENABLE_CACHING:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [config.REDIS_URL],
+                "capacity": 1500,  # Maximum messages per channel
+                "expiry": 60,      # Message expiry in seconds
+            },
+        },
+    }
+else:
+    # Use in-memory channel layer for development without Redis
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
 SESSION_COOKIE_SAMESITE = "Lax"
 
 # Authentication

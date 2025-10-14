@@ -6,16 +6,10 @@ from django.urls import path, include
 from rest_framework import routers
 from django.http import JsonResponse
 
-# Import ViewSets from apps (temporarily disabled to avoid circular imports)
-# TODO: Implement actual ViewSets without circular import issues
-# from apps.accounts.api_views import UserViewSet, OrganizationViewSet, TeamMemberViewSet
-# from apps.chatbots.api_views import ChatbotViewSet
-# from apps.knowledge.api_views import KnowledgeSourceViewSet
-# from apps.conversations.api_views import ConversationViewSet, MessageViewSet
-# from apps.billing.api_views import BillingViewSet
-# from apps.webhooks.api_views import WebhookViewSet
+# Import actual ViewSets 
+from apps.chatbots.api_views import ChatbotViewSet
 
-# Placeholder ViewSets for now
+# Placeholder ViewSets for other apps
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -38,9 +32,9 @@ class PlaceholderViewSet(viewsets.ViewSet):
     def destroy(self, request, pk=None):
         return Response({'todo': 'implement_viewset', 'action': 'destroy', 'pk': pk})
 
-# Use placeholder for all ViewSets to avoid circular imports
+# Use placeholder for other ViewSets
 UserViewSet = OrganizationViewSet = TeamMemberViewSet = PlaceholderViewSet
-ChatbotViewSet = KnowledgeSourceViewSet = PlaceholderViewSet
+KnowledgeSourceViewSet = PlaceholderViewSet
 ConversationViewSet = MessageViewSet = PlaceholderViewSet
 BillingViewSet = WebhookViewSet = PlaceholderViewSet
 

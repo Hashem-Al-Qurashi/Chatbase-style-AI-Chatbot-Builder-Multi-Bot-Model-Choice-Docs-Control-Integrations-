@@ -22,7 +22,7 @@ urlpatterns = [
     # Main API endpoints
     path('api/v1/', include('apps.api.urls')),
     # Authentication endpoints
-    path('auth/', include('apps.accounts.urls', namespace='auth')),
+    path('auth/', include('apps.accounts.auth_urls', namespace='auth')),
     # Health checks
     path('health/', lambda request: JsonResponse({'status': 'ok'}), name='health'),
 ]

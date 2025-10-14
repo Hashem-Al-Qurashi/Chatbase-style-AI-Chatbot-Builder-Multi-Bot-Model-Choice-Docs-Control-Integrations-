@@ -197,7 +197,7 @@ class JWTManager:
             "first_name": getattr(user, 'first_name', ''),
             "last_name": getattr(user, 'last_name', ''),
             "is_active": user.is_active,
-            "date_joined": user.date_joined.isoformat() if hasattr(user, 'date_joined') else None
+            "date_joined": user.created_at.isoformat() if hasattr(user, 'created_at') else None
         }
         
         return AuthResult(

@@ -185,7 +185,7 @@ class Chatbot(BaseModel):
     @property
     def has_knowledge_sources(self) -> bool:
         """Check if chatbot has any knowledge sources."""
-        return self.knowledge_sources.active().exists()
+        return self.knowledge_sources.filter(deleted_at__isnull=True).exists()
     
     def increment_conversation_count(self) -> None:
         """Increment conversation counter."""
