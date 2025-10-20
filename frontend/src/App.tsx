@@ -3,7 +3,8 @@ import { Loader2, Sparkles, Bot, Zap, Shield, Users } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { LoginForm } from './components/auth/LoginForm'
 import { RegisterForm } from './components/auth/RegisterForm'
-import { Dashboard } from './components/dashboard/Dashboard'
+// import { Dashboard } from './components/dashboard/Dashboard'
+import { SimpleDashboard as Dashboard } from './components/dashboard/SimpleDashboard'
 import { ButtonTest } from './components/test/ButtonTest'
 
 function LoadingScreen() {

@@ -371,6 +371,53 @@ class ApiService {
     await this.request(`/chatbots/${id}/`, { method: 'DELETE' });
   }
 
+  // Send chat message to a chatbot (for testing)
+  async sendChatMessage(
+    chatbotId: string,
+    message: { message: string }
+  ): Promise<ChatResponse> {
+    return this.request<ChatResponse>(`/chatbots/${chatbotId}/chat/`, {
+      method: 'POST',
+      body: JSON.stringify(message),
+    });
+  }
+  
+  // Upload knowledge source file
+  async uploadKnowledgeFile(_chatbotId: string, formData: FormData): Promise<any> {
+    const url = `/knowledge/upload/document/`;
+    
+    // Don't set Content-Type header for FormData - browser will set it with boundary
+    const response = await fetch(`${this.baseURL}${url}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new ApiError(
+        error.error || `Upload failed with status ${response.status}`,
+        response.status,
+        error
+      );
+    }
+    
+    return response.json();
+  }
+  
+  // Add knowledge source URL
+  async addKnowledgeUrl(chatbotId: string, data: { url: string; is_citable: boolean; name?: string; description?: string }): Promise<any> {
+    return this.request<any>('/knowledge/upload/url/', {
+      method: 'POST',
+      body: JSON.stringify({
+        chatbot_id: chatbotId,
+        ...data
+      }),
+    });
+  }
+
   // Conversation methods
   async getConversations(chatbotId?: string): Promise<Conversation[]> {
     const params = chatbotId ? `?chatbot=${chatbotId}` : '';

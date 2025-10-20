@@ -8,6 +8,7 @@ from django.http import JsonResponse
 
 # Import actual ViewSets 
 from apps.chatbots.api_views import ChatbotViewSet
+from apps.knowledge.api_views import KnowledgeSourceViewSet, KnowledgeChunkViewSet
 
 # Placeholder ViewSets for other apps
 from rest_framework import viewsets
@@ -34,7 +35,6 @@ class PlaceholderViewSet(viewsets.ViewSet):
 
 # Use placeholder for other ViewSets
 UserViewSet = OrganizationViewSet = TeamMemberViewSet = PlaceholderViewSet
-KnowledgeSourceViewSet = PlaceholderViewSet
 ConversationViewSet = MessageViewSet = PlaceholderViewSet
 BillingViewSet = WebhookViewSet = PlaceholderViewSet
 
@@ -47,6 +47,7 @@ router.register(r'organizations', OrganizationViewSet, basename='organization')
 router.register(r'team-members', TeamMemberViewSet, basename='teammember')
 router.register(r'chatbots', ChatbotViewSet, basename='chatbot')
 router.register(r'knowledge-sources', KnowledgeSourceViewSet, basename='knowledgesource')
+router.register(r'knowledge-chunks', KnowledgeChunkViewSet, basename='knowledgechunk')
 router.register(r'conversations', ConversationViewSet, basename='conversation')
 router.register(r'messages', MessageViewSet, basename='message')
 router.register(r'billing', BillingViewSet, basename='billing')
@@ -63,6 +64,11 @@ urlpatterns = [
     
     # Chat endpoints - RAG-powered chat with privacy enforcement
     path('chat/', include('apps.conversations.urls')),
+    
+    # Knowledge source upload endpoints
+    path('knowledge/', include([
+        path('upload/', include('apps.knowledge.urls')),
+    ])),
     
     # Webhook endpoints
     path('webhooks/', include([

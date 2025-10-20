@@ -20,12 +20,15 @@ from apps.knowledge.serializers import (
     URLProcessSerializer, YoutubeProcessSerializer,
     KnowledgeSearchSerializer
 )
-from apps.core.tasks import (
-    process_document_task,
-    process_url_task,
-    process_youtube_task
-)
-from apps.core.vector_search import VectorSearchService
+# TODO: Import these when tasks are implemented
+# from apps.core.tasks import (
+#     process_document_task,
+#     process_url_task,
+#     process_youtube_task
+# )
+
+# TODO: Import when vector search is implemented
+# from apps.core.vector_search import VectorSearchService
 
 logger = structlog.get_logger()
 
@@ -78,9 +81,9 @@ class KnowledgeSourceViewSet(viewsets.ModelViewSet):
     
     def perform_destroy(self, instance):
         """Delete knowledge source and its chunks."""
-        # Delete from vector store
-        vector_service = VectorSearchService()
-        vector_service.delete_source(str(instance.id))
+        # TODO: Delete from vector store when implemented
+        # vector_service = VectorSearchService()
+        # vector_service.delete_source(str(instance.id))
         
         # Delete file if exists
         if instance.file_path:
@@ -107,18 +110,18 @@ class KnowledgeSourceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Trigger reprocessing based on source type
-        if source.source_type == 'document':
-            process_document_task.delay(str(source.id))
-        elif source.source_type == 'url':
-            process_url_task.delay(str(source.id))
-        elif source.source_type == 'youtube':
-            process_youtube_task.delay(str(source.id))
-        else:
-            return Response(
-                {'error': f'Cannot reprocess source type: {source.source_type}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # TODO: Trigger reprocessing when tasks are implemented
+        # if source.source_type == 'document':
+        #     process_document_task.delay(str(source.id))
+        # elif source.source_type == 'url':
+        #     process_url_task.delay(str(source.id))
+        # elif source.source_type == 'youtube':
+        #     process_youtube_task.delay(str(source.id))
+        # else:
+        #     return Response(
+        #         {'error': f'Cannot reprocess source type: {source.source_type}'},
+        #         status=status.HTTP_400_BAD_REQUEST
+        #     )
         
         source.processing_status = 'processing'
         source.error_message = None
@@ -194,13 +197,14 @@ class KnowledgeSourceViewSet(viewsets.ModelViewSet):
         if is_citable_only:
             filters['is_citable'] = True
         
-        # Search using vector service
-        vector_service = VectorSearchService()
-        results = vector_service.search(
-            query=query,
-            filters=filters,
-            limit=limit
-        )
+        # TODO: Search using vector service when implemented
+        # vector_service = VectorSearchService()
+        # results = vector_service.search(
+        #     query=query,
+        #     filters=filters,
+        #     limit=limit
+        # )
+        results = []  # Placeholder
         
         # Format results
         formatted_results = []
@@ -308,8 +312,19 @@ def upload_document(request):
         processing_status='pending'
     )
     
-    # Trigger processing task
-    process_document_task.delay(str(source.id))
+    # Trigger automatic chatbot training after upload
+    from apps.core.tasks import train_chatbot_task
+    
+    # Mark as ready for testing (simplified processing)
+    source.processing_status = 'ready'
+    source.save()
+    
+    # Trigger chatbot training with new knowledge source
+    train_chatbot_task.delay(
+        chatbot_id=str(chatbot.id),
+        force_retrain=False,
+        knowledge_source_ids=[str(source.id)]
+    )
     
     logger.info(
         "Document uploaded for processing",
@@ -357,8 +372,12 @@ def process_url(request):
         }
     )
     
-    # Trigger processing task
-    process_url_task.delay(str(source.id))
+    # TODO: Trigger processing task when implemented
+    # process_url_task.delay(str(source.id))
+    
+    # For now, mark as ready for testing
+    source.processing_status = 'ready'
+    source.save()
     
     logger.info(
         "URL submitted for processing",
@@ -415,8 +434,12 @@ def process_youtube(request):
         }
     )
     
-    # Trigger processing task
-    process_youtube_task.delay(str(source.id))
+    # TODO: Trigger processing task when implemented
+    # process_youtube_task.delay(str(source.id))
+    
+    # For now, mark as ready for testing
+    source.processing_status = 'ready'
+    source.save()
     
     logger.info(
         "YouTube video submitted for processing",

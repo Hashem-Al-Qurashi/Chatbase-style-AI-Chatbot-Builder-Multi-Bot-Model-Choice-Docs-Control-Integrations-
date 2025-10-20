@@ -3,6 +3,8 @@ Serializers for chatbots app.
 Handles chatbot configuration, customization, and analytics.
 """
 
+import re
+import bleach
 from rest_framework import serializers
 from apps.chatbots.models import Chatbot, ChatbotSettings, ChatbotAnalytics
 
@@ -58,6 +60,76 @@ class ChatbotSerializer(serializers.ModelSerializer):
         """Check if chatbot has knowledge sources."""
         return obj.has_knowledge_sources
     
+    def _sanitize_text(self, value):
+        """
+        Comprehensive text sanitization to prevent XSS attacks.
+        Removes HTML tags and their content completely.
+        """
+        if not value:
+            return value
+        
+        # First, remove HTML tags with bleach (strip=True removes tags but keeps content)
+        text = bleach.clean(value, tags=[], attributes={}, strip=True)
+        
+        # Remove any remaining HTML entities
+        text = re.sub(r'&[a-zA-Z0-9#]+;', '', text)
+        
+        # Remove any javascript: or data: protocol attempts
+        text = re.sub(r'(?i)javascript\s*:', '', text)
+        text = re.sub(r'(?i)data\s*:', '', text)
+        text = re.sub(r'(?i)vbscript\s*:', '', text)
+        
+        # Remove event handler attributes (comprehensive list)
+        event_handlers = [
+            'onload', 'onerror', 'onclick', 'onmouseover', 'onmouseout', 
+            'onkeydown', 'onkeyup', 'onkeypress', 'onchange', 'onsubmit',
+            'onfocus', 'onblur', 'onselect', 'onreset', 'onabort',
+            'onunload', 'onresize', 'onscroll', 'ondblclick'
+        ]
+        for handler in event_handlers:
+            text = re.sub(rf'(?i){handler}\s*=\s*[^"\s]*', '', text)
+            text = re.sub(rf'(?i){handler}\s*=', '', text)
+        
+        # Remove any remaining angle brackets that could be used for injection
+        text = re.sub(r'[<>]', '', text)
+        
+        # Remove any quotes that could break out of attributes
+        text = re.sub(r'["\']', '', text)
+        
+        # Remove any equals signs that could be part of attribute injection
+        text = re.sub(r'=', '', text)
+        
+        return text.strip()
+
+    def validate_name(self, value):
+        """Sanitize chatbot name to prevent XSS attacks."""
+        if not value:
+            raise serializers.ValidationError("Name cannot be empty")
+        
+        # Sanitize the input
+        sanitized = self._sanitize_text(value)
+        
+        if not sanitized:
+            raise serializers.ValidationError("Name cannot contain only HTML tags or invalid characters")
+        
+        if len(sanitized) > 255:
+            raise serializers.ValidationError("Name cannot exceed 255 characters")
+            
+        return sanitized
+    
+    def validate_description(self, value):
+        """Sanitize chatbot description to prevent XSS attacks."""
+        if not value:
+            return value
+        
+        # Sanitize the input
+        sanitized = self._sanitize_text(value)
+        
+        if len(sanitized) > 1000:
+            raise serializers.ValidationError("Description cannot exceed 1000 characters")
+            
+        return sanitized
+
     def create(self, validated_data):
         """Create chatbot with user from context."""
         validated_data['user'] = self.context['request'].user

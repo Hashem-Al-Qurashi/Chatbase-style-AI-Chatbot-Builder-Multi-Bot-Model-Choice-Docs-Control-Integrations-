@@ -20,7 +20,7 @@ from apps.chatbots.serializers import (
     ChatbotTestSerializer, ChatbotCloneSerializer,
     ChatbotExportSerializer, ChatbotImportSerializer
 )
-# from apps.core.tasks import train_chatbot_task  # TODO: Implement chatbot training task
+from apps.core.tasks import train_chatbot_task
 # from apps.core.rate_limiting import rate_limiter, RateLimitType  # TODO: Fix rate limiting import
 
 logger = structlog.get_logger()
@@ -102,12 +102,12 @@ class ChatbotViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # TODO: Implement training task
-        # train_chatbot_task.delay(
-        #     chatbot_id=str(chatbot.id),
-        #     force_retrain=serializer.validated_data.get('force_retrain', False),
-        #     knowledge_source_ids=serializer.validated_data.get('knowledge_source_ids')
-        # )
+        # Trigger training task
+        train_chatbot_task.delay(
+            chatbot_id=str(chatbot.id),
+            force_retrain=serializer.validated_data.get('force_retrain', False),
+            knowledge_source_ids=serializer.validated_data.get('knowledge_source_ids')
+        )
         
         # Update status
         chatbot.update_training_status('processing')
@@ -365,6 +365,86 @@ class ChatbotViewSet(viewsets.ModelViewSet):
                 user_id=str(request.user.id)
             )
             raise ValidationError(f"Failed to import configuration: {str(e)}")
+    
+    @action(detail=True, methods=['post'])
+    def chat(self, request, pk=None):
+        """
+        Send a chat message to the chatbot.
+        This is the main chat endpoint for the dashboard.
+        """
+        chatbot = self.get_object()
+        
+        # Check if chatbot is ready
+        if not chatbot.is_ready:
+            return Response(
+                {'error': 'Chatbot is not ready. Please train it first.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get message from request
+        message = request.data.get('message')
+        if not message:
+            return Response(
+                {'error': 'Message is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Use the chat service to generate response
+        from apps.core.services import ServiceRegistry
+        
+        try:
+            # Get or create conversation for this user
+            from apps.conversations.models import Conversation, Message
+            conversation, created = Conversation.objects.get_or_create(
+                chatbot=chatbot,
+                session_id=f"user_{request.user.id}_{chatbot.id}",
+                defaults={'metadata': {'user_id': str(request.user.id)}}
+            )
+            
+            # Save user message
+            user_message = Message.objects.create(
+                conversation=conversation,
+                role='user',
+                content=message
+            )
+            
+            # Generate response using RAG pipeline
+            # For now, return a placeholder response until RAG is fully integrated
+            response_text = f"I received your message: '{message}'. The RAG pipeline is being integrated to provide intelligent responses based on your knowledge sources."
+            
+            # TODO: Integrate with actual RAG pipeline
+            # chat_service = ServiceRegistry.get_service('chat')
+            # response = chat_service.generate_response(
+            #     chatbot=chatbot,
+            #     message=message,
+            #     conversation_id=str(conversation.id)
+            # )
+            
+            # Save bot response
+            bot_message = Message.objects.create(
+                conversation=conversation,
+                role='assistant',
+                content=response_text,
+                metadata={'sources': []}
+            )
+            
+            return Response({
+                'response': response_text,
+                'conversation_id': str(conversation.id),
+                'message_id': str(bot_message.id),
+                'sources': []
+            })
+            
+        except Exception as e:
+            logger.error(
+                "Chat failed",
+                chatbot_id=str(chatbot.id),
+                error=str(e)
+            )
+            return Response(
+                {'error': 'Failed to generate response'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @action(detail=True, methods=['get'])
     def get_settings(self, request, pk=None):
