@@ -22,6 +22,7 @@ from apps.core.document_processors import DocumentProcessorFactory, ProcessedDoc
 from apps.core.text_chunking import ChunkerFactory, ChunkingConfig, ChunkingStrategy
 from apps.core.embedding_service import OpenAIEmbeddingService, EmbeddingConfig
 from apps.core.vector_storage import create_vector_storage
+from apps.core.rag_integration import RAGIntegrationService
 from apps.core.monitoring import task_monitor
 from chatbot_saas.config import get_settings
 
@@ -125,22 +126,35 @@ class BaseTaskWithProgress(Task):
             "status": TaskStatus.PROCESSING.value
         }
         
-        # Only cache if we have a real task_id
+        # Only cache if we have a real task_id and caching is enabled
         if task_id != 'eager-mode':
-            cache.set(
-                f"{self.progress_key_prefix}:{task_id}",
-                progress_data,
-                timeout=3600  # 1 hour
-            )
-            
-            # Also update task state
             try:
-                self.update_state(
-                    state="PROGRESS",
-                    meta=progress_data
-                )
-            except ValueError:
-                # Ignore if task_id is not available (eager mode)
+                from django.conf import settings
+                # Check if caching is enabled before attempting to cache
+                if getattr(settings, 'ENABLE_CACHING', True):
+                    cache.set(
+                        f"{self.progress_key_prefix}:{task_id}",
+                        progress_data,
+                        timeout=3600  # 1 hour
+                    )
+                else:
+                    # In development mode without caching, just log progress
+                    print(f"Task Progress: {progress_data['percentage']:.1f}% - {progress_data['message']}")
+            except Exception as e:
+                # If cache is not available, just continue without caching
+                print(f"Cache not available, skipping progress update: {e}")
+                print(f"Task Progress: {progress_data['percentage']:.1f}% - {progress_data['message']}")
+            
+            # Also update task state (only if not in eager mode and caching enabled)
+            try:
+                from django.conf import settings
+                if getattr(settings, 'ENABLE_CACHING', True):
+                    self.update_state(
+                        state="PROGRESS",
+                        meta=progress_data
+                    )
+            except (ValueError, Exception) as e:
+                # Ignore if task_id is not available (eager mode) or caching issues
                 pass
         
         # Always log progress for debugging
@@ -148,7 +162,15 @@ class BaseTaskWithProgress(Task):
     
     def get_progress(self, task_id: str) -> Optional[Dict[str, Any]]:
         """Get task progress."""
-        return cache.get(f"{self.progress_key_prefix}:{task_id}")
+        try:
+            from django.conf import settings
+            if getattr(settings, 'ENABLE_CACHING', True):
+                return cache.get(f"{self.progress_key_prefix}:{task_id}")
+            else:
+                # Return a default progress when caching is disabled
+                return {"percentage": 0, "message": "Progress tracking disabled in development mode"}
+        except Exception:
+            return None
     
     def mark_success(self, result: Any, metadata: Optional[Dict[str, Any]] = None):
         """Mark task as successful."""
@@ -519,6 +541,216 @@ def process_url(
             raise
 
 
+@app.task(bind=True, base=BaseTaskWithProgress, name='apps.core.tasks.generate_embeddings_for_knowledge_chunks')
+def generate_embeddings_for_knowledge_chunks(
+    self,
+    knowledge_source_id: str,
+    chunk_ids: Optional[List[str]] = None,
+    model: str = "text-embedding-ada-002",
+    batch_size: int = 50,
+    force_regenerate: bool = False
+) -> Dict[str, Any]:
+    """
+    Generate embeddings for KnowledgeChunk records.
+    
+    Args:
+        knowledge_source_id: KnowledgeSource ID to process chunks for
+        chunk_ids: Optional list of specific chunk IDs to process
+        model: Embedding model to use
+        batch_size: Batch size for processing
+        force_regenerate: Whether to regenerate existing embeddings
+        
+    Returns:
+        Dict[str, Any]: Processing result
+    """
+    try:
+        from apps.knowledge.models import KnowledgeSource, KnowledgeChunk, ProcessingJob
+        from apps.core.embedding_service import EmbeddingConfig, OpenAIEmbeddingService
+        from apps.core.models import ProcessingStatus
+        
+        self.update_progress(0, 100, "Starting embedding generation for knowledge chunks")
+        
+        # Get knowledge source
+        try:
+            source = KnowledgeSource.objects.get(id=knowledge_source_id)
+        except KnowledgeSource.DoesNotExist:
+            raise ValueError(f"KnowledgeSource {knowledge_source_id} not found")
+        
+        self.update_progress(10, 100, f"Loading chunks for source: {source.name}")
+        
+        # Get chunks to process
+        if chunk_ids:
+            chunks = KnowledgeChunk.objects.filter(
+                id__in=chunk_ids,
+                source=source
+            ).order_by('chunk_index')
+        else:
+            if force_regenerate:
+                chunks = source.chunks.all().order_by('chunk_index')
+            else:
+                # Only process chunks without embeddings
+                chunks = source.chunks.filter(
+                    embedding_vector__isnull=True
+                ).order_by('chunk_index')
+        
+        total_chunks = chunks.count()
+        if total_chunks == 0:
+            return self.mark_success({
+                "source_id": knowledge_source_id,
+                "processed_chunks": 0,
+                "generated_embeddings": 0,
+                "message": "No chunks found or all chunks already have embeddings"
+            })
+        
+        self.update_progress(20, 100, f"Processing {total_chunks} chunks")
+        
+        # Initialize embedding service
+        embedding_config = EmbeddingConfig(
+            model=model,
+            max_batch_size=batch_size,
+            enable_caching=True,
+            enable_deduplication=True
+        )
+        embedding_service = OpenAIEmbeddingService(embedding_config)
+        
+        # Process chunks in batches
+        processed_count = 0
+        total_cost = 0.0
+        total_tokens = 0
+        
+        chunk_list = list(chunks)
+        for i in range(0, len(chunk_list), batch_size):
+            batch_chunks = chunk_list[i:i + batch_size]
+            
+            batch_progress = 20 + (i / len(chunk_list)) * 60
+            self.update_progress(
+                int(batch_progress), 100,
+                f"Processing batch {i // batch_size + 1}/{(len(chunk_list) - 1) // batch_size + 1}"
+            )
+            
+            try:
+                # Generate embeddings for batch
+                chunk_embedding_results = asyncio.run(
+                    embedding_service.generate_embeddings_for_knowledge_chunks(
+                        batch_chunks, update_db=True
+                    )
+                )
+                
+                # STEP 5 FIX: Direct vector storage transfer to avoid async/sync issues
+                if chunk_embedding_results:
+                    try:
+                        # Get embeddings from processed chunks and store directly in vector DB
+                        vector_data = []
+                        chatbot_id = batch_chunks[0].source.chatbot.id
+                        
+                        for chunk, embedding_result in chunk_embedding_results:
+                            if embedding_result.embedding:
+                                vector_id = str(chunk.id)
+                                metadata = {
+                                    'content': chunk.content,
+                                    'chunk_index': chunk.chunk_index,
+                                    'source_id': str(chunk.source.id),
+                                    'source_name': chunk.source.name,
+                                    'is_citable': chunk.is_citable,
+                                    'token_count': chunk.token_count
+                                }
+                                vector_data.append((vector_id, embedding_result.embedding, metadata))
+                        
+                        if vector_data:
+                            # Store directly in vector database
+                            vector_storage = asyncio.run(create_vector_storage())
+                            namespace = f"chatbot_{chatbot_id}"
+                            
+                            success = asyncio.run(vector_storage.store_embeddings(vector_data, namespace=namespace))
+                            
+                            if success:
+                                logger.info(f"Vector storage success: {len(vector_data)} embeddings stored in namespace {namespace}")
+                            else:
+                                logger.error(f"Vector storage failed for {len(vector_data)} embeddings")
+                        
+                    except Exception as vector_error:
+                        logger.error(f"Vector storage failed for batch: {str(vector_error)}")
+                        # Continue processing - embeddings are still in database
+                
+                # Track statistics
+                for chunk, embedding_result in chunk_embedding_results:
+                    if not embedding_result.cached:
+                        total_cost += embedding_result.cost_usd
+                        total_tokens += embedding_result.tokens_used
+                    processed_count += 1
+                
+                logger.info(
+                    f"Processed embedding batch: {len(batch_chunks)} chunks, "
+                    f"processed: {processed_count}/{total_chunks}, "
+                    f"batch cost: ${sum(r.cost_usd for _, r in chunk_embedding_results if not r.cached):.6f}"
+                )
+                
+            except Exception as e:
+                logger.error(
+                    f"Batch embedding generation failed for batch {i // batch_size}: {str(e)}"
+                )
+                # Continue with other batches rather than failing completely
+                continue
+        
+        self.update_progress(85, 100, "Updating source status")
+        
+        # Update source with embedding completion status
+        try:
+            # Check if all chunks now have embeddings
+            remaining_chunks = source.chunks.filter(embedding_vector__isnull=True).count()
+            
+            if remaining_chunks == 0:
+                # Create processing job for embeddings
+                from apps.knowledge.models import ProcessingJob
+                ProcessingJob.objects.create(
+                    source=source,
+                    job_type='generate_embeddings',
+                    status=ProcessingStatus.COMPLETED,
+                    result_data={
+                        'processed_chunks': processed_count,
+                        'total_cost': total_cost,
+                        'total_tokens': total_tokens,
+                        'model': model
+                    },
+                    completed_at=timezone.now()
+                )
+                
+                logger.info(
+                    f"All chunks for source {knowledge_source_id} now have embeddings: {total_chunks} chunks"
+                )
+            
+        except Exception as e:
+            logger.warning(
+                f"Failed to update source status for {knowledge_source_id}: {str(e)}"
+            )
+        
+        self.update_progress(100, 100, "Embedding generation completed")
+        
+        result = {
+            "source_id": knowledge_source_id,
+            "source_name": source.name,
+            "processed_chunks": processed_count,
+            "total_chunks": total_chunks,
+            "generated_embeddings": processed_count,
+            "total_cost_usd": total_cost,
+            "total_tokens": total_tokens,
+            "model": model,
+            "batch_size": batch_size,
+            "is_citable": source.is_citable,
+            "privacy_preserved": True
+        }
+        
+        return self.mark_success(result)
+        
+    except Exception as e:
+        if self.request.retries < self.max_retries:
+            self.retry_with_backoff(e)
+        else:
+            logger.error(f"Knowledge chunk embedding generation failed permanently: {str(e)}")
+            self.mark_failure(e)
+            raise
+
+
 @app.task(bind=True, base=BaseTaskWithProgress, name='apps.core.tasks.generate_embeddings')
 def generate_embeddings(
     self,
@@ -527,7 +759,7 @@ def generate_embeddings(
     batch_size: int = 100
 ) -> Dict[str, Any]:
     """
-    Generate embeddings for existing chunks.
+    Generate embeddings for existing chunks (legacy task for backward compatibility).
     
     Args:
         chunk_ids: List of chunk IDs to process
@@ -537,54 +769,37 @@ def generate_embeddings(
     Returns:
         Dict[str, Any]: Processing result
     """
+    # Redirect to the new task for actual KnowledgeChunk processing
+    from apps.knowledge.models import KnowledgeChunk
+    
     try:
         self.update_progress(0, 100, f"Starting embedding generation for {len(chunk_ids)} chunks")
         
-        # Simplified implementation - in production this would load from actual database
-        # For now, we'll simulate chunk processing
+        # Get unique source IDs from chunks
+        chunks = KnowledgeChunk.objects.filter(id__in=chunk_ids).select_related('source')
+        source_ids = list(set(chunk.source.id for chunk in chunks))
         
-        self.update_progress(20, 100, f"Processing {len(chunk_ids)} chunk IDs")
+        total_processed = 0
         
-        # Simulate loading chunks (in production, load from database)
-        chunk_texts = [f"Sample chunk content {i}" for i in range(len(chunk_ids))]
-        
-        self.update_progress(40, 100, "Generating embeddings")
-        
-        # Generate embeddings using our service
-        try:
-            embedding_config = EmbeddingConfig(model=model)
-            embedding_service = OpenAIEmbeddingService(embedding_config)
+        for source_id in source_ids:
+            source_chunk_ids = [str(chunk.id) for chunk in chunks if chunk.source.id == source_id]
             
-            # Process in batches
-            all_embeddings = []
-            for i in range(0, len(chunk_texts), batch_size):
-                batch = chunk_texts[i:i + batch_size]
-                batch_result = asyncio.run(embedding_service.generate_embeddings_batch(batch))
-                all_embeddings.extend(batch_result.embeddings)
-                
-                progress = min(40 + (i / len(chunk_texts)) * 40, 80)
-                self.update_progress(int(progress), 100, f"Processed {i + len(batch)}/{len(chunk_texts)} chunks")
-                
-        except Exception as e:
-            logger.error(f"Embedding generation failed: {str(e)}")
-            self.mark_failure(e)
-            raise
-        
-        self.update_progress(80, 100, "Storing embeddings")
-        
-        # Store embeddings (simplified - in production would update database)
-        try:
-            logger.info(f"Generated {len(all_embeddings)} embeddings for {len(chunk_ids)} chunks")
-        except Exception as e:
-            logger.error(f"Storing embeddings failed: {str(e)}")
-            self.mark_failure(e)
-            raise
+            # Call the new embedding task
+            result = generate_embeddings_for_knowledge_chunks(
+                knowledge_source_id=str(source_id),
+                chunk_ids=source_chunk_ids,
+                model=model,
+                batch_size=batch_size
+            )
+            
+            if result and isinstance(result, dict) and 'result' in result:
+                total_processed += result['result'].get('processed_chunks', 0)
         
         self.update_progress(100, 100, "Embedding generation completed")
         
         result = {
-            "processed_chunks": len(chunk_ids),
-            "generated_embeddings": len(all_embeddings),
+            "processed_chunks": total_processed,
+            "generated_embeddings": total_processed,
             "model": model,
             "batch_size": batch_size
         }
@@ -713,6 +928,122 @@ def monitor_embedding_costs(self) -> Dict[str, Any]:
         raise
 
 
+@app.task(bind=True, base=BaseTaskWithProgress, name='apps.core.tasks.process_knowledge_source_task')
+def process_knowledge_source_task(
+    self,
+    knowledge_source_id: str,
+    force_reprocess: bool = False
+) -> Dict[str, Any]:
+    """
+    Process a knowledge source using the document processing service.
+    
+    Args:
+        knowledge_source_id: KnowledgeSource ID to process
+        force_reprocess: Whether to force reprocessing
+        
+    Returns:
+        Dict[str, Any]: Processing result
+    """
+    try:
+        from apps.knowledge.models import KnowledgeSource
+        from apps.core.document_processing_service import DocumentProcessingService
+        
+        self.update_progress(0, 100, "Starting knowledge source processing")
+        
+        # Get knowledge source
+        try:
+            source = KnowledgeSource.objects.get(id=knowledge_source_id)
+        except KnowledgeSource.DoesNotExist:
+            raise ValueError(f"KnowledgeSource {knowledge_source_id} not found")
+        
+        self.update_progress(10, 100, f"Processing source: {source.name}")
+        
+        # Skip if already processed and not forcing reprocess
+        if source.status == 'completed' and not force_reprocess:
+            return self.mark_success({
+                "source_id": knowledge_source_id,
+                "status": "already_processed",
+                "chunks_created": source.chunk_count,
+                "message": "Source already processed"
+            })
+        
+        # Initialize document processing service
+        doc_service = DocumentProcessingService()
+        
+        self.update_progress(20, 100, "Initializing document processing")
+        
+        # Process based on source type
+        if source.content_type == 'document' and source.file_path:
+            # File-based processing
+            self.update_progress(30, 100, "Reading file content")
+            
+            try:
+                with open(source.file_path, 'rb') as f:
+                    file_content = f.read()
+                
+                filename = source.metadata.get('original_filename', source.name)
+                
+                self.update_progress(40, 100, "Processing document content")
+                
+                result = doc_service.process_uploaded_file(
+                    knowledge_source=source,
+                    file_content=file_content,
+                    filename=filename,
+                    mime_type=source.mime_type
+                )
+                
+            except Exception as e:
+                error_msg = f"File processing failed: {str(e)}"
+                self.mark_failure(Exception(error_msg))
+                raise
+                
+        elif source.content_type == 'url' and source.source_url:
+            # URL-based processing
+            self.update_progress(30, 100, "Crawling URL content")
+            
+            try:
+                result = doc_service.process_url_content(
+                    knowledge_source=source,
+                    url=source.source_url
+                )
+                
+            except Exception as e:
+                error_msg = f"URL processing failed: {str(e)}"
+                self.mark_failure(Exception(error_msg))
+                raise
+        else:
+            error_msg = f"Unsupported source type: {source.content_type}"
+            self.mark_failure(Exception(error_msg))
+            raise ValueError(error_msg)
+        
+        self.update_progress(80, 100, "Finalizing processing")
+        
+        # Check result
+        if result.success:
+            self.update_progress(100, 100, "Knowledge source processing completed")
+            
+            return self.mark_success({
+                "source_id": knowledge_source_id,
+                "status": "completed",
+                "chunks_created": len(result.chunks),
+                "total_tokens": result.total_tokens,
+                "processing_time_ms": result.processing_time_ms,
+                "quality_score": result.processed_document.quality_score if result.processed_document else None
+            })
+        else:
+            error_msg = result.error_message or "Processing failed with unknown error"
+            self.mark_failure(Exception(error_msg))
+            raise Exception(error_msg)
+        
+    except Exception as e:
+        if self.request.retries < self.max_retries:
+            self.retry_with_backoff(e)
+        else:
+            logger.error(f"Knowledge source processing failed permanently: {str(e)}")
+            self.mark_failure(e)
+            raise
+
+
 @app.task(bind=True, base=BaseTaskWithProgress, name='apps.core.tasks.train_chatbot_task')
 def train_chatbot_task(
     self,
@@ -784,8 +1115,8 @@ def train_chatbot_task(
             )
             
             # Update source status to processing if not already processed
-            if source.processing_status != 'ready' or force_retrain:
-                source.processing_status = 'processing'
+            if source.status != 'completed' or force_retrain:
+                source.status = 'processing'
                 source.save()
                 
                 try:
@@ -811,14 +1142,14 @@ def train_chatbot_task(
                             user_id=str(chatbot.user.id)
                         )
                     
-                    # For now, mark as ready immediately (simplified)
-                    source.processing_status = 'ready'
+                    # For now, mark as completed immediately (simplified)
+                    source.status = 'completed'
                     source.save()
                     processed_sources += 1
                     
                 except Exception as e:
                     logger.error(f"Failed to process knowledge source {source.id}: {e}")
-                    source.processing_status = 'failed'
+                    source.status = 'failed'
                     source.save()
                     continue
             else:

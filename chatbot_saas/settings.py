@@ -119,23 +119,42 @@ DATABASES = {
     )
 }
 
-# Cache configuration - conditional based on feature flag
+# Cache configuration - conditional based on feature flag with Redis fallback
 if config.ENABLE_CACHING:
-    CACHES = {
-        "default": {
-            "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": config.REDIS_URL,
-            "OPTIONS": {
-                "CLIENT_CLASS": "django_redis.client.DefaultClient",
-                "CONNECTION_POOL_KWARGS": {"max_connections": 50},
-            },
-            "KEY_PREFIX": "chatbot_saas",
-            "TIMEOUT": config.CACHE_TTL_SECONDS,
+    # Try Redis first, fallback to LocMemCache if Redis unavailable
+    try:
+        import redis
+        redis_client = redis.Redis.from_url(config.REDIS_URL)
+        redis_client.ping()  # Test Redis connection
+        
+        # Redis is available, use it
+        CACHES = {
+            "default": {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": config.REDIS_URL,
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                    "CONNECTION_POOL_KWARGS": {"max_connections": 50},
+                },
+                "KEY_PREFIX": "chatbot_saas",
+                "TIMEOUT": config.CACHE_TTL_SECONDS,
+            }
         }
-    }
-    # Use Redis for sessions when caching is enabled
-    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-    SESSION_CACHE_ALIAS = "default"
+        SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+        SESSION_CACHE_ALIAS = "default"
+    except:
+        # Redis not available, use in-memory cache
+        CACHES = {
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": "chatbot_saas_cache",
+                "TIMEOUT": config.CACHE_TTL_SECONDS,
+                "OPTIONS": {
+                    "MAX_ENTRIES": 10000,  # Limit memory usage
+                }
+            }
+        }
+        SESSION_ENGINE = "django.contrib.sessions.backends.db"
 else:
     # Use dummy cache and database sessions when caching is disabled
     CACHES = {
@@ -453,6 +472,7 @@ CHATBOT_SETTINGS = {
 CELERY_BROKER_URL = config.CELERY_BROKER_URL
 CELERY_RESULT_BACKEND = config.CELERY_RESULT_BACKEND
 CELERY_TASK_ALWAYS_EAGER = config.CELERY_TASK_ALWAYS_EAGER
+CELERY_TASK_EAGER_PROPAGATES = config.CELERY_TASK_EAGER_PROPAGATES
 CELERY_TASK_SERIALIZER = config.CELERY_TASK_SERIALIZER
 CELERY_RESULT_SERIALIZER = config.CELERY_RESULT_SERIALIZER
 CELERY_ACCEPT_CONTENT = [config.CELERY_ACCEPT_CONTENT]

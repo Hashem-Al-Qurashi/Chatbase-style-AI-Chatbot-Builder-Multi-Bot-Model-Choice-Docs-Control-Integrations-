@@ -230,15 +230,11 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
         
         try {
           if (source.type === 'file' && source.file) {
-            // Upload file
-            const formData = new FormData()
-            formData.append('file', source.file)
-            formData.append('chatbot_id', chatbotId)
-            formData.append('is_citable', source.is_citable.toString())
-            formData.append('name', source.name)
-            
-            // Upload to the backend
-            await apiService.uploadKnowledgeFile(chatbotId, formData)
+            // Upload file using the correct API method signature
+            await apiService.uploadKnowledgeFile(chatbotId, source.file, {
+              name: source.name,
+              is_citable: source.is_citable
+            })
             console.log('Uploaded file:', source.name)
           } else if (source.type === 'url' && source.url) {
             // Process URL

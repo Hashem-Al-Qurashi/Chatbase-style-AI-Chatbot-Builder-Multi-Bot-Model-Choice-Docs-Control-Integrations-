@@ -64,16 +64,33 @@ class VectorSearchService:
             chatbot_id: Chatbot ID for filtering searches
         """
         self.chatbot_id = chatbot_id
-        self.vector_storage = None  # Will be initialized async
         self.embedding_service = OpenAIEmbeddingService()
         
-        # Initialize the existing search service
-        self.rag_search_service = RAGSearchService(
-            vector_store=self.vector_storage,
-            embedding_service=self.embedding_service
-        )
+        # Vector storage will be initialized lazily on first search
+        self.vector_storage = None
+        self.rag_search_service = None
+        self._initialization_lock = False
         
         logger.info(f"Initialized VectorSearchService for chatbot {chatbot_id}")
+    
+    async def _ensure_initialized(self):
+        """Ensure vector storage is initialized (lazy initialization)."""
+        if self.vector_storage is None and not self._initialization_lock:
+            self._initialization_lock = True
+            try:
+                # Initialize vector storage service
+                self.vector_storage = await create_vector_storage()
+                
+                # Use vector storage service directly (RAGSearchService not implemented)
+                self.rag_search_service = None  # Will use vector_storage directly
+                
+                logger.info(f"Lazy initialization completed for chatbot {self.chatbot_id}")
+            except Exception as e:
+                logger.error(f"Vector storage initialization failed: {e}")
+                self.vector_storage = None
+                self.rag_search_service = None
+            finally:
+                self._initialization_lock = False
     
     async def search(
         self,
@@ -103,53 +120,56 @@ class VectorSearchService:
         Raises:
             ValueError: If privacy requirements are violated
         """
+        # Ensure vector storage is initialized
+        await self._ensure_initialized()
+        
+        if self.vector_storage is None:
+            logger.error("Vector storage initialization failed")
+            return []
+        
         start_time = time.time()
         
         try:
-            # Create search context with privacy controls
-            search_context = SearchContext(
-                user_id=user_id,
-                knowledge_base_ids=[self.chatbot_id],
-                privacy_level=PrivacyLevel.CITABLE if filter_citable else PrivacyLevel.PRIVATE,
-                search_intent="answer"  # For RAG responses
-            )
+            # Use vector storage service directly for search
+            namespace = f"chatbot_{self.chatbot_id}"
             
-            # Configure search with privacy scope
-            search_scope = SearchScope.CITABLE_AND_PRIVATE if not filter_citable else SearchScope.PUBLIC_ONLY
+            # Choose search method based on privacy requirements
+            if filter_citable:
+                # Only citable content for citations
+                vector_results = await self.vector_storage.search_citable_only(
+                    query_vector=query_embedding,
+                    top_k=top_k,
+                    namespace=namespace
+                )
+            else:
+                # All content (including learn-only for context)
+                vector_results = await self.vector_storage.search_all_content(
+                    query_vector=query_embedding,
+                    top_k=top_k,
+                    namespace=namespace
+                )
             
-            search_config = SearchConfig(
-                top_k=top_k,
-                score_threshold=score_threshold,
-                search_scope=search_scope,
-                enable_reranking=enable_reranking,
-                rerank_top_k=min(top_k * 3, 50),  # Get more for reranking
-                require_citations=filter_citable
-            )
-            
-            # Perform search using existing service
-            detailed_results, search_metadata = await self.rag_search_service.search_for_rag(
-                query=query_text,
-                context=search_context,
-                config=search_config
-            )
-            
-            # Convert to simplified results for RAG pipeline
+            # Convert VectorSearchResult to SearchResult for RAG pipeline
             simple_results = []
-            for result in detailed_results:
+            for result in vector_results:
+                # Extract metadata for RAG pipeline
+                metadata = result.metadata or {}
+                is_citable = metadata.get('is_citable', True)
+                
                 # CRITICAL: Enforce privacy filtering
-                if filter_citable and not result.can_cite:
-                    logger.warning(f"Filtered non-citable result: {result.chunk_id}")
+                if filter_citable and not is_citable:
+                    logger.warning(f"Filtered non-citable result: {result.id}")
                     continue
                 
                 simple_result = SearchResult(
-                    content=result.content,
+                    content=metadata.get('content', ''),
                     score=result.score,
-                    chunk_id=result.chunk_id,
-                    document_id=result.document_id,
-                    knowledge_base_id=result.knowledge_base_id,
-                    is_citable=result.can_cite,
-                    citation_text=result.citation_text,
-                    metadata=result.metadata
+                    chunk_id=result.id,
+                    document_id=metadata.get('source_id', ''),
+                    knowledge_base_id=self.chatbot_id,
+                    is_citable=is_citable,
+                    citation_text=metadata.get('content', ''),
+                    metadata=metadata
                 )
                 simple_results.append(simple_result)
             

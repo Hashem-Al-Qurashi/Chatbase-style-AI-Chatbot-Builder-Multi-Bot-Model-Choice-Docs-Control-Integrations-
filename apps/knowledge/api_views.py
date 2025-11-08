@@ -10,7 +10,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Count
+from django.utils import timezone
 import structlog
+import hashlib
 
 from apps.knowledge.models import KnowledgeSource, KnowledgeChunk, CitationUsage
 from apps.chatbots.models import Chatbot
@@ -279,8 +281,11 @@ def upload_document(request):
         user=request.user
     )
     
-    # Save uploaded file
+    # Get uploaded file
     uploaded_file = serializer.validated_data['file']
+    
+    # Import the document processing service
+    from apps.core.document_processing_service import DocumentProcessingService
     
     # Create file path
     import os
@@ -294,44 +299,118 @@ def upload_document(request):
     # Create directory if not exists
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     
+    # Read file content BEFORE saving to avoid buffer consumption
+    file_content = uploaded_file.read()
+    file_hash = hashlib.sha256(file_content).hexdigest()
+    
+    # Reset file pointer for saving
+    uploaded_file.seek(0)
+    
     # Save file
     with open(file_path, 'wb+') as destination:
         for chunk in uploaded_file.chunks():
             destination.write(chunk)
+    
+    # STEP 1 FIX: Map file extension to correct content_type and MIME type
+    # This fixes the critical mismatch between frontend types and backend processing
+    file_extension = uploaded_file.name.lower().split('.')[-1] if '.' in uploaded_file.name else ''
+    
+    # Map file extensions to both content_type (for model) and mime_type (for processor)
+    file_type_mapping = {
+        'pdf': {
+            'content_type': 'pdf',
+            'mime_type': 'application/pdf'
+        },
+        'docx': {
+            'content_type': 'docx', 
+            'mime_type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        },
+        'doc': {  # Treat .doc as .docx for processing
+            'content_type': 'docx',
+            'mime_type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        },
+        'txt': {
+            'content_type': 'txt',
+            'mime_type': 'text/plain'
+        }
+    }
+    
+    # Get mapped types or defaults for unsupported files
+    mapping = file_type_mapping.get(file_extension, {
+        'content_type': 'document',
+        'mime_type': uploaded_file.content_type or 'application/octet-stream'
+    })
+    
+    mapped_content_type = mapping['content_type']
+    reliable_mime_type = mapping['mime_type']
     
     # Create knowledge source
     source = KnowledgeSource.objects.create(
         chatbot=chatbot,
         name=serializer.validated_data.get('name', uploaded_file.name),
         description=serializer.validated_data.get('description', ''),
-        source_type='document',
+        content_type=mapped_content_type,  # FIXED: Use mapped type instead of hardcoded 'document'
         file_path=file_path,
         file_size=uploaded_file.size,
-        mime_type=uploaded_file.content_type,
+        file_hash=file_hash,
+        mime_type=reliable_mime_type,  # FIXED: Use reliable MIME type based on extension
         is_citable=serializer.validated_data.get('is_citable', True),
-        processing_status='pending'
+        status='pending',
+        metadata={
+            'original_filename': uploaded_file.name,
+            'upload_timestamp': timezone.now().isoformat(),
+            'file_extension': file_extension,
+            'mapped_content_type': mapped_content_type,
+            'original_mime_type': uploaded_file.content_type,
+            'reliable_mime_type': reliable_mime_type
+        }
     )
     
-    # Trigger automatic chatbot training after upload
-    from apps.core.tasks import train_chatbot_task
+    # Process document immediately using the document processing service
+    try:
+        doc_service = DocumentProcessingService()
+        result = doc_service.process_uploaded_file(
+            knowledge_source=source,
+            file_content=file_content,
+            filename=uploaded_file.name,
+            mime_type=reliable_mime_type  # FIXED: Use reliable MIME type for processing
+        )
+        
+        if result.success:
+            logger.info(
+                "Document processed successfully",
+                source_id=str(source.id),
+                chatbot_id=str(chatbot.id),
+                chunks_created=len(result.chunks),
+                total_tokens=result.total_tokens,
+                processing_time_ms=result.processing_time_ms
+            )
+        else:
+            logger.error(
+                "Document processing failed",
+                source_id=str(source.id),
+                error=result.error_message
+            )
+            
+    except Exception as e:
+        logger.error(
+            "Document processing service error",
+            source_id=str(source.id),
+            error=str(e)
+        )
+        # Update source status to failed
+        source.update_processing_status('failed', error_message=str(e))
     
-    # Mark as ready for testing (simplified processing)
-    source.processing_status = 'ready'
-    source.save()
-    
-    # Trigger chatbot training with new knowledge source
-    train_chatbot_task.delay(
-        chatbot_id=str(chatbot.id),
-        force_retrain=False,
-        knowledge_source_ids=[str(source.id)]
-    )
+    # Refresh source to get updated status
+    source.refresh_from_db()
     
     logger.info(
-        "Document uploaded for processing",
+        "Document uploaded and processed",
         source_id=str(source.id),
         chatbot_id=str(chatbot.id),
         file_name=uploaded_file.name,
-        file_size=uploaded_file.size
+        file_size=uploaded_file.size,
+        final_status=source.status
     )
     
     return Response(
@@ -358,32 +437,71 @@ def process_url(request):
     
     url = serializer.validated_data['url']
     
+    # Import the document processing service
+    from apps.core.document_processing_service import DocumentProcessingService
+    
+    # Calculate URL hash for deduplication
+    url_hash = hashlib.sha256(url.encode()).hexdigest()
+    
     # Create knowledge source
     source = KnowledgeSource.objects.create(
         chatbot=chatbot,
         name=serializer.validated_data.get('name', url),
         description=serializer.validated_data.get('description', ''),
-        source_type='url',
-        url=url,
+        content_type='url',
+        source_url=url,
+        file_hash=url_hash,
         is_citable=serializer.validated_data.get('is_citable', True),
-        processing_status='pending',
+        status='pending',
         metadata={
-            'crawl_depth': serializer.validated_data.get('crawl_depth', 1)
+            'crawl_depth': serializer.validated_data.get('crawl_depth', 1),
+            'original_url': url,
+            'submission_timestamp': timezone.now().isoformat()
         }
     )
     
-    # TODO: Trigger processing task when implemented
-    # process_url_task.delay(str(source.id))
+    # Process URL immediately using the document processing service
+    try:
+        doc_service = DocumentProcessingService()
+        result = doc_service.process_url_content(
+            knowledge_source=source,
+            url=url
+        )
+        
+        if result.success:
+            logger.info(
+                "URL processed successfully",
+                source_id=str(source.id),
+                chatbot_id=str(chatbot.id),
+                chunks_created=len(result.chunks),
+                total_tokens=result.total_tokens,
+                processing_time_ms=result.processing_time_ms
+            )
+        else:
+            logger.error(
+                "URL processing failed",
+                source_id=str(source.id),
+                error=result.error_message
+            )
+            
+    except Exception as e:
+        logger.error(
+            "URL processing service error",
+            source_id=str(source.id),
+            error=str(e)
+        )
+        # Update source status to failed
+        source.update_processing_status('failed', error_message=str(e))
     
-    # For now, mark as ready for testing
-    source.processing_status = 'ready'
-    source.save()
+    # Refresh source to get updated status
+    source.refresh_from_db()
     
     logger.info(
-        "URL submitted for processing",
+        "URL submitted and processed",
         source_id=str(source.id),
         chatbot_id=str(chatbot.id),
-        url=url
+        url=url,
+        final_status=source.status
     )
     
     return Response(
@@ -423,10 +541,10 @@ def process_youtube(request):
         chatbot=chatbot,
         name=serializer.validated_data.get('name', f'YouTube: {video_id}'),
         description=serializer.validated_data.get('description', ''),
-        source_type='youtube',
-        url=video_url,
+        content_type='youtube',
+        source_url=video_url,
         is_citable=serializer.validated_data.get('is_citable', True),
-        processing_status='pending',
+        status='pending',
         metadata={
             'video_id': video_id,
             'include_transcript': serializer.validated_data.get('include_transcript', True),

@@ -28,6 +28,7 @@ from chatbot_saas.config import get_settings
 from .exceptions import EmbeddingGenerationError
 from .circuit_breaker import CircuitBreaker
 from .text_chunking import TextChunk
+from apps.knowledge.models import KnowledgeChunk
 
 settings = get_settings()
 logger = structlog.get_logger()
@@ -367,6 +368,13 @@ class OpenAIEmbeddingService:
         if not text.strip():
             raise EmbeddingGenerationError("Text cannot be empty")
         
+        # Validate text length (OpenAI limit is ~8192 tokens, roughly 32k characters)
+        if len(text) > 32000:
+            raise EmbeddingGenerationError(
+                f"Text too long ({len(text)} chars). Maximum supported: 32,000 characters. "
+                "Consider chunking the text into smaller pieces."
+            )
+        
         # Check cache first
         cached_result = self.cache.get_cached_embedding(text, self.config.model)
         if cached_result:
@@ -403,6 +411,16 @@ class OpenAIEmbeddingService:
                 api_calls=0
             )
         
+        # Validate text lengths
+        for i, text in enumerate(texts):
+            if not text.strip():
+                raise EmbeddingGenerationError(f"Text at index {i} cannot be empty")
+            if len(text) > 32000:
+                raise EmbeddingGenerationError(
+                    f"Text at index {i} too long ({len(text)} chars). "
+                    "Maximum supported: 32,000 characters."
+                )
+        
         start_time = time.time()
         
         self.logger.info(
@@ -418,8 +436,16 @@ class OpenAIEmbeddingService:
             
             # Process uncached texts in batches
             api_results = []
+            actual_api_calls = 0
             if uncached_texts:
-                api_results = await self._process_uncached_texts(uncached_texts)
+                api_results, actual_api_calls = await self._process_uncached_texts(uncached_texts)
+                
+                # Check if we got results for uncached texts (critical for detecting auth failures)
+                if not api_results and uncached_texts:
+                    raise EmbeddingGenerationError(
+                        f"Failed to generate embeddings for {len(uncached_texts)} texts. "
+                        "This likely indicates an authentication or API connectivity issue."
+                    )
             
             # Combine cached and new results
             all_results = {**cached_results}
@@ -447,7 +473,7 @@ class OpenAIEmbeddingService:
             total_tokens = sum(r.tokens_used for r in final_embeddings)
             total_cost = sum(r.cost_usd for r in final_embeddings)
             cache_hits = sum(1 for r in final_embeddings if r.cached)
-            api_calls = len(api_results)
+            api_calls = actual_api_calls  # Use actual API call count, not result count
             processing_time_ms = int((time.time() - start_time) * 1000)
             
             # Record costs
@@ -549,7 +575,7 @@ class OpenAIEmbeddingService:
         
         return cached_results, uncached_texts
     
-    async def _process_uncached_texts(self, texts: List[str]) -> List[EmbeddingResult]:
+    async def _process_uncached_texts(self, texts: List[str]) -> Tuple[List[EmbeddingResult], int]:
         """
         Process uncached texts through OpenAI API.
         
@@ -557,10 +583,10 @@ class OpenAIEmbeddingService:
             texts: List of texts to process
             
         Returns:
-            List of embedding results
+            Tuple of (embedding results, actual API calls made)
         """
         if not texts:
-            return []
+            return [], 0
         
         # Split into batches
         batches = [
@@ -569,6 +595,7 @@ class OpenAIEmbeddingService:
         ]
         
         all_results = []
+        api_calls_made = 0
         
         for batch_idx, batch in enumerate(batches):
             self.logger.info(
@@ -581,6 +608,7 @@ class OpenAIEmbeddingService:
             try:
                 batch_results = await self._call_openai_api(batch)
                 all_results.extend(batch_results)
+                api_calls_made += 1  # Count actual API calls, not results
                 
                 # Add small delay between batches to respect rate limits
                 if batch_idx < len(batches) - 1:
@@ -592,10 +620,18 @@ class OpenAIEmbeddingService:
                     batch_index=batch_idx + 1,
                     error=str(e)
                 )
-                # Continue with other batches rather than failing completely
+                
+                # For critical errors like authentication, fail immediately
+                if (isinstance(e, openai.AuthenticationError) or 
+                    "401" in str(e) or 
+                    "authentication" in str(e).lower() or
+                    "api key" in str(e).lower()):
+                    raise EmbeddingGenerationError(f"OpenAI authentication failed: {str(e)}")
+                
+                # For other errors, continue with other batches
                 continue
         
-        return all_results
+        return all_results, api_calls_made
     
     @retry(
         stop=stop_after_attempt(3),
@@ -702,6 +738,128 @@ class OpenAIEmbeddingService:
         
         return chunk_embeddings
     
+    async def generate_embeddings_for_knowledge_chunks(
+        self, 
+        knowledge_chunks: List[KnowledgeChunk],
+        update_db: bool = True
+    ) -> List[Tuple[KnowledgeChunk, EmbeddingResult]]:
+        """
+        Generate embeddings for KnowledgeChunk models.
+        
+        Args:
+            knowledge_chunks: List of KnowledgeChunk instances
+            update_db: Whether to update the database with embeddings
+            
+        Returns:
+            List of (chunk, embedding_result) tuples
+        """
+        if not knowledge_chunks:
+            return []
+        
+        self.logger.info(
+            "Generating embeddings for knowledge chunks",
+            chunk_count=len(knowledge_chunks),
+            update_db=update_db
+        )
+        
+        # Extract texts and check for existing embeddings
+        chunks_to_process = []
+        existing_embeddings = {}
+        
+        for chunk in knowledge_chunks:
+            # Check if chunk already has an embedding
+            if chunk.embedding_vector and not update_db:
+                # Create mock EmbeddingResult for existing embedding
+                existing_embeddings[chunk.id] = EmbeddingResult(
+                    embedding=chunk.embedding_vector,
+                    text_hash=chunk.content_hash,
+                    model=chunk.embedding_model or self.config.model,
+                    dimensions=len(chunk.embedding_vector),
+                    tokens_used=chunk.token_count,
+                    cached=True,
+                    cost_usd=0.0,
+                    processing_time_ms=0
+                )
+            else:
+                chunks_to_process.append(chunk)
+        
+        # Generate embeddings for chunks that need them
+        new_embeddings = {}
+        if chunks_to_process:
+            texts = [chunk.content for chunk in chunks_to_process]
+            batch_result = await self.generate_embeddings_batch(texts)
+            
+            # Map results back to chunks
+            for i, chunk in enumerate(chunks_to_process):
+                if i < len(batch_result.embeddings):
+                    new_embeddings[chunk.id] = batch_result.embeddings[i]
+        
+        # Update database if requested
+        if update_db and new_embeddings:
+            await self._update_knowledge_chunks_with_embeddings(
+                chunks_to_process, new_embeddings
+            )
+        
+        # Combine results
+        results = []
+        for chunk in knowledge_chunks:
+            if chunk.id in existing_embeddings:
+                results.append((chunk, existing_embeddings[chunk.id]))
+            elif chunk.id in new_embeddings:
+                results.append((chunk, new_embeddings[chunk.id]))
+            else:
+                self.logger.warning(
+                    "Missing embedding for knowledge chunk",
+                    chunk_id=str(chunk.id)
+                )
+        
+        return results
+    
+    async def _update_knowledge_chunks_with_embeddings(
+        self,
+        chunks: List[KnowledgeChunk],
+        embeddings: Dict[str, EmbeddingResult]
+    ) -> None:
+        """
+        Update KnowledgeChunk models with generated embeddings.
+        
+        Args:
+            chunks: List of KnowledgeChunk instances
+            embeddings: Mapping of chunk_id to EmbeddingResult
+        """
+        import asyncio
+        from django.db import transaction
+        from asgiref.sync import sync_to_async
+        
+        @sync_to_async
+        def update_chunk_sync(chunk: KnowledgeChunk, embedding: EmbeddingResult):
+            """Update a single chunk in sync context."""
+            with transaction.atomic():
+                chunk.embedding_vector = embedding.embedding
+                chunk.embedding_model = embedding.model
+                chunk.save(update_fields=['embedding_vector', 'embedding_model'])
+                
+                self.logger.debug(
+                    "Updated chunk with embedding",
+                    chunk_id=str(chunk.id),
+                    model=embedding.model,
+                    dimensions=embedding.dimensions,
+                    is_citable=chunk.is_citable
+                )
+        
+        # Update chunks sequentially to avoid database concurrency issues
+        updated_count = 0
+        for chunk in chunks:
+            if chunk.id in embeddings:
+                await update_chunk_sync(chunk, embeddings[chunk.id])
+                updated_count += 1
+        
+        if updated_count > 0:
+            self.logger.info(
+                "Updated knowledge chunks with embeddings",
+                updated_count=updated_count
+            )
+    
     def get_service_stats(self) -> Dict[str, Any]:
         """Get service statistics and health information."""
         return {
@@ -744,3 +902,12 @@ async def generate_embeddings(texts: List[str]) -> BatchEmbeddingResult:
     """Generate embeddings for multiple texts."""
     service = get_embedding_service()
     return await service.generate_embeddings_batch(texts)
+
+
+async def generate_embeddings_for_knowledge_chunks(
+    knowledge_chunks: List[KnowledgeChunk],
+    update_db: bool = True
+) -> List[Tuple[KnowledgeChunk, EmbeddingResult]]:
+    """Generate embeddings for KnowledgeChunk models."""
+    service = get_embedding_service()
+    return await service.generate_embeddings_for_knowledge_chunks(knowledge_chunks, update_db)

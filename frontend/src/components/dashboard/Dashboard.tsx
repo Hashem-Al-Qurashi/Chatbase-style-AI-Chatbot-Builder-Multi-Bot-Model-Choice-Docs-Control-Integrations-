@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   Bot, 
   Plus, 
@@ -27,11 +28,13 @@ import { LoadingSpinner } from '../ui/LoadingSpinner'
 import { useAuth } from '../../hooks/useAuth'
 import { apiService } from '../../services/api'
 import { Chatbot } from '../../types'
-import { ChatbotModal } from '../chatbot/ChatbotModal'
+import { ChatbotWizard } from '../chatbot/ChatbotWizard'
 import { ChatbotDeleteModal } from '../chatbot/ChatbotDeleteModal'
+import { ChatbotDetailsModal } from '../chatbot/ChatbotDetailsModal'
 
 export function Dashboard() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [chatbots, setChatbots] = useState<Chatbot[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,6 +44,7 @@ export function Dashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null)
 
   // Load chatbots on component mount
@@ -224,9 +228,7 @@ export function Dashboard() {
               <Button 
                 variant="gradient" 
                 size="sm"
-                onClick={() => {
-                  // TODO: Implement new chatbot creation modal
-                }}
+                onClick={handleCreateChatbot}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Chatbot
@@ -425,11 +427,20 @@ export function Dashboard() {
                         {/* Actions */}
                         <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <Button 
+                            variant="gradient" 
+                            size="sm"
+                            onClick={() => navigate(`/chat/${chatbot.id}`)}
+                            title="Start chatting with this bot"
+                          >
+                            <MessageSquare className="w-4 h-4 mr-1" />
+                            Chat
+                          </Button>
+                          <Button 
                             variant="ghost" 
                             size="sm"
                             onClick={() => {
-                              // Navigate to chatbot details (to be implemented)
-                              console.log('View chatbot:', chatbot.id)
+                              setSelectedChatbot(chatbot)
+                              setShowDetailsModal(true)
                             }}
                           >
                             <Eye className="w-4 h-4" />
@@ -544,20 +555,18 @@ export function Dashboard() {
       </main>
       
       {/* Modals */}
-      <ChatbotModal
+      <ChatbotWizard
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleModalSuccess}
-        mode="create"
-        chatbot={null}
+        existingChatbot={null}
       />
       
-      <ChatbotModal
+      <ChatbotWizard
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         onSuccess={handleModalSuccess}
-        mode="edit"
-        chatbot={selectedChatbot}
+        existingChatbot={selectedChatbot}
       />
       
       <ChatbotDeleteModal
@@ -565,6 +574,13 @@ export function Dashboard() {
         onClose={() => setShowDeleteModal(false)}
         onSuccess={handleModalSuccess}
         chatbot={selectedChatbot}
+      />
+      
+      <ChatbotDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        chatbot={selectedChatbot}
+        onChatbotUpdated={handleModalSuccess}
       />
     </div>
   )

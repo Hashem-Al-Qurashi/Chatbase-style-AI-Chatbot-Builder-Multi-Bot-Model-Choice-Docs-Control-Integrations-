@@ -180,6 +180,21 @@ class EmbeddingGenerationError(ExternalServiceError):
 class VectorStorageError(ExternalServiceError):
     """Raised when vector storage operations fail."""
     
-    def __init__(self, service: str, message: str = "Vector storage operation failed"):
-        super().__init__(service, message)
+    def __init__(self, message: str = "Vector storage operation failed"):
+        super().__init__("VectorStorage", message)
         self.error_code = "VECTOR_STORAGE_ERROR"
+
+
+class RAGIntegrationError(ServiceError):
+    """Raised when RAG integration operations fail."""
+    
+    def __init__(self, message: str = "RAG integration operation failed"):
+        super().__init__(message, "RAG_INTEGRATION_ERROR", 500)
+
+
+class RAGError(ServiceError):
+    """Raised when RAG pipeline operations fail."""
+    
+    def __init__(self, message: str, stage: str = None):
+        self.stage = stage
+        super().__init__(message, "RAG_ERROR", 500)

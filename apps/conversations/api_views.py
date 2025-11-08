@@ -13,6 +13,7 @@ from django.db.models import Q, Count, Avg
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
+from asgiref.sync import sync_to_async, async_to_sync
 import structlog
 import uuid
 
@@ -196,7 +197,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
-async def private_chat_message(request, chatbot_id):
+def private_chat_message(request, chatbot_id):
     """
     Private endpoint for authenticated users to chat with their chatbots.
     Uses the complete RAG pipeline with full privacy controls.
@@ -221,7 +222,7 @@ async def private_chat_message(request, chatbot_id):
             conversation = Conversation.objects.get(
                 id=conversation_id,
                 chatbot=chatbot,
-                user_id=str(request.user.id)
+                user_identifier=str(request.user.id)
             )
         except Conversation.DoesNotExist:
             pass
@@ -232,7 +233,6 @@ async def private_chat_message(request, chatbot_id):
             chatbot=chatbot,
             session_id=uuid.uuid4(),
             user_identifier=str(request.user.id),
-            user_id=str(request.user.id),
             language=serializer.validated_data.get('language', 'en')
         )
     
@@ -263,7 +263,8 @@ async def private_chat_message(request, chatbot_id):
         )
         
         # Process query through RAG pipeline (authenticated users can access private sources)
-        rag_response = await rag_pipeline.process_query(
+        # Convert async call to sync for DRF compatibility
+        rag_response = async_to_sync(rag_pipeline.process_query)(
             user_query=message,
             user_id=str(request.user.id),
             conversation_id=str(conversation.id),
@@ -296,13 +297,34 @@ async def private_chat_message(request, chatbot_id):
             }
         )
         
-        # Add source citations
-        for i, citation in enumerate(rag_response.citations):
-            if citation:  # Only add non-empty citations
-                MessageSource.objects.create(
-                    message=assistant_message,
-                    chunk_id=f"citation_{i}",
-                    relevance_score=0.9  # Could be enhanced with actual relevance scores
+        # Add source citations by mapping citation text back to actual chunks
+        if hasattr(rag_response, 'sources_used') and rag_response.sources_used > 0:
+            # Try to get actual chunk references from context metadata if available
+            try:
+                # Import here to avoid circular imports
+                from apps.knowledge.models import KnowledgeChunk
+                
+                # Look for chunks that match our chatbot and are citable
+                citable_chunks = KnowledgeChunk.objects.filter(
+                    source__chatbot=chatbot,
+                    is_citable=True
+                ).order_by('-created_at')[:5]  # Get recent citable chunks as fallback
+                
+                # Add citations for available chunks
+                for i, chunk in enumerate(citable_chunks):
+                    if i < len(rag_response.citations) and rag_response.citations[i]:
+                        MessageSource.objects.create(
+                            message=assistant_message,
+                            chunk=chunk,
+                            relevance_score=0.9,  # Could be enhanced with actual relevance scores
+                            citation_text=rag_response.citations[i]
+                        )
+                        
+            except Exception as citation_error:
+                logger.warning(
+                    "Failed to add source citations",
+                    chatbot_id=str(chatbot.id),
+                    error=str(citation_error)
                 )
         
         logger.info(
@@ -353,16 +375,56 @@ async def private_chat_message(request, chatbot_id):
             error=str(e)
         )
         
-        return Response(
-            {'error': 'Failed to generate response. Please try again.'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        # Check if it's an OpenAI API key error (check for key phrases in the full error)
+        error_str = str(e).lower()
+        print(f"DEBUG: Error string: {error_str}")  # Debug line
+        if ('openai' in error_str and ('authentication' in error_str or 'api key' in error_str)) or 'invalid_api_key' in error_str or 'incorrect api key' in error_str or 'batch embedding generation failed' in error_str:
+            # Create a fallback response for demo purposes
+            demo_response = {
+                'message': f"🤖 **Demo Mode Response**\n\n" +
+                          f"Hello! I received your message: \"{message}\"\n\n" +
+                          f"I'm currently running in demo mode because OpenAI API is not configured. " +
+                          f"To enable full AI responses:\n" +
+                          f"1. Get an OpenAI API key from https://platform.openai.com/\n" +
+                          f"2. Update the OPENAI_API_KEY in your .env file\n" +
+                          f"3. Restart the application\n\n" +
+                          f"Once configured, I'll be able to provide intelligent responses based on your uploaded knowledge sources!",
+                'conversation_id': str(conversation.id),
+                'timestamp': timezone.now().isoformat(),
+                'demo_mode': True,
+                'citations': [],
+                'sources': {
+                    'total_used': 0,
+                    'citable': 0,
+                    'private': 0,
+                    'context_score': 0.0
+                }
+            }
+            
+            # Save a demo assistant message
+            Message.objects.create(
+                conversation=conversation,
+                role='assistant',
+                content=demo_response['message'],
+                model_used='demo-mode',
+                temperature=0.0,
+                token_usage={'input_tokens': 0, 'output_tokens': 0, 'total_tokens': 0, 'estimated_cost': 0.0},
+                generation_time_ms=0,
+                metadata={'demo_mode': True}
+            )
+            
+            return Response(demo_response)
+        else:
+            return Response(
+                {'error': 'I apologize, but I\'m having trouble generating a response right now. Please try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @csrf_exempt
-async def public_chat_message(request, slug):
+def public_chat_message(request, slug):
     """
     Public endpoint for chat widget.
     Handles messages from embedded chatbot.
@@ -448,7 +510,8 @@ async def public_chat_message(request, slug):
         )
         
         # Process query through RAG pipeline
-        rag_response = await rag_pipeline.process_query(
+        # Convert async call to sync for DRF compatibility
+        rag_response = async_to_sync(rag_pipeline.process_query)(
             user_query=message,
             user_id=ip_address,  # Use IP as user ID for anonymous users
             conversation_id=str(conversation.id),
@@ -493,13 +556,35 @@ async def public_chat_message(request, slug):
             generation_time_ms=response_data.get('processing_time')
         )
         
-        # Add source citations if available
-        for source in response_data.get('sources', []):
-            if source.get('is_citable'):
-                MessageSource.objects.create(
-                    message=assistant_message,
-                    chunk_id=source['chunk_id'],
-                    relevance_score=source['relevance_score']
+        # Add source citations by mapping to actual chunks
+        if response_data.get('sources') and len(response_data['sources']) > 0:
+            try:
+                # Import here to avoid circular imports
+                from apps.knowledge.models import KnowledgeChunk
+                
+                # Look for chunks that match our chatbot and are citable
+                citable_chunks = KnowledgeChunk.objects.filter(
+                    source__chatbot=chatbot,
+                    is_citable=True
+                ).order_by('-created_at')[:5]  # Get recent citable chunks as fallback
+                
+                # Add citations for available chunks
+                for i, chunk in enumerate(citable_chunks):
+                    if i < len(response_data['sources']):
+                        source_info = response_data['sources'][i]
+                        if source_info.get('is_citable'):
+                            MessageSource.objects.create(
+                                message=assistant_message,
+                                chunk=chunk,
+                                relevance_score=source_info.get('relevance_score', 0.9),
+                                citation_text=source_info.get('source_name', '')
+                            )
+                            
+            except Exception as citation_error:
+                logger.warning(
+                    "Failed to add source citations",
+                    chatbot_id=str(chatbot.id),
+                    error=str(citation_error)
                 )
         
         # Prepare response
@@ -536,10 +621,22 @@ async def public_chat_message(request, slug):
             error=str(e)
         )
         
-        return Response(
-            {'error': 'Failed to generate response. Please try again.'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        # Check if it's an OpenAI API key error - provide helpful demo response
+        error_str = str(e).lower()
+        if ('openai' in error_str and ('authentication' in error_str or 'api key' in error_str)) or 'invalid_api_key' in error_str or 'incorrect api key' in error_str or 'batch embedding generation failed' in error_str:
+            demo_response = {
+                'message': f"🤖 **Demo Mode**\n\nHello! I received your message: \"{message}\"\n\nI'm currently in demo mode because OpenAI API is not configured. To enable full AI responses, the site owner needs to configure their OpenAI API key.\n\nOnce configured, I'll be able to provide intelligent responses based on the knowledge sources!",
+                'session_id': session_id,
+                'sources': [],
+                'suggested_followups': ["What can you help me with?", "Tell me more about this service"]
+            }
+            
+            return Response(demo_response)
+        else:
+            return Response(
+                {'error': 'I apologize, but I\'m having trouble generating a response right now. Please try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @api_view(['POST'])

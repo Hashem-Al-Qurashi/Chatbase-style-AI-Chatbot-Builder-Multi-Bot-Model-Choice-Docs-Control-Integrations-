@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { Loader2, Sparkles, Bot, Zap, Shield, Users } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { LoginForm } from './components/auth/LoginForm'
 import { RegisterForm } from './components/auth/RegisterForm'
 import { Dashboard } from './components/dashboard/Dashboard'
-import { ChatInterface } from './components/chat/ChatInterface'
 import { ButtonTest } from './components/test/ButtonTest'
 
 function LoadingScreen() {
@@ -157,28 +155,13 @@ function AuthPage() {
   )
 }
 
-// Chat page component with chatbot ID from URL
-function ChatPage() {
-  const { chatbotId } = useParams<{ chatbotId: string }>()
-  
-  if (!chatbotId) {
-    return <Navigate to="/dashboard" replace />
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4">
-      <div className="max-w-4xl mx-auto h-[90vh]">
-        <ChatInterface 
-          chatbot={{ id: chatbotId, name: `Chatbot ${chatbotId}` }}
-          onClose={() => window.history.back()}
-        />
-      </div>
-    </div>
-  )
-}
-
 function AppContent() {
   const { user, loading } = useAuth()
+
+  // Test route for debugging button functionality
+  if (window.location.pathname === '/test') {
+    return <ButtonTest />
+  }
 
   if (loading) {
     return <LoadingScreen />
@@ -188,24 +171,14 @@ function AppContent() {
     return <AuthPage />
   }
 
-  return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/chat/:chatbotId" element={<ChatPage />} />
-      <Route path="/test" element={<ButtonTest />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-  )
+  return <Dashboard />
 }
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </Router>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

@@ -16,16 +16,16 @@ class KnowledgeSourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = KnowledgeSource
         fields = (
-            'id', 'chatbot', 'name', 'description', 'source_type',
-            'url', 'file_path', 'file_size', 'file_size_mb',
-            'mime_type', 'is_active', 'is_citable',
-            'processing_status', 'processed_at',
+            'id', 'chatbot', 'name', 'description', 'content_type',
+            'source_url', 'file_path', 'file_size', 'file_size_mb',
+            'mime_type', 'is_citable',
+            'status', 'processed_at',
             'chunk_count', 'error_message',
             'created_at', 'updated_at', 'metadata'
         )
         read_only_fields = (
             'id', 'file_path', 'file_size', 'mime_type',
-            'processing_status', 'processed_at',
+            'status', 'processed_at',
             'chunk_count', 'error_message',
             'created_at', 'updated_at'
         )
@@ -45,13 +45,13 @@ class KnowledgeChunkSerializer(serializers.ModelSerializer):
     """Knowledge chunk serializer."""
     
     source_name = serializers.CharField(source='source.name', read_only=True)
-    source_type = serializers.CharField(source='source.source_type', read_only=True)
+    source_type = serializers.CharField(source='source.content_type', read_only=True)
     
     class Meta:
         model = KnowledgeChunk
         fields = (
             'id', 'source', 'source_name', 'source_type',
-            'content', 'chunk_index', 'chunk_hash',
+            'content', 'chunk_index', 'content_hash',
             'embedding_model', 'is_citable',
             'created_at', 'metadata'
         )
@@ -90,19 +90,23 @@ class DocumentUploadSerializer(serializers.Serializer):
         if value.size > 50 * 1024 * 1024:
             raise serializers.ValidationError("File size cannot exceed 50MB")
         
-        # Check file type
-        allowed_types = [
-            'application/pdf',
-            'text/plain',
-            'text/csv',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'text/html',
-            'text/markdown'
-        ]
+        # STEP 1 FIX: Validate by file extension instead of unreliable browser MIME type
+        # This prevents rejection of valid files with generic MIME types
+        if not value.name or '.' not in value.name:
+            raise serializers.ValidationError("File must have a valid extension")
+            
+        file_extension = value.name.lower().split('.')[-1]
+        allowed_extensions = ['pdf', 'txt', 'docx', 'doc', 'csv', 'html', 'md']
         
-        if value.content_type not in allowed_types:
-            raise serializers.ValidationError(f"File type {value.content_type} not supported")
+        if file_extension not in allowed_extensions:
+            raise serializers.ValidationError(
+                f"File extension '{file_extension}' not supported. "
+                f"Allowed types: {', '.join(allowed_extensions)}"
+            )
+        
+        # Additional size check for specific file types
+        if file_extension == 'pdf' and value.size > 20 * 1024 * 1024:  # 20MB for PDFs
+            raise serializers.ValidationError("PDF files cannot exceed 20MB")
         
         return value
 

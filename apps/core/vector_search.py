@@ -364,7 +364,6 @@ class VectorSearchEngine:
         
         try:
             # Perform vector search with circuit breaker
-            @self.circuit_breaker
             async def _search():
                 return await self.vector_store.search(
                     query_vector=query_vector,
@@ -374,7 +373,7 @@ class VectorSearchEngine:
                     score_threshold=config.score_threshold
                 )
             
-            raw_results = await _search()
+            raw_results = await self.circuit_breaker.call(_search)
             
             # Apply privacy filtering and sanitization
             sanitized_results = []

@@ -44,7 +44,8 @@ youtube-transcript-api==0.6.1
 
 # Text processing and embeddings
 langchain==0.0.340
-tiktoken==0.5.2
+langchain-openai==1.0.1
+tiktoken==0.8.0
 sentence-transformers>=2.2.0  # For semantic reranking (optional - gracefully degrades)
 
 # Monitoring and observability

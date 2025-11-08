@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG WebSocket Streaming Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.connected { background-color: #d4edda; color: #155724; }
+        .status.disconnected { background-color: #f8d7da; color: #721c24; }
+        .status.processing { background-color: #fff3cd; color: #856404; }
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #fafafa;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .message.user { background-color: #007bff; color: white; text-align: right; }
+        .message.system { background-color: #6c757d; color: white; }
+        .message.response { background-color: #28a745; color: white; }
+        .message.error { background-color: #dc3545; color: white; }
+        .message.citation { background-color: #17a2b8; color: white; font-size: 0.9em; }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        select, input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .metadata {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RAG WebSocket Streaming Test</h1>
+        
+        <div id="status" class="status disconnected">Disconnected</div>
+        
+        <div class="controls">
+            <div>
+                <label>Token:</label>
+                <input type="text" id="tokenInput" value="user_test_user" placeholder="Enter auth token">
+            </div>
+            <div>
+                <label>Privacy Mode:</label>
+                <select id="privacyMode">
+                    <option value="strict">Strict</option>
+                    <option value="contextual">Contextual</option>
+                    <option value="internal">Internal</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <button id="connectBtn" onclick="connect()">Connect</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+            <button onclick="ping()">Ping</button>
+        </div>
+        
+        <div class="chat-container" id="chatContainer"></div>
+        
+        <div class="input-group">
+            <input type="text" id="messageInput" placeholder="Enter your question..." onkeypress="handleKeyPress(event)">
+            <button id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+        </div>
+        
+        <div id="metadata" class="metadata" style="display: none;"></div>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentQueryId = null;
+        let isConnected = false;
+        
+        function updateStatus(message, className) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + className;
+        }
+        
+        function addMessage(content, type = 'system') {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+            messageDiv.innerHTML = content;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function connect() {
+            const token = document.getElementById('tokenInput').value;
+            if (!token) {
+                alert('Please enter an authentication token');
+                return;
+            }
+            
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            const wsUrl = `${protocol}//${host}/ws/chat/rag/?token=${encodeURIComponent(token)}`;
+            
+            updateStatus('Connecting...', 'processing');
+            
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function(event) {
+                isConnected = true;
+                updateStatus('Connected', 'connected');
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                addMessage('WebSocket connected successfully', 'system');
+            };
+            
+            socket.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleMessage(data);
+                } catch (e) {
+                    addMessage('Error parsing message: ' + e.message, 'error');
+                }
+            };
+            
+            socket.onclose = function(event) {
+                isConnected = false;
+                updateStatus('Disconnected', 'disconnected');
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('sendBtn').disabled = true;
+                addMessage(`Connection closed (code: ${event.code})`, 'system');
+            };
+            
+            socket.onerror = function(error) {
+                addMessage('WebSocket error: ' + error, 'error');
+            };
+        }
+        
+        function disconnect() {
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+        }
+        
+        function handleMessage(data) {
+            switch (data.type) {
+                case 'connection_established':
+                    addMessage(`Session established: ${data.session_id}`, 'system');
+                    addMessage(`Rate limit: ${data.rate_limit.remaining}/${data.rate_limit.max_requests} requests`, 'system');
+                    break;
+                
+                case 'query_started':
+                    currentQueryId = data.query_id;
+                    addMessage(`<strong>You:</strong> ${data.query}`, 'user');
+                    addMessage('Processing your question...', 'system');
+                    updateStatus('Processing query...', 'processing');
+                    break;
+                
+                case 'processing_status':
+                    addMessage(`Status: ${data.message}`, 'system');
+                    break;
+                
+                case 'response_start':
+                    addMessage('<strong>Assistant:</strong> ', 'response');
+                    break;
+                
+                case 'response_chunk':
+                    // Append chunk to the last response message
+                    const messages = document.querySelectorAll('.message.response');
+                    const lastMessage = messages[messages.length - 1];
+                    if (lastMessage) {
+                        lastMessage.innerHTML += data.chunk + ' ';
+                    }
+                    break;
+                
+                case 'response_end':
+                    // Response streaming completed
+                    break;
+                
+                case 'citations':
+                    if (data.citations && data.citations.length > 0) {
+                        let citationText = '<strong>Citations:</strong><br>';
+                        data.citations.forEach((citation, index) => {
+                            citationText += `[${citation.cite_number}] ${citation.citation_text}<br>`;
+                        });
+                        addMessage(citationText, 'citation');
+                    }
+                    break;
+                
+                case 'query_completed':
+                    updateStatus('Connected', 'connected');
+                    showMetadata(data.metadata);
+                    addMessage('Query completed', 'system');
+                    currentQueryId = null;
+                    break;
+                
+                case 'error':
+                    addMessage('Error: ' + data.message, 'error');
+                    updateStatus('Connected', 'connected');
+                    currentQueryId = null;
+                    break;
+                
+                case 'pong':
+                    addMessage('Pong received', 'system');
+                    break;
+                
+                default:
+                    addMessage('Unknown message type: ' + data.type, 'system');
+            }
+        }
+        
+        function showMetadata(metadata) {
+            const metadataDiv = document.getElementById('metadata');
+            let metadataHtml = '<strong>Query Metadata:</strong><br>';
+            metadataHtml += `Processing Time: ${metadata.processing_time?.toFixed(3)}s<br>`;
+            metadataHtml += `Generation Time: ${metadata.generation_time?.toFixed(3)}s<br>`;
+            metadataHtml += `Cost Estimate: $${metadata.cost_estimate?.toFixed(6)}<br>`;
+            metadataHtml += `Privacy Validated: ${metadata.privacy_validated}<br>`;
+            metadataHtml += `Sources: ${metadata.context_sources?.citable || 0} citable, ${metadata.context_sources?.private || 0} private<br>`;
+            metadataHtml += `Total Tokens: ${metadata.total_tokens}<br>`;
+            
+            metadataDiv.innerHTML = metadataHtml;
+            metadataDiv.style.display = 'block';
+        }
+        
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const privacyMode = document.getElementById('privacyMode').value;
+            const message = messageInput.value.trim();
+            
+            if (!message || !isConnected) {
+                return;
+            }
+            
+            const queryMessage = {
+                type: 'query',
+                query: message,
+                privacy_mode: privacyMode,
+                chatbot_id: 'test_chatbot',
+                top_k: 10,
+                temperature: 0.7
+            };
+            
+            socket.send(JSON.stringify(queryMessage));
+            messageInput.value = '';
+            
+            // Hide previous metadata
+            document.getElementById('metadata').style.display = 'none';
+        }
+        
+        function ping() {
+            if (isConnected) {
+                socket.send(JSON.stringify({ type: 'ping' }));
+            }
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // Auto-connect on page load for testing
+        window.onload = function() {
+            // Uncomment to auto-connect:
+            // setTimeout(connect, 1000);
+        };
+    </script>
+</body>
+</html>

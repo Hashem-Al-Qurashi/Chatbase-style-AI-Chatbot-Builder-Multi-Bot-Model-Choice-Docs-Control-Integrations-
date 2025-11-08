@@ -190,6 +190,31 @@ class JWTManager:
             algorithm=self.algorithm
         )
         
+        # Create UserSession records for both tokens
+        from apps.accounts.models import UserSession
+        
+        # Create session record for access token
+        UserSession.objects.create(
+            user=user,
+            jti=access_payload["jti"],
+            token_type='access',
+            ip_address='',  # Will be updated by session manager if needed
+            user_agent='',
+            expires_at=access_payload["exp"],
+            metadata={}
+        )
+        
+        # Create session record for refresh token
+        UserSession.objects.create(
+            user=user,
+            jti=refresh_payload["jti"],
+            token_type='refresh',
+            ip_address='',  # Will be updated by session manager if needed
+            user_agent='',
+            expires_at=refresh_payload["exp"],
+            metadata={}
+        )
+        
         # Prepare user data (excluding sensitive information)
         user_data = {
             "id": user.id,
@@ -286,11 +311,33 @@ class JWTManager:
             "scopes": payload.scopes
         }
         
-        return jwt.encode(
+        access_token = jwt.encode(
             access_payload,
             self.secret_key,
             algorithm=self.algorithm
         )
+        
+        # Create UserSession record for the new access token
+        from apps.accounts.models import UserSession
+        from django.contrib.auth import get_user_model
+        
+        User = get_user_model()
+        try:
+            user = User.objects.get(id=payload.user_id)
+            UserSession.objects.create(
+                user=user,
+                jti=access_payload["jti"],
+                token_type='access',
+                ip_address='',
+                user_agent='',
+                expires_at=access_payload["exp"],
+                metadata={}
+            )
+        except User.DoesNotExist:
+            # Log error but don't fail token refresh
+            pass
+        
+        return access_token
     
     def revoke_token(self, jti: str, expires_at: Optional[datetime] = None) -> bool:
         """

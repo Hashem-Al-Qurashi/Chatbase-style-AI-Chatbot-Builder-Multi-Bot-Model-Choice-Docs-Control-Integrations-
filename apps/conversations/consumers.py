@@ -258,11 +258,17 @@ class PrivateChatConsumer(BaseChatConsumer):
         )
     
     async def generate_ai_response(self, user_message):
-        """Generate AI response using RAG pipeline."""
+        """Generate AI response using RAG pipeline with real-time streaming."""
         try:
             # Import here to avoid circular imports
             from apps.core.rag.pipeline import get_rag_pipeline
             from apps.core.rag.llm_service import ChatbotConfig
+            
+            # Send typing indicator
+            await self.send(text_data=json.dumps({
+                'type': 'typing_start',
+                'message': 'AI is thinking...'
+            }))
             
             # Get RAG pipeline
             rag_pipeline = get_rag_pipeline(str(self.chatbot.id))
@@ -278,50 +284,11 @@ class PrivateChatConsumer(BaseChatConsumer):
                 allow_private_reasoning=True
             )
             
-            # Process query
-            rag_response = await rag_pipeline.process_query(
-                user_query=user_message,
-                user_id=self.user_identifier,
-                conversation_id=str(self.conversation.id),
+            # Start streaming response
+            await self.process_streaming_rag_query(
+                user_message=user_message,
+                rag_pipeline=rag_pipeline,
                 chatbot_config=chatbot_config
-            )
-            
-            # Save assistant message
-            assistant_message = await database_sync_to_async(
-                Message.objects.create
-            )(
-                conversation=self.conversation,
-                role='assistant',
-                content=rag_response.content,
-                model_used=chatbot_config.model.value,
-                temperature=chatbot_config.temperature,
-                token_usage={
-                    'input_tokens': rag_response.input_tokens,
-                    'output_tokens': rag_response.output_tokens,
-                    'total_tokens': rag_response.input_tokens + rag_response.output_tokens,
-                    'estimated_cost': rag_response.estimated_cost
-                },
-                generation_time_ms=rag_response.total_time * 1000
-            )
-            
-            # Broadcast AI response
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'chat_message_broadcast',
-                    'message': {
-                        'id': str(assistant_message.id),
-                        'role': 'assistant',
-                        'content': rag_response.content,
-                        'timestamp': assistant_message.created_at.isoformat(),
-                        'citations': rag_response.citations,
-                        'metadata': {
-                            'privacy_compliant': rag_response.privacy_compliant,
-                            'processing_time': rag_response.total_time,
-                            'token_usage': assistant_message.token_usage
-                        }
-                    }
-                }
             )
             
         except Exception as e:
@@ -332,6 +299,143 @@ class PrivateChatConsumer(BaseChatConsumer):
                 user_identifier=self.user_identifier
             )
             await self.send_error("Failed to generate response")
+    
+    async def process_streaming_rag_query(self, user_message, rag_pipeline, chatbot_config):
+        """Process RAG query with real-time streaming response."""
+        import time
+        start_time = time.time()
+        response_buffer = ""
+        
+        try:
+            # Step 1: Generate query embedding
+            query_embedding = await rag_pipeline._generate_embedding(user_message)
+            
+            # Step 2: Vector search with privacy filtering
+            search_results = await rag_pipeline.vector_search.search(
+                query_embedding=query_embedding,
+                query_text=user_message,
+                user_id=self.user_identifier,
+                top_k=10,
+                filter_citable=False,  # Get both for context
+                score_threshold=0.7
+            )
+            
+            # Step 3: Build context
+            context = rag_pipeline.context_builder.build_context(
+                search_results=search_results,
+                query=user_message,
+                include_private=True,
+                ranking_strategy=rag_pipeline.context_builder.RankingStrategy.HYBRID
+            )
+            
+            # Validate privacy
+            context_validation = rag_pipeline.context_builder.validate_context_privacy(context)
+            if not context_validation["valid"]:
+                await self.send_error("Privacy validation failed")
+                return
+            
+            # Step 4: Stream LLM response
+            message_id = str(uuid.uuid4())
+            
+            # Send stream start
+            await self.send(text_data=json.dumps({
+                'type': 'stream_start',
+                'message_id': message_id,
+                'sources_found': len(search_results)
+            }))
+            
+            # Stream response chunks
+            async for chunk in rag_pipeline.llm_service.generate_streaming_response(
+                context=context,
+                user_query=user_message,
+                chatbot_config=chatbot_config
+            ):
+                response_buffer += chunk
+                
+                # Send real-time chunk
+                await self.send(text_data=json.dumps({
+                    'type': 'stream_chunk',
+                    'message_id': message_id,
+                    'content': chunk
+                }))
+                
+                # Small delay to prevent overwhelming the client
+                await asyncio.sleep(0.01)
+            
+            # Step 5: Privacy filtering on complete response
+            privacy_result = rag_pipeline.privacy_filter.validate_response(
+                response=response_buffer,
+                context=context,
+                user_id=self.user_identifier,
+                chatbot_id=str(self.chatbot.id),
+                strict_mode=True
+            )
+            
+            final_response = (
+                privacy_result.sanitized_response 
+                if not privacy_result.passed 
+                else response_buffer
+            )
+            
+            # Step 6: Save to database
+            assistant_message = await database_sync_to_async(
+                Message.objects.create
+            )(
+                conversation=self.conversation,
+                role='assistant',
+                content=final_response,
+                model_used=chatbot_config.model.value,
+                temperature=chatbot_config.temperature,
+                generation_time_ms=(time.time() - start_time) * 1000,
+                metadata={
+                    'privacy_compliant': privacy_result.passed,
+                    'sources_used': len(search_results),
+                    'streaming_enabled': True
+                }
+            )
+            
+            # Extract citations
+            citations = rag_pipeline.context_builder.get_citation_list(context)
+            
+            # Send stream completion
+            await self.send(text_data=json.dumps({
+                'type': 'stream_complete',
+                'message_id': message_id,
+                'final_message_id': str(assistant_message.id),
+                'citations': citations,
+                'metadata': {
+                    'privacy_compliant': privacy_result.passed,
+                    'processing_time': time.time() - start_time,
+                    'sources_used': len(search_results)
+                }
+            }))
+            
+            # Broadcast complete message to group
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message_broadcast',
+                    'message': {
+                        'id': str(assistant_message.id),
+                        'role': 'assistant',
+                        'content': final_response,
+                        'timestamp': assistant_message.created_at.isoformat(),
+                        'citations': citations,
+                        'streaming': True
+                    }
+                }
+            )
+            
+        except Exception as e:
+            logger.error(
+                "Streaming RAG processing failed",
+                error=str(e),
+                user_message=user_message
+            )
+            await self.send(text_data=json.dumps({
+                'type': 'stream_error',
+                'message': f"Streaming failed: {str(e)}"
+            }))
 
 
 class PublicChatConsumer(BaseChatConsumer):

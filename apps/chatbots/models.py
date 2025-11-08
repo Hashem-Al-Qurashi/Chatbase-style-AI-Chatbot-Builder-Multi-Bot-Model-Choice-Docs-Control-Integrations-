@@ -164,14 +164,22 @@ class Chatbot(BaseModel):
     
     @property
     def embed_script(self) -> str:
-        """Generate JavaScript embed script."""
+        """Generate JavaScript embed script with XSS protection."""
+        import json
+        
+        # Sanitize all user inputs for JavaScript context
+        safe_embed_url = json.dumps(self.embed_url)  # JSON encoding prevents XSS
+        safe_name = json.dumps(self.name)            # JSON encoding prevents XSS
+        safe_slug = json.dumps(self.public_url_slug) # Additional safety
+        
         return f"""
 <script>
 (function() {{
     var chatbot = document.createElement('iframe');
-    chatbot.src = '{self.embed_url}';
+    chatbot.src = {safe_embed_url};
     chatbot.style.cssText = 'position:fixed;bottom:20px;right:20px;width:400px;height:600px;border:none;z-index:9999;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);';
-    chatbot.title = 'Chat with {self.name}';
+    chatbot.title = 'Chat with ' + {safe_name};
+    chatbot.setAttribute('data-chatbot-slug', {safe_slug});
     document.body.appendChild(chatbot);
 }})();
 </script>

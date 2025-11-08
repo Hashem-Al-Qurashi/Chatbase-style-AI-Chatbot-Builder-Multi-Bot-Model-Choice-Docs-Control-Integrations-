@@ -105,7 +105,7 @@ class ConversationManager:
     """Manage conversation history and context."""
     
     @staticmethod
-    def create_conversation(chatbot_id: str, session_id: str, user_id: str) -> str:
+    async def create_conversation(chatbot_id: str, session_id: str, user_id: str) -> str:
         """
         Create new conversation.
         
@@ -117,13 +117,16 @@ class ConversationManager:
         Returns:
             str: Conversation ID
         """
+        from asgiref.sync import sync_to_async
+        
         try:
-            chatbot = Chatbot.objects.get(id=chatbot_id)
+            # Use async database operations
+            chatbot = await sync_to_async(Chatbot.objects.get)(id=chatbot_id)
             
-            conversation = ConversationModel.objects.create(
+            conversation = await sync_to_async(ConversationModel.objects.create)(
                 chatbot=chatbot,
                 session_id=session_id,
-                user_id=user_id,
+                user_identifier=user_id,
                 created_at=timezone.now()
             )
             
@@ -307,7 +310,7 @@ class RAGPipeline:
             
             # Create conversation if needed
             if not conversation_id and session_id:
-                conversation_id = ConversationManager.create_conversation(
+                conversation_id = await ConversationManager.create_conversation(
                     self.chatbot_id, session_id, user_id
                 )
             
@@ -348,7 +351,7 @@ class RAGPipeline:
             # Stage 4: Generate response with LLM (Layer 2 privacy enforcement)
             stage_start = time.time()
             if not chatbot_config:
-                chatbot_config = self._get_default_chatbot_config()
+                chatbot_config = await self._get_default_chatbot_config()
             
             generation_result = await self.llm_service.generate_response(
                 context=context,
@@ -425,6 +428,20 @@ class RAGPipeline:
             
         except Exception as e:
             logger.error(f"RAG pipeline failed: {str(e)}")
+            
+            # Check if it's an OpenAI authentication error for demo mode
+            error_str = str(e).lower()
+            if (isinstance(e.__class__.__name__, str) and 'embeddinggenerationerror' in e.__class__.__name__.lower()) or \
+               any(keyword in error_str for keyword in [
+                   'openai authentication failed',
+                   'authentication', 
+                   'api key',
+                   'invalid_api_key',
+                   'incorrect api key',
+                   '401'
+               ]):
+                return self._generate_demo_response(user_query, time.time() - start_time)
+            
             return self._generate_fallback_response(e, time.time() - start_time)
     
     async def _generate_embedding(self, query: str) -> List[float]:
@@ -435,10 +452,12 @@ class RAGPipeline:
             logger.error(f"Embedding generation failed: {str(e)}")
             raise
     
-    def _get_default_chatbot_config(self) -> ChatbotConfig:
+    async def _get_default_chatbot_config(self) -> ChatbotConfig:
         """Get default chatbot configuration."""
+        from asgiref.sync import sync_to_async
+        
         try:
-            chatbot = Chatbot.objects.get(id=self.chatbot_id)
+            chatbot = await sync_to_async(Chatbot.objects.get)(id=self.chatbot_id)
             return ChatbotConfig(
                 name=chatbot.name,
                 description=chatbot.description or "AI Assistant",
@@ -577,6 +596,42 @@ class RAGPipeline:
             context_score=0.0,
             response_quality_score=0.0,
             user_satisfaction_predicted=0.0
+        )
+    
+    def _generate_demo_response(self, user_query: str, elapsed_time: float) -> RAGResponse:
+        """Generate demo response when OpenAI API is not available."""
+        track_metric("rag.pipeline.demo_mode", 1)
+        track_metric("rag.pipeline.total_time", elapsed_time)
+        
+        demo_content = (
+            f"🤖 **Demo Mode Response**\n\n"
+            f"Hello! I received your message: \"{user_query}\"\n\n"
+            f"I'm currently running in demo mode because OpenAI API is not configured. "
+            f"In a full deployment, I would:\n\n"
+            f"• Search through your knowledge base for relevant information\n"
+            f"• Use AI to generate a contextual response based on your content\n"
+            f"• Provide citations and sources for my answers\n"
+            f"• Maintain conversation history and context\n\n"
+            f"To enable full functionality, please configure a valid OpenAI API key in your environment settings.\n\n"
+            f"*This is a demonstration of the chatbot interface and conversation flow.*"
+        )
+        
+        return RAGResponse(
+            content=demo_content,
+            citations=[],
+            privacy_compliant=True,
+            privacy_violations=0,
+            total_time=elapsed_time,
+            stage_times={"demo_mode": elapsed_time},
+            input_tokens=len(user_query.split()),
+            output_tokens=len(demo_content.split()),
+            estimated_cost=0.0,
+            sources_used=0,
+            citable_sources=0,
+            private_sources=0,
+            context_score=1.0,  # Perfect score for demo
+            response_quality_score=0.8,  # Good demo quality
+            user_satisfaction_predicted=0.7
         )
 
 

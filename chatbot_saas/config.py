@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", env="CELERY_BROKER_URL")
     CELERY_RESULT_BACKEND: str = Field("redis://localhost:6379/1", env="CELERY_RESULT_BACKEND")
     CELERY_TASK_ALWAYS_EAGER: bool = Field(False, env="CELERY_TASK_ALWAYS_EAGER")
+    CELERY_TASK_EAGER_PROPAGATES: bool = Field(True, env="CELERY_TASK_EAGER_PROPAGATES")
     CELERY_TASK_SERIALIZER: str = Field("json", env="CELERY_TASK_SERIALIZER")
     CELERY_RESULT_SERIALIZER: str = Field("json", env="CELERY_RESULT_SERIALIZER")
     CELERY_ACCEPT_CONTENT: str = Field("json", env="CELERY_ACCEPT_CONTENT")

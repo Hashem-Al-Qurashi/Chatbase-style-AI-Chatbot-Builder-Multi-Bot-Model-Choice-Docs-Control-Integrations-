@@ -102,15 +102,27 @@ class ChatbotViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Trigger training task
-        train_chatbot_task.delay(
-            chatbot_id=str(chatbot.id),
-            force_retrain=serializer.validated_data.get('force_retrain', False),
-            knowledge_source_ids=serializer.validated_data.get('knowledge_source_ids')
-        )
+        # Trigger training task with proper eager mode handling
+        from django.conf import settings
         
-        # Update status
-        chatbot.update_training_status('processing')
+        if getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+            # In eager mode: task executes synchronously, don't override status
+            task_result = train_chatbot_task.delay(
+                chatbot_id=str(chatbot.id),
+                force_retrain=serializer.validated_data.get('force_retrain', False),
+                knowledge_source_ids=serializer.validated_data.get('knowledge_source_ids')
+            )
+            # Task already completed, get updated status from DB
+            chatbot.refresh_from_db()
+        else:
+            # In async mode: task runs in background, set processing status
+            train_chatbot_task.delay(
+                chatbot_id=str(chatbot.id),
+                force_retrain=serializer.validated_data.get('force_retrain', False),
+                knowledge_source_ids=serializer.validated_data.get('knowledge_source_ids')
+            )
+            # Update status for async execution
+            chatbot.update_training_status('processing')
         
         logger.info(
             "Chatbot training initiated",
@@ -119,9 +131,9 @@ class ChatbotViewSet(viewsets.ModelViewSet):
         )
         
         return Response({
-            'message': 'Training initiated',
-            'status': 'processing',
-            'estimated_time': '2-5 minutes'
+            'message': 'Training initiated' if not getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False) else 'Training completed',
+            'status': chatbot.status,
+            'estimated_time': '2-5 minutes' if not getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False) else 'Completed instantly'
         })
     
     @action(detail=True, methods=['post'])
@@ -395,10 +407,16 @@ class ChatbotViewSet(viewsets.ModelViewSet):
         try:
             # Get or create conversation for this user
             from apps.conversations.models import Conversation, Message
-            conversation, created = Conversation.objects.get_or_create(
+            import uuid
+            
+            # Create a new conversation for each chat session
+            conversation = Conversation.objects.create(
                 chatbot=chatbot,
-                session_id=f"user_{request.user.id}_{chatbot.id}",
-                defaults={'metadata': {'user_id': str(request.user.id)}}
+                user_identifier=str(request.user.id),
+                metadata={
+                    'user_id': str(request.user.id),
+                    'authenticated': True
+                }
             )
             
             # Save user message
@@ -409,30 +427,40 @@ class ChatbotViewSet(viewsets.ModelViewSet):
             )
             
             # Generate response using RAG pipeline
-            # For now, return a placeholder response until RAG is fully integrated
-            response_text = f"I received your message: '{message}'. The RAG pipeline is being integrated to provide intelligent responses based on your knowledge sources."
+            from apps.core.rag.pipeline import RAGPipeline
+            from asgiref.sync import sync_to_async
+            import asyncio
             
-            # TODO: Integrate with actual RAG pipeline
-            # chat_service = ServiceRegistry.get_service('chat')
-            # response = chat_service.generate_response(
-            #     chatbot=chatbot,
-            #     message=message,
-            #     conversation_id=str(conversation.id)
-            # )
+            # Initialize RAG pipeline for this chatbot
+            rag_pipeline = RAGPipeline(str(chatbot.id))
+            
+            # Process the query through RAG pipeline (async call)
+            async def get_rag_response():
+                return await rag_pipeline.process_query(
+                    user_query=message,
+                    conversation_id=str(conversation.id),
+                    user_id=str(request.user.id)
+                )
+            
+            # Run the async function
+            rag_result = asyncio.run(get_rag_response())
+            
+            response_text = rag_result.content
+            sources = rag_result.citations if hasattr(rag_result, 'citations') else []
             
             # Save bot response
             bot_message = Message.objects.create(
                 conversation=conversation,
                 role='assistant',
                 content=response_text,
-                metadata={'sources': []}
+                metadata={'sources': sources}
             )
             
             return Response({
                 'response': response_text,
                 'conversation_id': str(conversation.id),
                 'message_id': str(bot_message.id),
-                'sources': []
+                'sources': sources
             })
             
         except Exception as e:

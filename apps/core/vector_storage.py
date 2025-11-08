@@ -392,19 +392,90 @@ class PgVectorBackend(VectorStorageBackend):
         vectors: List[Tuple[str, List[float], Dict[str, Any]]], 
         namespace: Optional[str] = None
     ) -> bool:
-        """Synchronous vector upsert operation."""
+        """Synchronous vector upsert operation with comprehensive input validation."""
         try:
+            # CRITICAL SECURITY: Validate namespace input
+            if namespace is not None:
+                if not isinstance(namespace, str):
+                    raise VectorStorageError(f"Invalid namespace type: must be string or None, got {type(namespace)}")
+                if len(namespace.strip()) == 0:
+                    namespace = None  # Treat empty string as None for consistency
+                else:
+                    namespace = namespace.strip()
+            
+            # CRITICAL SECURITY: Validate all inputs before processing
+            validated_vectors = []
+            for vector_id, embedding, metadata in vectors:
+                # Validate vector ID
+                if not vector_id or not isinstance(vector_id, str) or len(vector_id.strip()) == 0:
+                    raise VectorStorageError(f"Invalid vector ID: must be non-empty string")
+                
+                # Validate embedding dimension
+                if not isinstance(embedding, list):
+                    raise VectorStorageError(f"Invalid embedding: must be a list, got {type(embedding)}")
+                    
+                if len(embedding) != self.config.vector_dimension:
+                    raise VectorStorageError(
+                        f"Invalid embedding dimension: expected {self.config.vector_dimension}, got {len(embedding)}"
+                    )
+                
+                # Validate numeric values and check for dangerous values
+                validated_embedding = []
+                for i, value in enumerate(embedding):
+                    if not isinstance(value, (int, float)):
+                        raise VectorStorageError(f"Invalid embedding value at index {i}: must be numeric, got {type(value)}")
+                    
+                    # Check for NaN and Infinity
+                    if not isinstance(value, int) and (
+                        value != value or  # NaN check
+                        value == float('inf') or value == float('-inf')
+                    ):
+                        raise VectorStorageError(f"Invalid embedding value at index {i}: NaN or Infinity not allowed")
+                    
+                    validated_embedding.append(float(value))
+                
+                # Validate metadata
+                if metadata is not None:
+                    if not isinstance(metadata, dict):
+                        raise VectorStorageError(f"Invalid metadata: must be dict, got {type(metadata)}")
+                    
+                    # Limit metadata size to prevent abuse
+                    metadata_str = json.dumps(metadata)
+                    if len(metadata_str) > 100000:  # 100KB limit
+                        raise VectorStorageError(f"Metadata too large: {len(metadata_str)} bytes (max 100KB)")
+                
+                validated_vectors.append((vector_id.strip(), validated_embedding, metadata))
+            
+            # Process validated vectors
             with connection.cursor() as cursor:
-                for vector_id, embedding, metadata in vectors:
+                for vector_id, embedding, metadata in validated_vectors:
                     if self.is_sqlite:
-                        # SQLite version - store embedding as JSON string
-                        sql = f"INSERT OR REPLACE INTO {self.table_name} (id, embedding, metadata, namespace) VALUES (?, ?, ?, ?);"
-                        cursor.execute(sql, [
-                            vector_id,
-                            json.dumps(embedding),
-                            json.dumps(metadata),
-                            namespace
-                        ])
+                        # SQLite version - use direct sqlite3 to avoid Django debug issues
+                        import sqlite3
+                        import os
+                        from django.conf import settings
+                        
+                        # Get database path from Django settings
+                        db_path = settings.DATABASES['default']['NAME']
+                        
+                        # Use direct sqlite3 connection to avoid Django's debug formatting
+                        sqlite_conn = sqlite3.connect(db_path)
+                        sqlite_cursor = sqlite_conn.cursor()
+                        
+                        try:
+                            sqlite_cursor.execute(
+                                f"INSERT OR REPLACE INTO {self.table_name} (id, embedding, metadata, namespace, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                                [
+                                    vector_id,
+                                    json.dumps(embedding),
+                                    json.dumps(metadata),
+                                    namespace
+                                ]
+                            )
+                            sqlite_conn.commit()
+                        finally:
+                            sqlite_cursor.close()
+                            sqlite_conn.close()
                     else:
                         # PostgreSQL version with pgvector
                         sql = f"""
@@ -431,6 +502,9 @@ class PgVectorBackend(VectorStorageBackend):
             )
             return True
             
+        except VectorStorageError:
+            # Re-raise validation errors to the service layer
+            raise
         except Exception as e:
             backend_type = "SQLite" if self.is_sqlite else "PgVector"
             self.logger.error(
@@ -439,10 +513,20 @@ class PgVectorBackend(VectorStorageBackend):
                 error_type=type(e).__name__,
                 count=len(vectors)
             )
+            
+            # Add more detailed debugging for SQLite
+            if self.is_sqlite:
+                import traceback
+                self.logger.error(
+                    "SQLite upsert detailed error",
+                    traceback=traceback.format_exc(),
+                    table_name=self.table_name
+                )
+            
             return False
     
     async def search_vectors(self, query: VectorSearchQuery) -> List[VectorSearchResult]:
-        """Search vectors using cosine similarity (PostgreSQL pgvector or SQLite fallback)."""
+        """Search vectors using cosine similarity with privacy filtering (PostgreSQL pgvector or SQLite fallback)."""
         try:
             if self.is_sqlite:
                 return await sync_to_async(self._search_vectors_sqlite_sync)(query)
@@ -460,15 +544,36 @@ class PgVectorBackend(VectorStorageBackend):
             return []
     
     def _search_vectors_postgresql_sync(self, query: VectorSearchQuery) -> List[VectorSearchResult]:
-        """Search vectors in PostgreSQL using pgvector cosine similarity."""
+        """Search vectors in PostgreSQL using pgvector cosine similarity with privacy filtering."""
         with connection.cursor() as cursor:
-            # Build WHERE clause for namespace filter
-            where_clause = ""
-            params = [query.vector, query.top_k]
+            # Build WHERE clause for namespace and privacy filters
+            where_conditions = []
+            params = [query.vector]
             
             if query.namespace:
-                where_clause = "WHERE namespace = %s"
-                params.insert(-1, query.namespace)
+                where_conditions.append("namespace = %s")
+                params.append(query.namespace)
+            
+            # CRITICAL: Apply privacy filtering - only return citable content unless explicitly requested
+            if query.filter and query.filter.get('include_non_citable'):
+                # Allow non-citable content (for internal RAG context)
+                pass
+            else:
+                # Default: only citable content
+                where_conditions.append("(metadata->>'is_citable' = 'true' OR metadata->>'is_citable' IS NULL)")
+            
+            # Add any additional metadata filters
+            if query.filter:
+                for key, value in query.filter.items():
+                    if key != 'include_non_citable':  # Skip our special privacy flag
+                        where_conditions.append(f"metadata->>%s = %s")
+                        params.extend([key, str(value)])
+            
+            where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+            
+            # Add vector parameter for similarity calculation and ordering
+            params.append(query.vector)
+            params.append(query.top_k)
             
             # Execute similarity search
             sql = f"""
@@ -496,77 +601,205 @@ class PgVectorBackend(VectorStorageBackend):
                 results.append(result)
             
             self.logger.info(
-                "PgVector search completed",
+                "PgVector search completed with privacy filtering",
                 top_k=query.top_k,
                 results_count=len(results),
-                namespace=query.namespace
+                namespace=query.namespace,
+                privacy_filtered=not (query.filter and query.filter.get('include_non_citable', False))
             )
             return results
     
     def _search_vectors_sqlite_sync(self, query: VectorSearchQuery) -> List[VectorSearchResult]:
-        """Search vectors in SQLite using Python-based cosine similarity."""
+        """Search vectors in SQLite using Python-based cosine similarity with privacy filtering."""
         import math
+        import sqlite3
+        from django.conf import settings
         
-        with connection.cursor() as cursor:
-            # Build WHERE clause for namespace filter
-            where_clause = ""
+        # SECURITY: Validate namespace input to prevent injection
+        if query.namespace is not None and not isinstance(query.namespace, str):
+            raise VectorStorageError(f"Invalid namespace type: must be string or None, got {type(query.namespace)}")
+        
+        # Use direct sqlite3 to avoid Django debug issues
+        db_path = settings.DATABASES['default']['NAME']
+        sqlite_conn = sqlite3.connect(db_path)
+        sqlite_cursor = sqlite_conn.cursor()
+        
+        try:
+            # Build WHERE clause for namespace filter with proper null handling
+            where_conditions = []
             params = []
             
-            if query.namespace:
-                where_clause = "WHERE namespace = ?"
+            if query.namespace is not None:
+                where_conditions.append("namespace = ?")
                 params.append(query.namespace)
+            else:
+                # SECURITY: Handle null namespace explicitly to prevent unintended data access
+                where_conditions.append("(namespace IS NULL OR namespace = '')")
+            
+            where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
             
             # Get all vectors for similarity calculation
-            sql = f"SELECT id, embedding, metadata FROM {self.table_name} {where_clause};"
-            cursor.execute(sql, params)
+            sql = f"SELECT id, embedding, metadata FROM {self.table_name} {where_clause}"
+            sqlite_cursor.execute(sql, params)
+            rows = sqlite_cursor.fetchall()
+        finally:
+            sqlite_cursor.close()
+            sqlite_conn.close()
             
-            # Calculate cosine similarity in Python
-            results = []
-            for row in cursor.fetchall():
-                vector_id, embedding_json, metadata_json = row
+        # Calculate cosine similarity in Python with privacy filtering
+        results = []
+        for row in rows:
+            vector_id, embedding_json, metadata_json = row
+            
+            # CRITICAL FIX: Ensure stored embedding is parsed correctly as float list
+            try:
                 stored_embedding = json.loads(embedding_json)
-                metadata = json.loads(metadata_json) if metadata_json else {}
+                # Validate that it's a list of numbers
+                if not isinstance(stored_embedding, list):
+                    self.logger.warning(f"Invalid stored embedding format for ID {vector_id}: not a list")
+                    continue
                 
-                # Calculate cosine similarity
+                # Convert to float list to ensure compatibility
+                stored_embedding = [float(x) for x in stored_embedding]
+                
+            except (json.JSONDecodeError, ValueError, TypeError) as e:
+                self.logger.warning(f"Failed to parse embedding for ID {vector_id}: {e}")
+                continue
+                
+            metadata = json.loads(metadata_json) if metadata_json else {}
+            
+            # CRITICAL: Apply privacy filtering - only return citable content unless explicitly requested
+            is_citable = metadata.get('is_citable', True)  # Default to citable if not specified
+            include_non_citable = query.filter and query.filter.get('include_non_citable', False)
+            
+            if not is_citable and not include_non_citable:
+                # Skip non-citable content unless explicitly requested
+                continue
+            
+            # Apply additional metadata filters
+            if query.filter:
+                filter_passed = True
+                for key, value in query.filter.items():
+                    if key != 'include_non_citable':  # Skip our special privacy flag
+                        if metadata.get(key) != value:
+                            filter_passed = False
+                            break
+                if not filter_passed:
+                    continue
+            
+            # Calculate cosine similarity with error handling
+            try:
                 similarity = self._cosine_similarity(query.vector, stored_embedding)
                 
-                result = VectorSearchResult(
-                    id=vector_id,
-                    score=similarity,
-                    metadata=metadata,
-                    content=metadata.get('content'),
-                    embedding=None
-                )
-                results.append(result)
+                # Validate similarity score
+                if not isinstance(similarity, (int, float)) or similarity != similarity:  # NaN check
+                    self.logger.warning(f"Invalid similarity score for ID {vector_id}: {similarity}")
+                    similarity = 0.0
+                    
+            except Exception as e:
+                self.logger.warning(f"Failed to calculate similarity for ID {vector_id}: {e}")
+                similarity = 0.0
             
-            # Sort by similarity and limit
-            results.sort(key=lambda x: x.score, reverse=True)
-            results = results[:query.top_k]
-            
-            self.logger.info(
-                "SQLite search completed",
-                top_k=query.top_k,
-                results_count=len(results),
-                namespace=query.namespace
+            result = VectorSearchResult(
+                id=vector_id,
+                score=similarity,
+                metadata=metadata,
+                content=metadata.get('content'),
+                embedding=None
             )
-            return results
+            results.append(result)
+        
+        # Sort by similarity and limit
+        results.sort(key=lambda x: x.score, reverse=True)
+        results = results[:query.top_k]
+        
+        self.logger.info(
+            "SQLite search completed with privacy filtering",
+            top_k=query.top_k,
+            results_count=len(results),
+            namespace=query.namespace,
+            privacy_filtered=not (query.filter and query.filter.get('include_non_citable', False))
+        )
+        return results
     
     def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
-        """Calculate cosine similarity between two vectors."""
+        """
+        Calculate cosine similarity between two vectors with robust error handling.
+        
+        Args:
+            vec1: First vector
+            vec2: Second vector
+            
+        Returns:
+            float: Cosine similarity score between -1 and 1
+        """
         import math
         
-        # Calculate dot product
-        dot_product = sum(a * b for a, b in zip(vec1, vec2))
+        # Input validation
+        if not isinstance(vec1, list) or not isinstance(vec2, list):
+            raise VectorStorageError(f"Both inputs must be lists, got {type(vec1)} and {type(vec2)}")
         
-        # Calculate magnitudes
-        magnitude1 = math.sqrt(sum(a * a for a in vec1))
-        magnitude2 = math.sqrt(sum(a * a for a in vec2))
+        if len(vec1) != len(vec2):
+            raise VectorStorageError(f"Vector dimensions must match: {len(vec1)} != {len(vec2)}")
         
-        # Avoid division by zero
-        if magnitude1 == 0 or magnitude2 == 0:
+        if len(vec1) == 0:
             return 0.0
         
-        return dot_product / (magnitude1 * magnitude2)
+        # Convert to float and validate
+        try:
+            vec1_float = [float(x) for x in vec1]
+            vec2_float = [float(x) for x in vec2]
+        except (ValueError, TypeError) as e:
+            raise VectorStorageError(f"Non-numeric values in vectors: {e}")
+        
+        # Calculate dot product with overflow protection
+        try:
+            dot_product = sum(a * b for a, b in zip(vec1_float, vec2_float))
+            
+            # Check for overflow/underflow
+            if not math.isfinite(dot_product):
+                self.logger.warning("Dot product overflow detected, returning 0.0")
+                return 0.0
+                
+        except OverflowError:
+            self.logger.warning("Dot product calculation overflow, returning 0.0")
+            return 0.0
+        
+        # Calculate magnitudes with overflow protection
+        try:
+            magnitude1_squared = sum(a * a for a in vec1_float)
+            magnitude2_squared = sum(a * a for a in vec2_float)
+            
+            # Check for zero magnitudes
+            if magnitude1_squared == 0.0 or magnitude2_squared == 0.0:
+                return 0.0
+            
+            magnitude1 = math.sqrt(magnitude1_squared)
+            magnitude2 = math.sqrt(magnitude2_squared)
+            
+            # Additional check for very small magnitudes
+            if magnitude1 < 1e-12 or magnitude2 < 1e-12:
+                return 0.0
+            
+        except (OverflowError, ValueError):
+            self.logger.warning("Magnitude calculation error, returning 0.0")
+            return 0.0
+        
+        # Calculate final similarity
+        try:
+            similarity = dot_product / (magnitude1 * magnitude2)
+            
+            # Validate result is within expected range
+            if not math.isfinite(similarity):
+                return 0.0
+            
+            # Clamp to valid range due to floating point precision
+            similarity = max(-1.0, min(1.0, similarity))
+            
+            return similarity
+            
+        except (ZeroDivisionError, OverflowError):
+            return 0.0
     
     async def delete_vectors(self, ids: List[str], namespace: Optional[str] = None) -> bool:
         """Delete vectors from database (SQLite or PostgreSQL)."""
@@ -580,11 +813,11 @@ class PgVectorBackend(VectorStorageBackend):
                     # SQLite version
                     if namespace:
                         placeholders = ','.join('?' * len(ids))
-                        sql = f"DELETE FROM {self.table_name} WHERE id IN ({placeholders}) AND namespace = ?;"
+                        sql = "DELETE FROM " + self.table_name + " WHERE id IN (" + placeholders + ") AND namespace = ?"
                         cursor.execute(sql, ids + [namespace])
                     else:
                         placeholders = ','.join('?' * len(ids))
-                        sql = f"DELETE FROM {self.table_name} WHERE id IN ({placeholders});"
+                        sql = "DELETE FROM " + self.table_name + " WHERE id IN (" + placeholders + ")"
                         cursor.execute(sql, ids)
                 else:
                     # PostgreSQL version
@@ -623,7 +856,7 @@ class PgVectorBackend(VectorStorageBackend):
             with connection.cursor() as cursor:
                 if self.is_sqlite:
                     # SQLite version
-                    sql = f"SELECT COUNT(*) as total_vectors, COUNT(DISTINCT namespace) as namespaces FROM {self.table_name};"
+                    sql = "SELECT COUNT(*) as total_vectors, COUNT(DISTINCT namespace) as namespaces FROM " + self.table_name
                     cursor.execute(sql)
                     
                     row = cursor.fetchone()
@@ -733,6 +966,10 @@ class VectorStorageService:
                 if not batch_success:
                     success = False
             
+            # If any batch failed, raise an exception for proper error handling
+            if not success:
+                raise VectorStorageError("One or more embedding batches failed to store")
+            
             self.logger.info(
                 "Embeddings stored",
                 count=len(embeddings),
@@ -742,6 +979,9 @@ class VectorStorageService:
             )
             return success
             
+        except VectorStorageError:
+            # Re-raise VectorStorageErrors as-is
+            raise
         except Exception as e:
             self.logger.error(
                 "Failed to store embeddings",
@@ -758,7 +998,10 @@ class VectorStorageService:
         namespace: Optional[str] = None,
         filter_metadata: Optional[Dict[str, Any]] = None
     ) -> List[VectorSearchResult]:
-        """Search for similar vectors."""
+        """
+        Search for similar vectors with privacy filtering.
+        By default, only returns citable content.
+        """
         if not self.backend:
             raise VectorStorageError("Vector storage not initialized")
         
@@ -800,6 +1043,56 @@ class VectorStorageService:
                 top_k=top_k
             )
             raise VectorStorageError(f"Failed to search vectors: {e}")
+    
+    async def search_citable_only(
+        self,
+        query_vector: List[float],
+        top_k: int = 10,
+        namespace: Optional[str] = None,
+        filter_metadata: Optional[Dict[str, Any]] = None
+    ) -> List[VectorSearchResult]:
+        """
+        Search for similar vectors, returning only citable content.
+        This is the safe method for user-facing responses.
+        """
+        # Ensure privacy filtering is enabled
+        filter_metadata = filter_metadata or {}
+        filter_metadata['include_non_citable'] = False
+        
+        return await self.search_similar(
+            query_vector=query_vector,
+            top_k=top_k,
+            namespace=namespace,
+            filter_metadata=filter_metadata
+        )
+    
+    async def search_all_content(
+        self,
+        query_vector: List[float],
+        top_k: int = 10,
+        namespace: Optional[str] = None,
+        filter_metadata: Optional[Dict[str, Any]] = None
+    ) -> List[VectorSearchResult]:
+        """
+        Search for similar vectors, including non-citable content.
+        WARNING: Only use for internal RAG context, never for user-facing responses.
+        """
+        # Allow non-citable content for internal use
+        filter_metadata = filter_metadata or {}
+        filter_metadata['include_non_citable'] = True
+        
+        self.logger.warning(
+            "Searching all content including non-citable - ensure proper usage",
+            namespace=namespace,
+            top_k=top_k
+        )
+        
+        return await self.search_similar(
+            query_vector=query_vector,
+            top_k=top_k,
+            namespace=namespace,
+            filter_metadata=filter_metadata
+        )
     
     async def delete_embeddings(
         self,

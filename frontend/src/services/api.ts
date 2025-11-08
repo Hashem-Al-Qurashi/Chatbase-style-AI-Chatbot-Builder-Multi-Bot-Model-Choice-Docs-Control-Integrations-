@@ -421,6 +421,134 @@ class ApiService {
     return this.request<any>(endpoint);
   }
 
+  // Chat methods - MISSING METHOD ADDED FOR RAG INTEGRATION
+  async sendChatMessage(
+    chatbotId: string,
+    message: { message: string; conversation_id?: string }
+  ): Promise<{ response: string; conversation_id?: string; sources?: string[] }> {
+    // Call the private chat endpoint which connects to the working RAG pipeline
+    const response = await this.request<any>(`/chat/private/${chatbotId}/`, {
+      method: 'POST',
+      body: JSON.stringify(message),
+    });
+    
+    // Map RAG response to expected frontend format
+    return {
+      response: response.message || response.content || 'No response generated',
+      conversation_id: response.conversation_id,
+      sources: response.citations || response.sources || []
+    };
+  }
+
+  // Knowledge file upload method - STEP 1 FIX: Frontend API disconnect
+  async uploadKnowledgeFile(
+    chatbotId: string,
+    file: File,
+    options?: {
+      name?: string;
+      description?: string;
+      is_citable?: boolean;
+    }
+  ): Promise<any> {
+    // Create FormData for multipart file upload
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('chatbot_id', chatbotId);
+    
+    if (options?.name) {
+      formData.append('name', options.name);
+    }
+    if (options?.description) {
+      formData.append('description', options.description);
+    }
+    if (options?.is_citable !== undefined) {
+      formData.append('is_citable', options.is_citable.toString());
+    }
+
+    // Make request without JSON content-type for multipart upload
+    const url = `${this.baseURL}/knowledge/upload/document/`;
+    
+    const headers: Record<string, string> = {};
+    if (this.accessToken) {
+      headers.Authorization = `Bearer ${this.accessToken}`;
+    }
+    // Don't set Content-Type - let browser set it with boundary for multipart
+
+    try {
+      // Check if token needs refresh before making request
+      if (this.accessToken) {
+        await this.ensureValidToken();
+      }
+
+      let response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      // Handle token refresh on 401
+      if (response.status === 401 && this.refreshToken) {
+        console.log('Got 401 on file upload, attempting token refresh...');
+        const refreshed = await this.refreshAccessToken();
+        
+        if (refreshed) {
+          // Retry with new token
+          headers.Authorization = `Bearer ${this.accessToken}`;
+          response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: formData,
+          });
+        } else {
+          console.log('Token refresh failed, redirecting to login...');
+          window.location.href = '/login';
+        }
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        let errorMessage = `HTTP Error ${response.status}`;
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        
+        throw new ApiError(errorMessage, response.status, errorData);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('File upload failed', 0, error);
+    }
+  }
+
+  // Knowledge URL processing method - STEP 1 FIX: Frontend API disconnect  
+  async addKnowledgeUrl(
+    chatbotId: string,
+    urlData: {
+      url: string;
+      name?: string;
+      description?: string;
+      is_citable?: boolean;
+    }
+  ): Promise<any> {
+    return this.request<any>('/knowledge/upload/url/', {
+      method: 'POST',
+      body: JSON.stringify({
+        chatbot_id: chatbotId,
+        url: urlData.url,
+        name: urlData.name || urlData.url,
+        description: urlData.description || '',
+        is_citable: urlData.is_citable !== undefined ? urlData.is_citable : true
+      }),
+    });
+  }
+
   // Utility methods
   isAuthenticated(): boolean {
     return !!this.accessToken;
