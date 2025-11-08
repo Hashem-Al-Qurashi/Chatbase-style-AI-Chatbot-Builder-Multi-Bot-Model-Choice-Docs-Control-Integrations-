@@ -7,19 +7,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Modern SaaS color palette
+        // Chatbase-inspired color palette with softer gradients
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          50: '#fdf4ff',
+          100: '#fae8ff',
+          200: '#f5d0fe',
+          300: '#f0abfc',
+          400: '#e879f9',
+          500: '#d946ef',
+          600: '#c026d3',
+          700: '#a21caf',
+          800: '#86198f',
+          900: '#701a75',
+          950: '#4a044e',
         },
         secondary: {
           50: '#f8fafc',
@@ -35,16 +35,17 @@ export default {
           950: '#020617',
         },
         accent: {
-          50: '#fef7ff',
-          100: '#fceeff',
-          200: '#f8daff',
-          300: '#f2bdff',
-          400: '#e879ff',
-          500: '#d946ef',
-          600: '#c026d3',
-          700: '#a21caf',
-          800: '#86198f',
-          900: '#701a75',
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#f97316',
+          600: '#ea580c',
+          700: '#c2410c',
+          800: '#9a3412',
+          900: '#7c2d12',
+          950: '#431407',
         },
         success: {
           50: '#f0fdf4',
@@ -123,6 +124,12 @@ export default {
         'gradient-sunset': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
         'gradient-aurora': 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
         'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+        // Chatbase-inspired gradients
+        'chatbase-primary': 'linear-gradient(135deg, #d946ef 0%, #f97316 100%)',
+        'chatbase-soft': 'linear-gradient(135deg, #fae8ff 0%, #fff7ed 100%)',
+        'chatbase-glass': 'linear-gradient(135deg, rgba(217, 70, 239, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%)',
+        'chatbase-header': 'linear-gradient(135deg, #c026d3 0%, #ea580c 100%)',
+        'gradient-mesh': 'radial-gradient(at 40% 20%, #d946ef 0px, transparent 50%), radial-gradient(at 80% 0%, #f97316 0px, transparent 50%), radial-gradient(at 0% 50%, #fae8ff 0px, transparent 50%)',
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
@@ -130,6 +137,12 @@ export default {
         'glow': '0 0 20px rgba(59, 130, 246, 0.3)',
         'glow-lg': '0 0 40px rgba(59, 130, 246, 0.2)',
         'inner-glow': 'inset 0 2px 4px 0 rgba(255, 255, 255, 0.06)',
+        // Chatbase-inspired soft shadows
+        'soft': '0 2px 8px -1px rgba(0, 0, 0, 0.1), 0 1px 3px -1px rgba(0, 0, 0, 0.06)',
+        'soft-lg': '0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -3px rgba(0, 0, 0, 0.05)',
+        'soft-xl': '0 20px 40px -10px rgba(0, 0, 0, 0.1), 0 8px 20px -5px rgba(0, 0, 0, 0.04)',
+        'chatbase': '0 4px 15px -3px rgba(217, 70, 239, 0.1), 0 2px 6px -2px rgba(249, 115, 22, 0.05)',
+        'chatbase-lg': '0 10px 30px -5px rgba(217, 70, 239, 0.15), 0 4px 12px -3px rgba(249, 115, 22, 0.08)',
       },
       backdropBlur: {
         'xs': '2px',

@@ -365,13 +365,13 @@ export function Dashboard() {
               {!loading && !error && filteredChatbots.length > 0 && (
               <div className="grid gap-4">
                 {formattedChatbots.map((chatbot) => (
-                  <Card key={chatbot.id} className="group hover:shadow-elegant transition-all duration-300 hover:scale-[1.02]">
+                  <Card key={chatbot.id} className="group hover:shadow-chatbase-lg transition-all duration-300 hover:scale-[1.01] border-gray-100/80 rounded-2xl">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-4 flex-1">
                           {/* Bot Avatar */}
-                          <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25 group-hover:shadow-primary-500/40 transition-all duration-300">
-                            <Bot className="w-6 h-6 text-white" />
+                          <div className="w-14 h-14 bg-chatbase-primary rounded-2xl flex items-center justify-center shadow-chatbase group-hover:shadow-chatbase-lg transition-all duration-300 ring-1 ring-primary-300/30">
+                            <Bot className="w-7 h-7 text-white" />
                           </div>
 
                           {/* Bot Info */}
