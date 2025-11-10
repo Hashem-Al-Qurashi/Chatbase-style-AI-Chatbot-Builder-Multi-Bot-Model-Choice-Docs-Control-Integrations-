@@ -29,8 +29,15 @@ function AuthPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Modern Background */}
+      {/* Modern Background with Journal Texture */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100" />
+      <div 
+        className="absolute inset-0 bg-dot-pattern-light opacity-30"
+        style={{
+          backgroundSize: '20px 20px',
+          backgroundPosition: '0 0, 10px 10px'
+        }}
+      />
       
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">

@@ -57,8 +57,15 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Beautiful Background - Same as Login */}
+      {/* Beautiful Background with Dotted Texture */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100" />
+      <div 
+        className="absolute inset-0 bg-dot-pattern-light opacity-40"
+        style={{
+          backgroundSize: '20px 20px',
+          backgroundPosition: '0 0, 10px 10px'
+        }}
+      />
       
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
