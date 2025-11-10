@@ -4,11 +4,6 @@ import {
   Bot, 
   User, 
   Loader2, 
-  Copy, 
-  ThumbsUp, 
-  ThumbsDown,
-  Clock,
-  ExternalLink,
   X,
   Minimize2,
   Paperclip,
@@ -16,7 +11,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Upload,
-  Trash2
+  Plus
 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -64,7 +59,7 @@ export function ChatInterface({
     {
       id: '1',
       role: 'assistant',
-      content: `Hello! I'm ${chatbot?.name || 'your AI assistant'}. ${chatbot?.description || 'How can I help you today?'}`,
+      content: `Hello! I'm ${chatbot?.name || 'your AI assistant'}. How can I help you today?`,
       timestamp: new Date()
     }
   ])
@@ -102,7 +97,6 @@ export function ChatInterface({
     setError(null)
 
     try {
-      // Use real API to send message to RAG backend
       const response = await apiService.sendChatMessage(chatbot.id, {
         message: userMessage.content
       })
@@ -128,16 +122,6 @@ export function ChatInterface({
     }
   }
 
-  const handleCopyMessage = (content: string) => {
-    navigator.clipboard.writeText(content)
-    // Could add toast notification here
-  }
-
-  const handleFeedback = (messageId: string, type: 'like' | 'dislike') => {
-    console.log(`Feedback: ${type} for message ${messageId}`)
-    // Implement feedback API call
-  }
-
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -151,7 +135,6 @@ export function ChatInterface({
     
     const fileArray = Array.from(files)
     
-    // Add files to upload queue with initial status
     const newFiles: UploadedFile[] = fileArray.map(file => ({
       id: Date.now().toString() + Math.random().toString(36),
       name: file.name,
@@ -162,31 +145,16 @@ export function ChatInterface({
     
     setUploadedFiles(prev => [...prev, ...newFiles])
     
-    // Upload each file
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i]
       const uploadFile = newFiles[i]
       
       try {
-        // Simulate progress updates (since the API doesn't provide progress)
-        const progressInterval = setInterval(() => {
-          setUploadedFiles(prev => 
-            prev.map(f => 
-              f.id === uploadFile.id && f.status === 'uploading'
-                ? { ...f, progress: Math.min((f.progress || 0) + 10, 90) }
-                : f
-            )
-          )
-        }, 200)
-        
         await apiService.uploadKnowledgeFile(chatbot.id, file, {
           name: file.name,
           is_citable: true
         })
         
-        clearInterval(progressInterval)
-        
-        // Mark as success
         setUploadedFiles(prev => 
           prev.map(f => 
             f.id === uploadFile.id 
@@ -195,7 +163,6 @@ export function ChatInterface({
           )
         )
         
-        // Add success message to chat
         const successMessage: Message = {
           id: (Date.now() + i).toString(),
           role: 'assistant',
@@ -207,7 +174,6 @@ export function ChatInterface({
       } catch (error: any) {
         console.error('File upload error:', error)
         
-        // Mark as error
         setUploadedFiles(prev => 
           prev.map(f => 
             f.id === uploadFile.id 
@@ -216,7 +182,6 @@ export function ChatInterface({
           )
         )
         
-        // Add error message to chat
         const errorMessage: Message = {
           id: (Date.now() + i + 1000).toString(),
           role: 'assistant', 
@@ -232,10 +197,6 @@ export function ChatInterface({
     if (e.target.files && e.target.files.length > 0) {
       handleFileSelect(e.target.files)
     }
-  }
-
-  const handleRemoveFile = (fileId: string) => {
-    setUploadedFiles(prev => prev.filter(f => f.id !== fileId))
   }
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -262,9 +223,7 @@ export function ChatInterface({
       <div className="fixed bottom-4 right-4 z-50">
         <Button
           onClick={onToggleMinimize}
-          variant="gradient"
-          size="lg"
-          className="w-16 h-16 rounded-full shadow-lg shadow-primary-500/25"
+          className="w-14 h-14 rounded-full bg-gray-900 hover:bg-gray-800 text-white shadow-lg"
         >
           <Bot className="w-6 h-6" />
         </Button>
@@ -274,374 +233,259 @@ export function ChatInterface({
 
   return (
     <div 
-      className={`relative flex flex-col h-full bg-white rounded-2xl overflow-hidden shadow-soft-xl ${
-        isDragOver ? 'ring-2 ring-primary-400 bg-gradient-to-br from-primary-50/80 to-accent-50/60' : ''
+      className={`flex flex-col h-full bg-white ${
+        isDragOver ? 'bg-gray-50' : ''
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Header - Minimal & Clean */}
-      <div className="border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-              <Bot className="w-4 h-4 text-gray-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900">{chatbot?.name || 'AI Assistant'}</h3>
-              <p className="text-xs text-gray-500">Online</p>
-            </div>
+      {/* Chatbase-style Header - Very Minimal */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
+            <Bot className="w-4 h-4 text-white" />
           </div>
-          
-          <div className="flex items-center space-x-2">
-            {onToggleMinimize && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onToggleMinimize}
-                className="text-white hover:bg-white/20"
-              >
-                <Minimize2 className="w-4 h-4" />
-              </Button>
-            )}
-            {onClose && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="text-white hover:bg-white/20"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
+          <span className="font-medium text-gray-900">
+            {chatbot?.name || 'AI Assistant'}
+          </span>
+        </div>
+        
+        <div className="flex items-center space-x-1">
+          {onToggleMinimize && (
+            <button
+              onClick={onToggleMinimize}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Minimize2 className="w-4 h-4 text-gray-500" />
+            </button>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4 text-gray-500" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Messages - Spacious */}
-      <div className="flex-1 overflow-y-auto py-8 px-6 space-y-8">
-        {messages.map((message, index) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            <div className={`flex items-start space-x-3 max-w-[80%] ${
-              message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-            }`}>
-              {/* Avatar - Minimal */}
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+      {/* Messages - ChatGPT-like Layout */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
+          {messages.map((message, index) => (
+            <div
+              key={message.id}
+              className={`flex items-start space-x-4 ${
+                message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+              }`}
+            >
+              {/* Avatar */}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                 message.role === 'user' 
                   ? 'bg-blue-500'
-                  : 'bg-gray-800'
+                  : 'bg-gray-900'
               }`}>
                 {message.role === 'user' ? (
-                  <User className="w-3 h-3 text-white" />
+                  <User className="w-4 h-4 text-white" />
                 ) : (
-                  <Bot className="w-3 h-3 text-white" />
+                  <Bot className="w-4 h-4 text-white" />
                 )}
               </div>
 
-              {/* Message bubble - Clean */}
-              <div className={`relative group ${
-                message.role === 'user' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-100'
-              } rounded-lg px-4 py-3 max-w-md`}>
-                {/* Message content */}
-                <div className="space-y-2">
-                  <p className={`text-sm leading-relaxed ${
-                    message.role === 'user' ? 'text-white' : 'text-gray-800'
-                  }`}>
+              {/* Message Content */}
+              <div className="flex-1 max-w-2xl">
+                <div className={`p-4 rounded-lg ${
+                  message.role === 'user' 
+                    ? 'bg-blue-50 ml-12' 
+                    : 'bg-gray-50'
+                }`}>
+                  <p className="text-gray-800 whitespace-pre-wrap">
                     {message.content}
                   </p>
-
+                  
                   {/* Sources */}
                   {message.sources && message.sources.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-gray-200">
-                      <p className="text-xs font-medium text-gray-600">Sources:</p>
-                      <div className="space-y-1">
-                        {message.sources.map((source) => (
-                          <a
-                            key={source.id}
-                            href={source.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center space-x-2 text-xs text-primary-600 hover:text-primary-700 transition-colors"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            <span>{source.title}</span>
-                          </a>
-                        ))}
-                      </div>
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-600 mb-1">Sources:</p>
+                      {message.sources.map((source) => (
+                        <div key={source.id} className="text-xs text-gray-500 mb-1">
+                          {source.title}
+                        </div>
+                      ))}
                     </div>
                   )}
+                </div>
+                
+                <div className="text-xs text-gray-400 mt-1 px-4">
+                  {message.timestamp.toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          ))}
 
-                  {/* Timestamp */}
-                  <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center space-x-1">
-                      <Clock className={`w-3 h-3 ${
-                        message.role === 'user' ? 'text-white/60' : 'text-gray-400'
-                      }`} />
-                      <span className={`text-xs ${
-                        message.role === 'user' ? 'text-white/60' : 'text-gray-400'
-                      }`}>
-                        {message.timestamp.toLocaleTimeString()}
-                      </span>
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="flex items-start space-x-4">
+              <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1 max-w-2xl">
+                <div className="p-4 rounded-lg bg-gray-50">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
-
-                    {/* Message actions */}
-                    {message.role === 'assistant' && (
-                      <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyMessage(message.content)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleFeedback(message.id, 'like')}
-                          className="h-6 w-6 p-0"
-                        >
-                          <ThumbsUp className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleFeedback(message.id, 'dislike')}
-                          className="h-6 w-6 p-0"
-                        >
-                          <ThumbsDown className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    )}
+                    <span className="text-gray-600 text-sm">Thinking...</span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          )}
 
-        {/* Loading indicator - Minimal */}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="flex items-start space-x-3">
-              <div className="w-7 h-7 bg-gray-800 rounded-full flex items-center justify-center">
-                <Bot className="w-3 h-3 text-white" />
-              </div>
-              <div className="bg-gray-100 rounded-lg px-4 py-3">
-                <div className="flex items-center space-x-2">
-                  <div className="flex space-x-1">
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"></div>
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      {/* Error message */}
-      {error && (
-        <div className="px-4 py-2 bg-gradient-to-r from-error-50 to-error-100 border-t border-error-200">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-error-700">{error}</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setError(null)}
-              className="text-error-600 hover:text-error-700"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* File Upload Area */}
-      {(showFileUpload || uploadedFiles.length > 0) && (
-        <div className="border-t border-gray-100/80 p-6 bg-chatbase-soft">
-          <div className="space-y-3">
-            {/* File Upload Zone */}
-            {showFileUpload && (
-              <div className="space-y-3">
-                <div 
-                  className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 cursor-pointer ${
-                    isDragOver 
-                      ? 'border-primary-400 bg-gradient-to-br from-primary-50 to-accent-50/50 shadow-chatbase' 
-                      : 'border-gray-300 hover:border-primary-300 hover:bg-chatbase-glass hover:shadow-soft'
-                  }`}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600 mb-1">
-                    Drop files here or <span className="text-primary-600 cursor-pointer">browse</span>
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Supports PDF, DOC, DOCX, TXT, and more
-                  </p>
-                </div>
-                
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.pptx"
-                  onChange={handleFileInputChange}
-                  className="hidden"
-                />
-              </div>
-            )}
-
-            {/* Uploaded Files List */}
-            {uploadedFiles.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-gray-700">Uploading Files</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setUploadedFiles([])}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    Clear all
-                  </Button>
-                </div>
-                
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {uploadedFiles.map((file) => (
-                    <div 
-                      key={file.id} 
-                      className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200"
-                    >
-                      <div className={`w-8 h-8 rounded flex items-center justify-center ${
-                        file.status === 'success' 
-                          ? 'bg-green-100' 
-                          : file.status === 'error' 
-                          ? 'bg-red-100' 
-                          : 'bg-blue-100'
-                      }`}>
-                        {file.status === 'success' ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        ) : file.status === 'error' ? (
-                          <AlertCircle className="w-4 h-4 text-red-600" />
-                        ) : (
-                          <File className="w-4 h-4 text-blue-600" />
-                        )}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {file.name}
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs text-gray-500">
-                            {formatFileSize(file.size)}
-                          </span>
-                          {file.status === 'uploading' && (
-                            <span className="text-xs text-blue-600">
-                              {file.progress}%
-                            </span>
-                          )}
-                          {file.status === 'error' && (
-                            <span className="text-xs text-red-600">
-                              {file.error}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {file.status === 'uploading' && (
-                          <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
-                            <div 
-                              className="bg-blue-600 h-1 rounded-full transition-all duration-300"
-                              style={{ width: `${file.progress || 0}%` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveFile(file.id)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+      {showFileUpload && (
+        <div className="border-t border-gray-200 p-4 bg-gray-50">
+          <div 
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+              isDragOver 
+                ? 'border-blue-300 bg-blue-50' 
+                : 'border-gray-300 hover:border-blue-300'
+            }`}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+            <p className="text-sm text-gray-600 mb-1">
+              Drop files here or <span className="text-blue-500 cursor-pointer font-medium">browse</span>
+            </p>
+            <p className="text-xs text-gray-500">PDF, DOC, TXT files supported</p>
           </div>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.txt,.md"
+            onChange={handleFileInputChange}
+            className="hidden"
+          />
+          
+          {uploadedFiles.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {uploadedFiles.map((file) => (
+                <div key={file.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-6 h-6 rounded flex items-center justify-center ${
+                      file.status === 'success' ? 'bg-green-100' : 
+                      file.status === 'error' ? 'bg-red-100' : 'bg-blue-100'
+                    }`}>
+                      {file.status === 'success' ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      ) : file.status === 'error' ? (
+                        <AlertCircle className="w-4 h-4 text-red-600" />
+                      ) : (
+                        <File className="w-4 h-4 text-blue-600" />
+                      )}
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                      <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                    </div>
+                  </div>
+                  
+                  {file.status === 'uploading' && (
+                    <div className="text-xs text-blue-600">{file.progress}%</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
+
+      {/* Input Area - ChatGPT Style */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="max-w-3xl mx-auto">
+          <form onSubmit={handleSubmit}>
+            <div className="flex items-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setShowFileUpload(!showFileUpload)}
+                className={`p-3 rounded-lg transition-colors ${
+                  showFileUpload 
+                    ? 'bg-gray-200 text-gray-700' 
+                    : 'hover:bg-gray-100 text-gray-500'
+                }`}
+              >
+                <Paperclip className="w-5 h-5" />
+              </button>
+              
+              <div className="flex-1 relative">
+                <Input
+                  type="text"
+                  placeholder="Message"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={isLoading}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                />
+                
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+          
+          <p className="text-xs text-gray-500 text-center mt-2">
+            AI can make mistakes. Check important info.
+          </p>
+        </div>
+      </div>
 
       {/* Drag Overlay */}
       {isDragOver && (
-        <div className="absolute inset-0 bg-chatbase-glass backdrop-blur-lg flex items-center justify-center z-50">
-          <div className="bg-white rounded-3xl p-8 shadow-chatbase-lg text-center ring-1 ring-primary-200/50 max-w-sm mx-4">
-            <div className="w-16 h-16 bg-chatbase-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-chatbase">
-              <Upload className="w-8 h-8 text-white" />
+        <div className="absolute inset-0 bg-blue-50/80 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-lg border text-center">
+            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+              <Upload className="w-6 h-6 text-white" />
             </div>
-            <p className="text-xl font-semibold text-gray-900 mb-2">Drop files to upload</p>
-            <p className="text-sm text-gray-600">Add knowledge to your chatbot instantly</p>
+            <p className="font-medium text-gray-900 mb-1">Drop files to upload</p>
+            <p className="text-sm text-gray-600">Add knowledge to your chatbot</p>
           </div>
         </div>
       )}
-
-      {/* Input - Clean & Simple */}
-      <div className="border-t border-gray-200 px-6 py-4">
-        <form onSubmit={handleSubmit} className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            type="button"
-            onClick={() => setShowFileUpload(!showFileUpload)}
-            className="text-gray-400 hover:text-gray-600 p-2"
-            title="Upload files"
-          >
-            <Paperclip className="w-4 h-4" />
-          </Button>
-          
-          <div className="flex-1">
-            <Input
-              type="text"
-              placeholder="Message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={isLoading}
-              className="border border-gray-300 rounded-lg px-4 py-3 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
+      
+      {/* Error message */}
+      {error && (
+        <div className="p-4 bg-red-50 border-t border-red-200">
+          <div className="max-w-3xl mx-auto flex items-center justify-between">
+            <p className="text-sm text-red-700">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-600 hover:text-red-700 p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          
-          <Button
-            type="submit"
-            disabled={!input.trim() || isLoading}
-            className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
-        </form>
-        
-        {/* Minimal footer */}
-        <div className="mt-3 text-center">
-          <span className="text-xs text-gray-400">Powered by AI</span>
         </div>
-      </div>
+      )}
     </div>
   )
 }
