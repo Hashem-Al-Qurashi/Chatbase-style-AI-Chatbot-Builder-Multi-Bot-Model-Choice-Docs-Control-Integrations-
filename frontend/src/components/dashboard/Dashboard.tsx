@@ -60,10 +60,9 @@ export function Dashboard() {
       {/* Beautiful Background with Dotted Texture */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100" />
       <div 
-        className="absolute inset-0 bg-dot-pattern-light opacity-40"
+        className="absolute inset-0 bg-dot-pattern opacity-60"
         style={{
-          backgroundSize: '20px 20px',
-          backgroundPosition: '0 0, 10px 10px'
+          backgroundSize: '24px 24px'
         }}
       />
       

@@ -233,15 +233,34 @@ export function ChatInterface({
 
   return (
     <div 
-      className={`flex flex-col h-full bg-white ${
-        isDragOver ? 'bg-gray-50' : ''
+      className={`relative flex flex-col h-full ${
+        isDragOver ? 'bg-blue-50/30' : ''
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Chatbase-style Header - Very Minimal */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+      {/* Modern Background with Journal Texture */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100" />
+      <div 
+        className="absolute inset-0 bg-dot-pattern opacity-50"
+        style={{
+          backgroundSize: '24px 24px'
+        }}
+      />
+      
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-br from-primary-400/20 to-accent-400/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute -top-20 -right-40 w-96 h-96 bg-gradient-to-br from-accent-400/15 to-primary-400/15 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}} />
+        <div className="absolute -bottom-40 -left-20 w-96 h-96 bg-gradient-to-br from-primary-400/10 to-accent-400/10 rounded-full blur-3xl animate-float" style={{animationDelay: '4s'}} />
+        <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-gradient-to-br from-accent-300/20 to-primary-300/20 rounded-full blur-2xl animate-pulse-gentle" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col h-full">
+        {/* Chatbase-style Header - Very Minimal */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
             <Bot className="w-4 h-4 text-white" />
@@ -269,10 +288,10 @@ export function ChatInterface({
             </button>
           )}
         </div>
-      </div>
+        </div>
 
-      {/* Messages - ChatGPT-like Layout */}
-      <div className="flex-1 overflow-y-auto">
+        {/* Messages - ChatGPT-like Layout */}
+        <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
           {messages.map((message, index) => (
             <div
@@ -348,10 +367,10 @@ export function ChatInterface({
 
           <div ref={messagesEndRef} />
         </div>
-      </div>
+        </div>
 
-      {/* File Upload Area */}
-      {showFileUpload && (
+        {/* File Upload Area */}
+        {showFileUpload && (
         <div className="border-t border-gray-200 p-4 bg-gray-50">
           <div 
             className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
@@ -409,10 +428,10 @@ export function ChatInterface({
             </div>
           )}
         </div>
-      )}
+        )}
 
-      {/* Input Area - ChatGPT Style */}
-      <div className="p-4 border-t border-gray-200">
+        {/* Input Area - ChatGPT Style */}
+        <div className="p-4 border-t border-gray-200">
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSubmit}>
             <div className="flex items-end space-x-3">
@@ -457,10 +476,10 @@ export function ChatInterface({
             AI can make mistakes. Check important info.
           </p>
         </div>
-      </div>
+        </div>
 
-      {/* Drag Overlay */}
-      {isDragOver && (
+        {/* Drag Overlay */}
+        {isDragOver && (
         <div className="absolute inset-0 bg-blue-50/80 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 shadow-lg border text-center">
             <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -470,10 +489,10 @@ export function ChatInterface({
             <p className="text-sm text-gray-600">Add knowledge to your chatbot</p>
           </div>
         </div>
-      )}
-      
-      {/* Error message */}
-      {error && (
+        )}
+        
+        {/* Error message */}
+        {error && (
         <div className="p-4 bg-red-50 border-t border-red-200">
           <div className="max-w-3xl mx-auto flex items-center justify-between">
             <p className="text-sm text-red-700">{error}</p>
@@ -485,7 +504,8 @@ export function ChatInterface({
             </button>
           </div>
         </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
