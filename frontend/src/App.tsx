@@ -32,10 +32,9 @@ function AuthPage() {
       {/* Modern Background with Journal Texture */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100" />
       <div 
-        className="absolute inset-0 bg-dot-pattern-light opacity-30"
+        className="absolute inset-0 bg-dot-pattern opacity-50"
         style={{
-          backgroundSize: '20px 20px',
-          backgroundPosition: '0 0, 10px 10px'
+          backgroundSize: '24px 24px'
         }}
       />
       
@@ -173,13 +172,11 @@ function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4">
-      <div className="max-w-4xl mx-auto h-[90vh]">
-        <ChatInterface 
-          chatbot={{ id: chatbotId, name: `Chatbot ${chatbotId}` }}
-          onClose={() => window.history.back()}
-        />
-      </div>
+    <div className="h-screen">
+      <ChatInterface 
+        chatbot={{ id: chatbotId, name: `Chatbot ${chatbotId}` }}
+        onClose={() => window.history.back()}
+      />
     </div>
   )
 }

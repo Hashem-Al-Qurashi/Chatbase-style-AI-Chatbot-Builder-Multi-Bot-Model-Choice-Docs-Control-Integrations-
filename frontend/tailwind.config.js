@@ -130,8 +130,8 @@ export default {
         'chatbase-glass': 'linear-gradient(135deg, rgba(217, 70, 239, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%)',
         'chatbase-header': 'linear-gradient(135deg, #c026d3 0%, #ea580c 100%)',
         'gradient-mesh': 'radial-gradient(at 40% 20%, #d946ef 0px, transparent 50%), radial-gradient(at 80% 0%, #f97316 0px, transparent 50%), radial-gradient(at 0% 50%, #fae8ff 0px, transparent 50%)',
-        'dot-pattern': 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
-        'dot-pattern-light': 'radial-gradient(circle, #f3f4f6 1px, transparent 1px)',
+        'dot-pattern': 'radial-gradient(circle, #d1d5db 1.5px, transparent 1.5px)',
+        'dot-pattern-subtle': 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
