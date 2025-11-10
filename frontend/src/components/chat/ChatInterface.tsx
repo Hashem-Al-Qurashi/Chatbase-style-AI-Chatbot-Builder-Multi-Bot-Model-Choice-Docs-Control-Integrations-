@@ -276,26 +276,23 @@ export function ChatInterface({
 
   return (
     <div 
-      className={`relative flex flex-col h-full bg-white rounded-2xl overflow-hidden shadow-soft-xl ${
-        isDragOver ? 'ring-2 ring-primary-400 bg-gradient-to-br from-primary-50/80 to-accent-50/60' : ''
+      className={`relative flex flex-col h-full bg-white rounded-lg overflow-hidden border border-gray-200 ${
+        isDragOver ? 'ring-1 ring-blue-300 bg-blue-50/30' : ''
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Header */}
-      <div className="bg-chatbase-header px-6 py-5">
+      {/* Header - Chatbase Simplicity */}
+      <div className="border-b border-gray-200 px-6 py-4 bg-white">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm ring-1 ring-white/30">
-              <Bot className="w-6 h-6 text-white" />
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Bot className="w-4 h-4 text-gray-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-white text-lg">{chatbot?.name || 'AI Assistant'}</h3>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <p className="text-sm text-white/80">Online now</p>
-              </div>
+              <h3 className="font-medium text-gray-900">{chatbot?.name || 'AI Assistant'}</h3>
+              <p className="text-xs text-gray-500">Online</p>
             </div>
           </div>
           
@@ -324,36 +321,36 @@ export function ChatInterface({
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-gray-50/50 to-white">
+      {/* Messages - Spacious Layout */}
+      <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-white">
         {messages.map((message, index) => (
           <div
             key={message.id}
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
             style={{ animationDelay: `${index * 0.1}s` }}
           >
-            <div className={`flex items-start space-x-3 max-w-[80%] ${
+            <div className={`flex items-start space-x-4 max-w-[85%] ${
               message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
             }`}>
-              {/* Avatar */}
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+              {/* Avatar - Minimal */}
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
                 message.role === 'user' 
-                  ? 'bg-gradient-to-br from-gray-100 to-gray-200 ring-1 ring-gray-300/30'
-                  : 'bg-chatbase-primary shadow-chatbase ring-1 ring-primary-300/30'
+                  ? 'bg-blue-500'
+                  : 'bg-gray-800'
               }`}>
                 {message.role === 'user' ? (
-                  <User className="w-4 h-4 text-gray-600" />
+                  <User className="w-3 h-3 text-white" />
                 ) : (
-                  <Bot className="w-4 h-4 text-white" />
+                  <Bot className="w-3 h-3 text-white" />
                 )}
               </div>
 
-              {/* Message bubble */}
+              {/* Message bubble - Simple & Clean */}
               <div className={`relative group ${
                 message.role === 'user' 
-                  ? 'bg-chatbase-primary text-white shadow-chatbase' 
-                  : 'bg-white border border-gray-100/80 shadow-soft-lg'
-              } rounded-2xl px-5 py-4`}>
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100'
+              } rounded-lg px-4 py-3 max-w-md`}>
                 {/* Message content */}
                 <div className="space-y-2">
                   <p className={`text-sm leading-relaxed ${
@@ -362,18 +359,17 @@ export function ChatInterface({
                     {message.content}
                   </p>
 
-                  {/* Sources */}
+                  {/* Sources - Minimal */}
                   {message.sources && message.sources.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-gray-200">
-                      <p className="text-xs font-medium text-gray-600">Sources:</p>
-                      <div className="space-y-1">
+                    <div className="mt-3 pt-3 border-t border-gray-200/50">
+                      <div className="space-y-2">
                         {message.sources.map((source) => (
                           <a
                             key={source.id}
                             href={source.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center space-x-2 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                            className="flex items-center space-x-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                           >
                             <ExternalLink className="w-3 h-3" />
                             <span>{source.title}</span>
@@ -383,18 +379,14 @@ export function ChatInterface({
                     </div>
                   )}
 
-                  {/* Timestamp */}
-                  <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center space-x-1">
-                      <Clock className={`w-3 h-3 ${
-                        message.role === 'user' ? 'text-white/60' : 'text-gray-400'
-                      }`} />
-                      <span className={`text-xs ${
-                        message.role === 'user' ? 'text-white/60' : 'text-gray-400'
-                      }`}>
-                        {message.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
+                  {/* Timestamp - Hidden by default, elegant simplicity */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-2">
+                    <span className={`text-xs ${
+                      message.role === 'user' ? 'text-white/60' : 'text-gray-400'
+                    }`}>
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
 
                     {/* Message actions */}
                     {message.role === 'assistant' && (
@@ -432,21 +424,20 @@ export function ChatInterface({
           </div>
         ))}
 
-        {/* Loading indicator */}
+        {/* Loading indicator - Minimal */}
         {isLoading && (
           <div className="flex justify-start animate-slide-up">
             <div className="flex items-start space-x-4">
-              <div className="w-10 h-10 bg-chatbase-primary rounded-2xl flex items-center justify-center shadow-chatbase ring-1 ring-primary-300/30">
-                <Bot className="w-5 h-5 text-white" />
+              <div className="w-7 h-7 bg-gray-800 rounded-full flex items-center justify-center">
+                <Bot className="w-3 h-3 text-white" />
               </div>
-              <div className="bg-white border border-gray-100/80 shadow-soft-lg rounded-2xl px-5 py-4">
-                <div className="flex items-center space-x-3">
+              <div className="bg-gray-100 rounded-lg px-4 py-3">
+                <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-accent-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
                   </div>
-                  <span className="text-sm text-gray-600">AI is thinking...</span>
                 </div>
               </div>
             </div>
@@ -473,27 +464,27 @@ export function ChatInterface({
         </div>
       )}
 
-      {/* File Upload Area */}
+      {/* File Upload Area - Simplified */}
       {(showFileUpload || uploadedFiles.length > 0) && (
-        <div className="border-t border-gray-100/80 p-6 bg-chatbase-soft">
+        <div className="border-t border-gray-200 p-6 bg-gray-50">
           <div className="space-y-3">
             {/* File Upload Zone */}
             {showFileUpload && (
               <div className="space-y-3">
                 <div 
-                  className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 cursor-pointer ${
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-all cursor-pointer ${
                     isDragOver 
-                      ? 'border-primary-400 bg-gradient-to-br from-primary-50 to-accent-50/50 shadow-chatbase' 
-                      : 'border-gray-300 hover:border-primary-300 hover:bg-chatbase-glass hover:shadow-soft'
+                      ? 'border-blue-300 bg-blue-50' 
+                      : 'border-gray-300 hover:border-blue-300'
                   }`}
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <Upload className="w-6 h-6 mx-auto text-gray-400 mb-2" />
                   <p className="text-sm text-gray-600 mb-1">
-                    Drop files here or <span className="text-primary-600 cursor-pointer">browse</span>
+                    Drop files here or <span className="text-blue-500 cursor-pointer">browse</span>
                   </p>
                   <p className="text-xs text-gray-500">
-                    Supports PDF, DOC, DOCX, TXT, and more
+                    PDF, DOC, TXT supported
                   </p>
                 </div>
                 
@@ -592,80 +583,60 @@ export function ChatInterface({
         </div>
       )}
 
-      {/* Drag Overlay */}
+      {/* Drag Overlay - Minimal */}
       {isDragOver && (
-        <div className="absolute inset-0 bg-chatbase-glass backdrop-blur-lg flex items-center justify-center z-50">
-          <div className="bg-white rounded-3xl p-8 shadow-chatbase-lg text-center ring-1 ring-primary-200/50 max-w-sm mx-4">
-            <div className="w-16 h-16 bg-chatbase-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-chatbase">
-              <Upload className="w-8 h-8 text-white" />
+        <div className="absolute inset-0 bg-blue-50/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 border border-blue-200 text-center max-w-sm mx-4">
+            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+              <Upload className="w-6 h-6 text-white" />
             </div>
-            <p className="text-xl font-semibold text-gray-900 mb-2">Drop files to upload</p>
-            <p className="text-sm text-gray-600">Add knowledge to your chatbot instantly</p>
+            <p className="text-lg font-medium text-gray-900 mb-1">Drop files to upload</p>
+            <p className="text-sm text-gray-600">Add to your knowledge base</p>
           </div>
         </div>
       )}
 
-      {/* Input */}
-      <div className="border-t border-gray-100/80 p-6 bg-white">
-        <form onSubmit={handleSubmit} className="flex items-end space-x-4">
+      {/* Input - Chatbase Simplicity */}
+      <div className="border-t border-gray-200 p-6 bg-white">
+        <form onSubmit={handleSubmit} className="flex items-center space-x-3">
           <div className="flex-1">
             <Input
               type="text"
-              placeholder="Type your message..."
+              placeholder="Message..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
-              className="resize-none border-0 bg-gray-50/70 rounded-2xl shadow-soft focus:ring-2 focus:ring-primary-400/50 focus:bg-white transition-all duration-200 py-4 px-5"
+              className="border border-gray-300 rounded-lg px-4 py-3 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={() => setShowFileUpload(!showFileUpload)}
-              className={`transition-colors ${
-                showFileUpload 
-                  ? 'text-primary-600 hover:text-primary-700 bg-primary-50' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              title="Upload files"
-            >
-              <Paperclip className="w-4 h-4" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-            
-            <Button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="bg-chatbase-primary hover:bg-gradient-to-r hover:from-primary-600 hover:to-accent-500 text-white rounded-2xl px-6 py-3 shadow-chatbase hover:shadow-chatbase-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            onClick={() => setShowFileUpload(!showFileUpload)}
+            className="text-gray-400 hover:text-gray-600 p-2"
+            title="Upload files"
+          >
+            <Paperclip className="w-4 h-4" />
+          </Button>
+          
+          <Button
+            type="submit"
+            disabled={!input.trim() || isLoading}
+            className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </Button>
         </form>
 
-        {/* Typing indicator placeholder */}
-        <div className="mt-4 h-4 flex items-center">
-          <div className="flex items-center space-x-2 text-xs text-gray-400">
-            <div className="w-4 h-4 bg-gradient-to-r from-primary-400 to-accent-400 rounded-full flex items-center justify-center">
-              <Sparkles className="w-2.5 h-2.5 text-white" />
-            </div>
-            <span>Powered by AI • Real-time RAG responses</span>
-          </div>
+        {/* Minimal footer info */}
+        <div className="mt-3 text-center">
+          <span className="text-xs text-gray-400">Powered by AI</span>
         </div>
       </div>
     </div>
