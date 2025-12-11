@@ -7,6 +7,9 @@ import { RegisterForm } from './components/auth/RegisterForm'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { ChatInterface } from './components/chat/ChatInterface'
 import { ButtonTest } from './components/test/ButtonTest'
+import { StandaloneWidget } from './components/widget/StandaloneWidget'
+import ChatbotSaaSLanding from './components/landing/ChatbotSaaSLanding'
+import SubscriptionUpgradeExact from './components/billing/SubscriptionUpgradeExact'
 
 function LoadingScreen() {
   return (
@@ -188,17 +191,16 @@ function AppContent() {
     return <LoadingScreen />
   }
 
-  if (!user) {
-    return <AuthPage />
-  }
-
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/chat/:chatbotId" element={<ChatPage />} />
+      <Route path="/" element={!user ? <ChatbotSaaSLanding /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/login" element={!user ? <AuthPage /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/register" element={!user ? <AuthPage /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" replace />} />
+      <Route path="/chat/:chatbotId" element={user ? <ChatPage /> : <Navigate to="/login" replace />} />
+      <Route path="/subscription" element={<SubscriptionUpgradeExact />} />
       <Route path="/test" element={<ButtonTest />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
@@ -206,9 +208,17 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <Routes>
+        {/* Public Widget Route - No Authentication Required */}
+        <Route path="/widget/:slug" element={<StandaloneWidget />} />
+        
+        {/* Authenticated Routes */}
+        <Route path="/*" element={
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        } />
+      </Routes>
     </Router>
   )
 }

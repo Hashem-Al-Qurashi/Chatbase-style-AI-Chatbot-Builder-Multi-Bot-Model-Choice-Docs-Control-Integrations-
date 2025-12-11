@@ -1,0 +1,30 @@
+CRITICAL KNOWLEDGE VALIDATION TEST DOCUMENT
+
+Company: Acme Quantum Computing Solutions Inc.
+Product: QuantumMax Pro 5000X
+Secret Launch Date: March 15, 2026
+Unique Product Code: QMP-5000X-GAMMA-7721
+
+CONFIDENTIAL PRODUCT SPECIFICATIONS:
+- Quantum processing power: 5000 qubits with 99.7% fidelity
+- Revolutionary ZeroPoint cooling system using proprietary CryoFlux technology
+- Exclusive partnership with Institute of Advanced Physics in Geneva
+- Only compatible with specialized NeuralLink Interface Module v3.8
+- Price point: $2.7 million per unit (strictly confidential)
+
+SPECIFIC TEST SCENARIOS:
+1. The QuantumMax Pro 5000X uses a unique "Quantum Entanglement Cascade" algorithm
+2. Dr. Amanda Rodriguez is the lead scientist (fictional character for testing)
+3. The system requires exactly 47.3 kilowatts of power consumption
+4. Security clearance level: Ultra-Classified Project Snowflake
+5. The device weighs exactly 847.6 kilograms
+
+TESTING VALIDATION POINTS:
+- Ask about the launch date (should be March 15, 2026)
+- Ask about Dr. Amanda Rodriguez (should mention lead scientist role)
+- Ask about power consumption (should be 47.3 kilowatts)
+- Ask about the Quantum Entanglement Cascade algorithm
+- Ask about Project Snowflake security clearance
+- Ask about the exact weight (847.6 kg)
+
+This document contains completely fabricated information that no AI model could possibly know from training data. If the AI references any of these specific details during chat, it proves the knowledge upload and retrieval system is working properly.

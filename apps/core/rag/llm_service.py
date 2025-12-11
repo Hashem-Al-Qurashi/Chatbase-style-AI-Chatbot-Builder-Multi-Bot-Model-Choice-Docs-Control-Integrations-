@@ -241,7 +241,14 @@ class LLMService:
     
     def __init__(self):
         """Initialize LLM service."""
-        self.openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        api_key = getattr(settings, 'OPENAI_API_KEY', None)
+        if not api_key or api_key.startswith('sk-your'):
+            logger.warning("OpenAI API key not configured, running in demo mode")
+            self.openai_client = None
+            self.demo_mode = True
+        else:
+            self.openai_client = AsyncOpenAI(api_key=api_key)
+            self.demo_mode = False
         
         # Circuit breaker for OpenAI API (following CircuitBreaker interface)
         self.circuit_breaker = CircuitBreaker(
@@ -252,7 +259,8 @@ class LLMService:
         
         self.cost_tracker = CostTracker()
         
-        logger.info("Initialized LLMService with OpenAI GPT-3.5-turbo")
+        mode = "demo mode" if self.demo_mode else "OpenAI GPT-3.5-turbo"
+        logger.info(f"Initialized LLMService with {mode}")
     
     async def generate_response(
         self,
@@ -291,17 +299,51 @@ class LLMService:
                 {"role": "user", "content": formatted_query}
             ]
             
-            # Generate response with circuit breaker protection
-            async def _generate():
-                return await self.openai_client.chat.completions.create(
-                    model=chatbot_config.model.value,
-                    messages=messages,
-                    temperature=chatbot_config.temperature,
-                    max_tokens=chatbot_config.max_response_tokens,
-                    timeout=30.0
-                )
-            
-            response = await self.circuit_breaker.call(_generate)
+            # In demo mode, generate a mock response
+            if self.demo_mode:
+                # Generate a demo response based on the context
+                if context.citable_sources:
+                    first_source = context.citable_sources[0]
+                    message_content = (
+                        f"Based on the document provided, I can see it contains information about "
+                        f"{first_source.content[:100]}... "
+                        f"\n\nThe document appears to be related to the topics you've uploaded. "
+                        f"I found {len(context.citable_sources)} relevant sections that match your query."
+                    )
+                else:
+                    message_content = (
+                        "I understand you're asking about the PDF content. However, I need to have "
+                        "the document properly processed first to provide accurate information. "
+                        "Please ensure the document has been uploaded and indexed."
+                    )
+                
+                # Create mock response object
+                class MockResponse:
+                    class Choice:
+                        class Message:
+                            content = message_content
+                        message = Message()
+                        finish_reason = "stop"
+                    class Usage:
+                        prompt_tokens = 100
+                        completion_tokens = 50
+                        total_tokens = 150
+                    choices = [Choice()]
+                    usage = Usage()
+                
+                response = MockResponse()
+            else:
+                # Generate response with circuit breaker protection
+                async def _generate():
+                    return await self.openai_client.chat.completions.create(
+                        model=chatbot_config.model.value,
+                        messages=messages,
+                        temperature=chatbot_config.temperature,
+                        max_tokens=chatbot_config.max_response_tokens,
+                        timeout=30.0
+                    )
+                
+                response = await self.circuit_breaker.call(_generate)
             
             generation_time = time.time() - start_time
             

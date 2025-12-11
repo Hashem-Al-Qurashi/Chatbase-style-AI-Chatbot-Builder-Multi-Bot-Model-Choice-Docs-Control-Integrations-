@@ -1,0 +1,15 @@
+This is a test document for the RAG system.
+
+The RAG (Retrieval-Augmented Generation) chatbot is designed to:
+1. Process documents and extract knowledge
+2. Generate embeddings for semantic search
+3. Retrieve relevant context for user queries
+4. Generate AI responses based on the retrieved information
+
+Key features:
+- Privacy-first design with citable vs learn-only content
+- Real-time chat with streaming responses
+- Cost optimization with OpenAI API
+- Enterprise-grade security and monitoring
+
+This document should help test the knowledge retrieval functionality.

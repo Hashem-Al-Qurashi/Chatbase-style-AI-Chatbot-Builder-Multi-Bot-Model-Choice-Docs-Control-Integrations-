@@ -109,6 +109,14 @@ class ConversationViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Conversation ended successfully'})
     
     @action(detail=True, methods=['get'])
+    def messages(self, request, pk=None):
+        """Get all messages for a conversation."""
+        conversation = self.get_object()
+        messages = conversation.messages.all().order_by('created_at')
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
     def export(self, request, pk=None):
         """Export conversation in various formats."""
         conversation = self.get_object()
@@ -214,6 +222,23 @@ def private_chat_message(request, chatbot_id):
     
     message = serializer.validated_data['message']
     conversation_id = serializer.validated_data.get('conversation_id')
+    
+    # Check user's credit limits before processing (Chatbase style)
+    from apps.core.plan_limits import PlanLimitsService
+    from apps.core.usage_tracking import UsageTrackingService
+    
+    model_name = getattr(chatbot.settings, 'model', 'gpt-3.5-turbo')
+    can_proceed, reason = PlanLimitsService.can_send_message(request.user, 
+        PlanLimitsService.get_credit_cost_for_model(model_name))
+    
+    if not can_proceed:
+        return Response({
+            'error': 'Insufficient credits',
+            'reason': reason,
+            'credits_remaining': request.user.credits_remaining,
+            'suggested_plan': PlanLimitsService.get_upgrade_suggestion(request.user, 'more_credits'),
+            'upgrade_url': '/pricing/'
+        }, status=status.HTTP_402_PAYMENT_REQUIRED)
     
     # Get or create conversation
     conversation = None
@@ -327,13 +352,33 @@ def private_chat_message(request, chatbot_id):
                     error=str(citation_error)
                 )
         
+        # Consume credits after successful response (Chatbase style)
+        credits_consumed = PlanLimitsService.consume_message_credit(request.user, model_name)
+        if not credits_consumed:
+            logger.error(
+                "Failed to consume credits after processing message",
+                user_id=str(request.user.id),
+                chatbot_id=str(chatbot.id)
+            )
+        
+        # Track usage for analytics
+        total_tokens = rag_response.input_tokens + rag_response.output_tokens
+        UsageTrackingService.record_message_usage(
+            user=request.user,
+            model_name=model_name,
+            tokens_used=total_tokens,
+            chatbot_id=str(chatbot.id)
+        )
+        
         logger.info(
             "Private chat message processed",
             chatbot_id=str(chatbot.id),
             conversation_id=str(conversation.id),
             user_id=str(request.user.id),
             privacy_compliant=rag_response.privacy_compliant,
-            cost=rag_response.estimated_cost
+            cost=rag_response.estimated_cost,
+            credits_consumed=PlanLimitsService.get_credit_cost_for_model(model_name),
+            credits_remaining=request.user.credits_remaining
         )
         
         # Prepare detailed response for authenticated users
@@ -354,7 +399,9 @@ def private_chat_message(request, chatbot_id):
             'usage': {
                 'input_tokens': rag_response.input_tokens,
                 'output_tokens': rag_response.output_tokens,
-                'estimated_cost': rag_response.estimated_cost
+                'estimated_cost': rag_response.estimated_cost,
+                'credits_consumed': PlanLimitsService.get_credit_cost_for_model(model_name),
+                'credits_remaining': request.user.credits_remaining
             },
             'sources': {
                 'total_used': rag_response.sources_used,
@@ -439,7 +486,8 @@ def public_chat_message(request, slug):
     ip_address = request.META.get('REMOTE_ADDR')
     rate_limit_key = f"chat_{slug}_{ip_address}"
     
-    if not rate_limiter.check_limit(rate_limit_key, RateLimitType.CHAT_MESSAGE):
+    rate_limit_status = rate_limiter.check_rate_limit(RateLimitType.API_REQUESTS, rate_limit_key)
+    if rate_limit_status.blocked_until:
         return Response(
             {'error': 'Rate limit exceeded. Please wait before sending another message.'},
             status=status.HTTP_429_TOO_MANY_REQUESTS

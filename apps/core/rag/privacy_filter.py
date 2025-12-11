@@ -227,15 +227,14 @@ class ResponseSanitizer:
                             sanitized = sanitized.replace(phrase, violation.suggested_replacement)
                 
                 elif violation.violation_type == ViolationType.PRIVATE_SOURCE_REFERENCE:
-                    # Remove references to private sources
-                    private_patterns = [
+                    # Remove only explicit private source markers, not content words
+                    private_markers = [
                         r'\[PRIVATE\]',
-                        r'private source',
-                        r'confidential',
-                        r'internal document'
+                        r'\[INTERNAL\]',
+                        r'\[RESTRICTED\]'
                     ]
-                    for pattern in private_patterns:
-                        sanitized = re.sub(pattern, violation.suggested_replacement, sanitized, flags=re.IGNORECASE)
+                    for marker in private_markers:
+                        sanitized = re.sub(marker, '', sanitized, flags=re.IGNORECASE)
         
         return sanitized
     
@@ -471,22 +470,23 @@ class PrivacyFilter:
         """Check for references to private concepts."""
         violations = []
         
-        private_terms = [
-            "private source", "confidential", "internal document",
-            "restricted", "classified", "private content",
-            "not for sharing", "internal only"
+        # Only check for EXPLICIT references to private sources, not content words
+        private_indicators = [
+            "[PRIVATE]", "[INTERNAL]", "[RESTRICTED]",
+            "private source says", "internal document states",
+            "according to private", "from restricted sources"
         ]
         
         response_lower = response.lower()
         
-        for term in private_terms:
-            if term in response_lower:
+        for indicator in private_indicators:
+            if indicator.lower() in response_lower:
                 violations.append(PrivacyViolation(
                     violation_type=ViolationType.PRIVATE_SOURCE_REFERENCE,
-                    description=f"Reference to private concept: '{term}'",
-                    confidence=0.8,
+                    description=f"Reference to private source indicator: '{indicator}'",
+                    confidence=0.9,
                     location="response_text",
-                    suggested_replacement="available information"
+                    suggested_replacement=""
                 ))
         
         return violations

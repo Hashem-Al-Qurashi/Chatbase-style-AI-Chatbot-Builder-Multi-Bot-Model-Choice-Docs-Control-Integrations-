@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'gradient' | 'glow' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'gradient' | 'glow' | 'danger' | 'elegant';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   loading?: boolean;
   icon?: React.ReactNode;
@@ -39,15 +39,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           
           // Color variants
           variant === 'primary' && [
-            'bg-gradient-to-r from-primary-600 to-primary-700',
-            'text-white shadow-lg shadow-primary-500/25',
-            'hover:from-primary-700 hover:to-primary-800 hover:shadow-xl hover:shadow-primary-500/30',
+            'bg-primary-600 text-white shadow-lg shadow-primary-500/25',
+            'hover:bg-primary-700 hover:shadow-xl',
             'focus:ring-primary-500 focus:ring-offset-2',
-            'active:scale-[0.98] active:shadow-md',
-            // Shimmer effect with pointer-events fix
-            'before:absolute before:inset-0 before:-translate-x-full before:pointer-events-none',
-            'before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent',
-            'hover:before:translate-x-full before:transition-transform before:duration-700',
+            'active:scale-[0.98]',
           ],
           
           variant === 'secondary' && [
@@ -72,16 +67,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           ],
           
           variant === 'gradient' && [
-            'bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600',
-            'text-white shadow-lg shadow-primary-500/30',
-            'hover:shadow-xl hover:shadow-primary-500/40 hover:scale-[1.02]',
+            'bg-gradient-to-r from-primary-500 to-accent-600',
+            'text-white shadow-lg shadow-primary-500/25',
+            'hover:from-primary-600 hover:to-accent-700 hover:shadow-xl',
             'focus:ring-primary-500',
             'active:scale-[0.98]',
-            // Animated gradient with pointer-events fix
-            'bg-size-200 hover:bg-pos-0',
-            'before:absolute before:inset-0 before:-translate-x-full before:pointer-events-none',
-            'before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent',
-            'hover:before:translate-x-full before:transition-transform before:duration-1000',
           ],
           
           variant === 'glow' && [
@@ -103,6 +93,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             'before:absolute before:inset-0 before:-translate-x-full before:pointer-events-none',
             'before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent',
             'hover:before:translate-x-full before:transition-transform before:duration-700',
+          ],
+          
+          variant === 'elegant' && [
+            'bg-white/80 backdrop-blur-sm border border-white/20 text-gray-700',
+            'shadow-soft hover:shadow-lg hover:shadow-primary-500/5',
+            'hover:bg-white/90 hover:border-primary-200 hover:text-primary-700',
+            'focus:ring-primary-500 focus:ring-offset-2',
+            'active:scale-[0.98]',
+            'transition-all duration-200',
           ],
           
           className
@@ -139,7 +138,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         
         {/* Button text */}
         {children && (
-          <span className="relative z-10">
+          <span className="font-medium">
             {children}
           </span>
         )}
@@ -157,11 +156,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             {icon}
           </span>
         )}
-        
-        {/* Ripple effect container */}
-        <span className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
-          <span className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity duration-75" />
-        </span>
       </button>
     );
   }

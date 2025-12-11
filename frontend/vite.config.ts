@@ -7,8 +7,9 @@ export default defineConfig({
     port: 3005,
     strictPort: false, // Allow fallback to other ports
     host: true, // Allow external connections
+    allowedHosts: ['481217dade00.ngrok-free.app', 'localhost', '.ngrok-free.app'],
     proxy: {
-      '/api': {
+      '/api/v1': {
         target: 'http://localhost:8001',
         changeOrigin: true,
         secure: false,

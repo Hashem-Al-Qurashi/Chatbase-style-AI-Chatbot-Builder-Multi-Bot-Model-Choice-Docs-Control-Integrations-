@@ -64,6 +64,7 @@ LOCAL_APPS = [
     "apps.conversations",
     "apps.billing",
     "apps.webhooks",
+    "widget",  # Widget app for embeddable chat widgets
 ]
 
 # Add debug toolbar only in development

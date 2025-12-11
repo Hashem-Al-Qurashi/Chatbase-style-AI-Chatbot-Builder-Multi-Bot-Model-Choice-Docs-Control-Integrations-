@@ -5,7 +5,8 @@ import {
   Plus, 
   MessageSquare, 
   LogOut,
-  Search
+  Search,
+  Code
 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -13,6 +14,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { apiService } from '../../services/api'
 import { Chatbot } from '../../types'
 import { ChatbotWizard } from '../chatbot/ChatbotWizard'
+import { ChatbotDetailsModal } from '../chatbot/ChatbotDetailsModal'
 
 export function Dashboard() {
   const { user, logout } = useAuth()
@@ -22,10 +24,50 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [userPlan, setUserPlan] = useState<any>(null)
+  const [planLoading, setPlanLoading] = useState(true)
 
   useEffect(() => {
     loadChatbots()
+    loadUserPlan()
   }, [])
+
+  const loadUserPlan = async () => {
+    try {
+      setPlanLoading(true)
+      const response = await apiService.get('/api/v1/billing/current_plan/')
+      setUserPlan(response.data.plan)
+    } catch (error) {
+      console.error('Failed to load user plan:', error)
+      // Set default plan info if API fails
+      setUserPlan({
+        tier: 'free',
+        message_credits: 50,
+        credits_used: 0,
+        credits_remaining: 50,
+        max_ai_agents: 1
+      })
+    } finally {
+      setPlanLoading(false)
+    }
+  }
+
+  const handleChatbotClick = (chatbot: Chatbot) => {
+    navigate(`/chat/${chatbot.id}`)
+  }
+
+  const handleEmbedClick = (e: React.MouseEvent, chatbot: Chatbot) => {
+    e.stopPropagation() // Prevent triggering the main card click
+    setSelectedChatbot(chatbot)
+    setShowDetailsModal(true)
+  }
+
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false)
+    setSelectedChatbot(null)
+  }
 
   const loadChatbots = async () => {
     try {
@@ -89,12 +131,48 @@ export function Dashboard() {
               </div>
             </div>
             
-            <button
-              onClick={logout}
-              className="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-white/50 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            <div className="flex items-center space-x-4">
+              {/* Plan and Credit Display */}
+              {(userPlan || planLoading) && (
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl px-4 py-3 shadow-soft border border-white/20" data-testid="plan-info">
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-600">Current Plan</div>
+                    <div className="text-lg font-bold text-gray-900 capitalize" data-testid="plan-name">
+                      {planLoading ? 'Loading...' : (userPlan?.tier || 'free')}
+                    </div>
+                  </div>
+                  <div className="text-center mt-2">
+                    <div className="text-sm text-gray-600">Credits</div>
+                    <div className="text-lg font-bold text-blue-600" data-testid="credits-remaining">
+                      {planLoading ? '...' : (userPlan?.credits_remaining || 50)}
+                    </div>
+                    <div className="text-xs text-gray-500" data-testid="credits-total">
+                      of {planLoading ? '...' : (userPlan?.message_credits || 50)}
+                    </div>
+                  </div>
+                  {userPlan.credits_remaining < 10 && (
+                    <div className="mt-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => navigate('/#pricing')}
+                        className="text-xs"
+                      >
+                        Upgrade
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <button
+                onClick={logout}
+                className="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-white/50 transition-colors"
+                data-testid="logout-button"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Soft Controls */}
@@ -113,6 +191,7 @@ export function Dashboard() {
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white px-6 py-3 rounded-xl shadow-lg shadow-primary-500/25 transition-all duration-200 flex items-center space-x-2"
+                data-testid="new-chatbot-button"
               >
                 <Plus className="w-5 h-5" />
                 <span>Create Chatbot</span>
@@ -160,6 +239,7 @@ export function Dashboard() {
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white px-8 py-4 rounded-xl shadow-lg shadow-primary-500/25 transition-all duration-200 font-medium"
+                  data-testid="new-chatbot-button"
                 >
                   Get Started
                 </button>
@@ -184,10 +264,19 @@ export function Dashboard() {
                 {filteredChatbots.map((chatbot) => (
                   <div
                     key={chatbot.id}
-                    onClick={() => navigate(`/chat/${chatbot.id}`)}
-                    className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 shadow-soft hover:shadow-elegant hover:bg-white/70 transition-all duration-300 cursor-pointer group"
+                    onClick={() => handleChatbotClick(chatbot)}
+                    className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 shadow-soft hover:shadow-elegant hover:bg-white/70 transition-all duration-300 cursor-pointer group relative"
                   >
-                    <div className="flex items-center space-x-4">
+                    {/* Embed Button - Top Right */}
+                    <button
+                      onClick={(e) => handleEmbedClick(e, chatbot)}
+                      className="absolute top-4 right-4 p-2 rounded-lg bg-white/80 hover:bg-white shadow-sm hover:shadow-md transition-all duration-200 text-gray-600 hover:text-primary-600 group-hover:opacity-100 opacity-70"
+                      title="Get Embed Code"
+                    >
+                      <Code className="w-4 h-4" />
+                    </button>
+
+                    <div className="flex items-center space-x-4 pr-12"> {/* Added right padding for embed button */}
                       <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25 group-hover:shadow-primary-500/40 transition-shadow">
                         <Bot className="w-7 h-7 text-white" />
                       </div>
@@ -219,7 +308,18 @@ export function Dashboard() {
       <ChatbotWizard
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSuccess={handleCreateSuccess}
+        onSuccess={() => {
+          setShowCreateModal(false)
+          loadChatbots()
+        }}
+      />
+
+      {/* Chatbot Details Modal */}
+      <ChatbotDetailsModal
+        isOpen={showDetailsModal}
+        onClose={handleCloseDetailsModal}
+        chatbot={selectedChatbot}
+        onChatbotUpdated={loadChatbots}
       />
     </div>
   )

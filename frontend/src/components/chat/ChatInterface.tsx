@@ -11,11 +11,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Upload,
-  Plus
+  ChevronDown,
+  ChevronUp,
+  Menu
 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { apiService } from '../../services/api'
+import { ChatSidebar } from './ChatSidebar'
 
 interface Message {
   id: string
@@ -55,20 +58,17 @@ export function ChatInterface({
   isMinimized, 
   onToggleMinimize 
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: `Hello! I'm ${chatbot?.name || 'your AI assistant'}. How can I help you today?`,
-      timestamp: new Date()
-    }
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
+  const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set())
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
+  const [showSidebar, setShowSidebar] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -76,9 +76,77 @@ export function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  // Load conversation history when component mounts
+  useEffect(() => {
+    if (chatbot?.id) {
+      loadConversationHistory()
+    }
+  }, [chatbot?.id])
+
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  const loadConversationHistory = async () => {
+    if (!chatbot?.id) return
+
+    try {
+      setIsLoadingHistory(true)
+      setError(null)
+
+      // Get existing conversations for this chatbot
+      const conversationsResponse = await apiService.getConversations(chatbot.id)
+      
+      // Handle paginated response
+      const conversations = Array.isArray(conversationsResponse) 
+        ? conversationsResponse 
+        : conversationsResponse.results || []
+      
+      if (conversations && conversations.length > 0) {
+        // Get the most recent conversation
+        const latestConversation = conversations[0]
+        setCurrentConversationId(latestConversation.id)
+        
+        // Load messages from the latest conversation
+        const conversationMessages = await apiService.getConversationMessages(latestConversation.id)
+        
+        if (conversationMessages && conversationMessages.length > 0) {
+          // Convert API messages to component message format
+          const formattedMessages: Message[] = conversationMessages.map(msg => ({
+            id: msg.id,
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+            sources: msg.sources || []
+          }))
+          
+          setMessages(formattedMessages)
+        } else {
+          // No messages in conversation, add welcome message
+          addWelcomeMessage()
+        }
+      } else {
+        // No existing conversations, add welcome message
+        addWelcomeMessage()
+      }
+    } catch (err: any) {
+      console.error('Failed to load conversation history:', err)
+      setError('Failed to load conversation history')
+      addWelcomeMessage()
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
+
+  const addWelcomeMessage = () => {
+    const welcomeMessage: Message = {
+      id: 'welcome',
+      role: 'assistant',
+      content: `Hello! I'm ${chatbot?.name || 'your AI assistant'}. How can I help you today?`,
+      timestamp: new Date()
+    }
+    setMessages([welcomeMessage])
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,8 +166,14 @@ export function ChatInterface({
 
     try {
       const response = await apiService.sendChatMessage(chatbot.id, {
-        message: userMessage.content
+        message: userMessage.content,
+        conversation_id: currentConversationId || undefined
       })
+      
+      // Update conversation ID if this is a new conversation
+      if (response.conversation_id && !currentConversationId) {
+        setCurrentConversationId(response.conversation_id)
+      }
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -218,6 +292,18 @@ export function ChatInterface({
     }
   }, [handleFileSelect])
 
+  const toggleSources = (messageId: string) => {
+    setExpandedSources(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId)
+      } else {
+        newSet.add(messageId)
+      }
+      return newSet
+    })
+  }
+
   if (isMinimized) {
     return (
       <div className="fixed bottom-4 right-4 z-50">
@@ -258,42 +344,64 @@ export function ChatInterface({
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col h-full">
-        {/* Chatbase-style Header - Very Minimal */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
-            <Bot className="w-4 h-4 text-white" />
+      <div className="relative z-10 flex h-full">
+        {/* Main Chat Area */}
+        <div className="flex flex-col flex-1">
+          {/* Chatbase-style Header - Very Minimal */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-medium text-gray-900">
+                {chatbot?.name || 'AI Assistant'}
+              </span>
+            </div>
+            
+            <div className="flex items-center space-x-1">
+              {/* Sidebar Toggle */}
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Quick Actions"
+              >
+                <Menu className="w-4 h-4 text-gray-500" />
+              </button>
+              
+              {onToggleMinimize && (
+                <button
+                  onClick={onToggleMinimize}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <Minimize2 className="w-4 h-4 text-gray-500" />
+                </button>
+              )}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              )}
+            </div>
           </div>
-          <span className="font-medium text-gray-900">
-            {chatbot?.name || 'AI Assistant'}
-          </span>
-        </div>
-        
-        <div className="flex items-center space-x-1">
-          {onToggleMinimize && (
-            <button
-              onClick={onToggleMinimize}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Minimize2 className="w-4 h-4 text-gray-500" />
-            </button>
-          )}
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-4 h-4 text-gray-500" />
-            </button>
-          )}
-        </div>
-        </div>
 
-        {/* Messages - ChatGPT-like Layout */}
-        <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
-          {messages.map((message, index) => (
+          {/* Messages - ChatGPT-like Layout */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
+          {/* Loading conversation history */}
+          {isLoadingHistory && (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center space-x-3">
+                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                <span className="text-gray-500">Loading conversation history...</span>
+              </div>
+            </div>
+          )}
+          
+          {/* Messages */}
+          {!isLoadingHistory && messages.map((message) => (
             <div
               key={message.id}
               className={`flex items-start space-x-4 ${
@@ -323,21 +431,46 @@ export function ChatInterface({
                   <p className="text-gray-800 whitespace-pre-wrap">
                     {message.content}
                   </p>
-                  
-                  {/* Sources */}
-                  {message.sources && message.sources.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-xs font-medium text-gray-600 mb-1">Sources:</p>
-                      {message.sources.map((source) => (
-                        <div key={source.id} className="text-xs text-gray-500 mb-1">
-                          {source.title}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
+
+                {/* Sources Button */}
+                {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
+                  <div className="px-4">
+                    <button
+                      onClick={() => toggleSources(message.id)}
+                      className="inline-flex items-center space-x-1 mt-2 text-sm text-gray-600 hover:text-gray-800 transition-colors group"
+                    >
+                      <span className="text-xs">
+                        {message.sources.length} source{message.sources.length > 1 ? 's' : ''}
+                      </span>
+                      {expandedSources.has(message.id) ? (
+                        <ChevronUp className="w-3 h-3 group-hover:text-gray-700" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3 group-hover:text-gray-700" />
+                      )}
+                    </button>
+
+                    {/* Expandable Sources */}
+                    {expandedSources.has(message.id) && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 transform transition-all duration-200 ease-out">
+                        <div className="space-y-2">
+                          {message.sources.map((source) => (
+                            <div key={source.id} className="flex items-start space-x-2 text-sm">
+                              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-gray-700 leading-relaxed">
+                                  {source.title}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
-                <div className="text-xs text-gray-400 mt-1 px-4">
+                <div className="text-xs text-gray-400 mt-2 px-4">
                   {message.timestamp.toLocaleTimeString()}
                 </div>
               </div>
@@ -430,56 +563,71 @@ export function ChatInterface({
         </div>
         )}
 
-        {/* Input Area - ChatGPT Style */}
-        <div className="p-4 border-t border-gray-200">
-        <div className="max-w-3xl mx-auto">
-          <form onSubmit={handleSubmit}>
-            <div className="flex items-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setShowFileUpload(!showFileUpload)}
-                className={`p-3 rounded-lg transition-colors ${
-                  showFileUpload 
-                    ? 'bg-gray-200 text-gray-700' 
-                    : 'hover:bg-gray-100 text-gray-500'
-                }`}
-              >
-                <Paperclip className="w-5 h-5" />
-              </button>
+          {/* Input Area - ChatGPT Style */}
+          <div className="p-4 border-t border-gray-200">
+            <div className="max-w-3xl mx-auto">
+              <form onSubmit={handleSubmit}>
+                <div className="flex items-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowFileUpload(!showFileUpload)}
+                    className={`p-3 rounded-lg transition-colors ${
+                      showFileUpload 
+                        ? 'bg-gray-200 text-gray-700' 
+                        : 'hover:bg-gray-100 text-gray-500'
+                    }`}
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+                  
+                  <div className="flex-1 relative">
+                    <Input
+                      type="text"
+                      placeholder="Message"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      disabled={isLoading}
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    />
+                    
+                    <button
+                      type="submit"
+                      disabled={!input.trim() || isLoading}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
               
-              <div className="flex-1 relative">
-                <Input
-                  type="text"
-                  placeholder="Message"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  disabled={isLoading}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                />
-                
-                <button
-                  type="submit"
-                  disabled={!input.trim() || isLoading}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                AI can make mistakes. Check important info.
+              </p>
             </div>
-          </form>
-          
-          <p className="text-xs text-gray-500 text-center mt-2">
-            AI can make mistakes. Check important info.
-          </p>
-        </div>
+          </div>
         </div>
 
-        {/* Drag Overlay */}
-        {isDragOver && (
+        {/* Sidebar */}
+        {chatbot && (
+          <ChatSidebar
+            isOpen={showSidebar}
+            onClose={() => setShowSidebar(false)}
+            chatbot={chatbot}
+            onChatbotUpdate={() => {
+              // Refresh chatbot data if needed
+              console.log('Chatbot updated via sidebar')
+            }}
+          />
+        )}
+      </div>
+
+      {/* Drag Overlay */}
+      {isDragOver && (
         <div className="absolute inset-0 bg-blue-50/80 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 shadow-lg border text-center">
             <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -489,10 +637,10 @@ export function ChatInterface({
             <p className="text-sm text-gray-600">Add knowledge to your chatbot</p>
           </div>
         </div>
-        )}
-        
-        {/* Error message */}
-        {error && (
+      )}
+      
+      {/* Error message */}
+      {error && (
         <div className="p-4 bg-red-50 border-t border-red-200">
           <div className="max-w-3xl mx-auto flex items-center justify-between">
             <p className="text-sm text-red-700">{error}</p>
@@ -504,8 +652,7 @@ export function ChatInterface({
             </button>
           </div>
         </div>
-        )}
-      </div>
+      )}
     </div>
   )
 }

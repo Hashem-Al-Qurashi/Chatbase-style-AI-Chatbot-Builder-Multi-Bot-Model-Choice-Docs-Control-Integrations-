@@ -1,0 +1,19 @@
+Test Document for Chat Upload Feature
+
+This is a test document to verify that the file upload functionality is working properly in the chat interface.
+
+Key Features to Test:
+1. File drag and drop functionality
+2. File selection via browse button
+3. Upload progress indicator
+4. Success/error status display
+5. Integration with knowledge base
+
+The chatbot should be able to answer questions about this document once it is uploaded successfully.
+
+Sample Question: "What are the key features being tested in this document?"
+Expected Answer: The chatbot should be able to reference the 5 key features listed above.
+
+Upload Test Date: November 7, 2025
+Feature: In-Chat Document Upload
+Status: Ready for Testing

@@ -88,18 +88,36 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         blank=True
     )
     
-    # Usage tracking
-    message_quota = models.PositiveIntegerField(
-        default=100,
-        help_text="Monthly message quota"
+    # Chatbase-style credit tracking
+    message_credits = models.PositiveIntegerField(
+        default=50,
+        help_text="Monthly message credits (Chatbase style)"
     )
-    messages_used = models.PositiveIntegerField(
+    credits_used = models.PositiveIntegerField(
         default=0,
-        help_text="Messages used this period"
+        help_text="Credits used this period"
     )
-    quota_reset_date = models.DateTimeField(
+    credits_reset_date = models.DateTimeField(
         default=timezone.now,
-        help_text="When quota resets"
+        help_text="When credits reset"
+    )
+    
+    # Additional limits
+    max_ai_agents = models.PositiveIntegerField(
+        default=1,
+        help_text="Maximum AI agents allowed"
+    )
+    storage_limit_mb = models.PositiveIntegerField(
+        default=1,  # 400KB = ~0.4MB, rounded to 1
+        help_text="Storage limit per AI agent in MB"
+    )
+    max_ai_actions = models.PositiveIntegerField(
+        default=0,
+        help_text="AI Actions per agent"
+    )
+    max_seats = models.PositiveIntegerField(
+        default=1,
+        help_text="Team seats allowed"
     )
     
     # OAuth fields
@@ -152,51 +170,56 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         return self.full_name or self.email
     
     @property
-    def has_quota_remaining(self) -> bool:
-        """Check if user has message quota remaining."""
-        return self.messages_used < self.message_quota
+    def has_credits_remaining(self) -> bool:
+        """Check if user has message credits remaining."""
+        return self.credits_used < self.message_credits
     
     @property
-    def quota_percentage_used(self) -> float:
-        """Get percentage of quota used."""
-        if self.message_quota == 0:
+    def credits_percentage_used(self) -> float:
+        """Get percentage of credits used."""
+        if self.message_credits == 0:
             return 100.0
-        return (self.messages_used / self.message_quota) * 100
+        return (self.credits_used / self.message_credits) * 100
     
-    def consume_quota(self, count: int = 1) -> bool:
+    @property
+    def credits_remaining(self) -> int:
+        """Get remaining credits."""
+        return max(0, self.message_credits - self.credits_used)
+    
+    def consume_credits(self, count: int = 1) -> bool:
         """
-        Consume message quota.
+        Consume message credits (Chatbase style).
         
         Args:
-            count: Number of messages to consume
+            count: Number of credits to consume
             
         Returns:
-            bool: True if quota was consumed, False if insufficient
+            bool: True if credits were consumed, False if insufficient
         """
-        if self.messages_used + count > self.message_quota:
+        if self.credits_used + count > self.message_credits:
             logger.warning(
-                "Quota exceeded",
+                "Credits exceeded",
                 user_id=str(self.id),
-                current_usage=self.messages_used,
-                quota=self.message_quota,
+                current_usage=self.credits_used,
+                credits=self.message_credits,
                 requested=count
             )
             return False
         
-        self.messages_used += count
-        self.save(update_fields=['messages_used'])
+        self.credits_used += count
+        self.save(update_fields=['credits_used'])
         return True
     
-    def reset_quota(self) -> None:
-        """Reset message quota."""
-        self.messages_used = 0
-        self.quota_reset_date = timezone.now()
-        self.save(update_fields=['messages_used', 'quota_reset_date'])
+    def reset_credits(self) -> None:
+        """Reset message credits."""
+        self.credits_used = 0
+        self.credits_reset_date = timezone.now()
+        self.save(update_fields=['credits_used', 'credits_reset_date'])
         
         logger.info(
-            "Quota reset",
+            "Credits reset",
             user_id=str(self.id),
-            quota=self.message_quota
+            credits=self.message_credits
         )
     
     def verify_email(self) -> None:
@@ -213,7 +236,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     
     def upgrade_plan(self, plan_tier: str, stripe_subscription_id: str = None) -> None:
         """
-        Upgrade user plan.
+        Upgrade user plan (Chatbase style).
         
         Args:
             plan_tier: New plan tier
@@ -225,18 +248,53 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         if stripe_subscription_id:
             self.subscription_id = stripe_subscription_id
         
-        # Update quota based on plan
-        quota_map = {
-            PlanTier.FREE: 100,
-            PlanTier.PRO: 1000,
-            PlanTier.ENTERPRISE: 10000,
+        # Update credits and limits based on plan (Chatbase structure)
+        plan_configs = {
+            PlanTier.FREE: {
+                'credits': 50,
+                'agents': 1,
+                'storage_mb': 1,  # 400KB
+                'actions': 0,
+                'seats': 1,
+            },
+            'hobby': {
+                'credits': 2000,
+                'agents': 1,
+                'storage_mb': 40,
+                'actions': 5,
+                'seats': 1,
+            },
+            'standard': {
+                'credits': 12000,
+                'agents': 2,
+                'storage_mb': 33,
+                'actions': 10,
+                'seats': 3,
+            },
+            'pro': {
+                'credits': 40000,
+                'agents': 3,
+                'storage_mb': 33,
+                'actions': 15,
+                'seats': 5,
+            },
         }
-        self.message_quota = quota_map.get(plan_tier, 100)
+        
+        config = plan_configs.get(plan_tier, plan_configs[PlanTier.FREE])
+        self.message_credits = config['credits']
+        self.max_ai_agents = config['agents']
+        self.storage_limit_mb = config['storage_mb']
+        self.max_ai_actions = config['actions']
+        self.max_seats = config['seats']
         
         self.save(update_fields=[
             'plan_tier',
             'subscription_id',
-            'message_quota'
+            'message_credits',
+            'max_ai_agents',
+            'storage_limit_mb',
+            'max_ai_actions',
+            'max_seats'
         ])
         
         logger.info(
@@ -244,7 +302,8 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
             user_id=str(self.id),
             old_plan=old_plan,
             new_plan=plan_tier,
-            new_quota=self.message_quota
+            new_credits=self.message_credits,
+            new_agents=self.max_ai_agents
         )
 
 

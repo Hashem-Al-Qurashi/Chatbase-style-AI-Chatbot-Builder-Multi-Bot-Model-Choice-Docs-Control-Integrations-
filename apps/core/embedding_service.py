@@ -324,11 +324,18 @@ class OpenAIEmbeddingService:
         self.logger = structlog.get_logger().bind(component="OpenAIEmbeddingService")
         
         # Initialize OpenAI client
-        self.client = OpenAI(
-            api_key=settings.OPENAI_API_KEY,
-            timeout=self.config.timeout_seconds,
-            max_retries=0  # We handle retries ourselves
-        )
+        api_key = getattr(settings, 'OPENAI_API_KEY', None)
+        if not api_key or api_key.startswith('sk-your'):
+            self.logger.warning("OpenAI API key not configured, running in demo mode")
+            self.client = None
+            self.demo_mode = True
+        else:
+            self.client = OpenAI(
+                api_key=api_key,
+                timeout=self.config.timeout_seconds,
+                max_retries=0  # We handle retries ourselves
+            )
+            self.demo_mode = False
         
         # Initialize components
         self.cache = EmbeddingCache(self.config)
@@ -373,6 +380,26 @@ class OpenAIEmbeddingService:
             raise EmbeddingGenerationError(
                 f"Text too long ({len(text)} chars). Maximum supported: 32,000 characters. "
                 "Consider chunking the text into smaller pieces."
+            )
+        
+        # In demo mode, return a mock embedding
+        if self.demo_mode:
+            import hashlib
+            # Generate deterministic mock embedding based on text hash
+            text_hash = hashlib.md5(text.encode()).hexdigest()
+            # Create a 1536-dimensional vector (OpenAI ada-002 size)
+            mock_embedding = [float(int(text_hash[i:i+2], 16)) / 255.0 for i in range(0, min(len(text_hash), 64), 2)]
+            mock_embedding.extend([0.5] * (1536 - len(mock_embedding)))
+            
+            return EmbeddingResult(
+                embedding=mock_embedding,
+                text_hash=text_hash[:16],
+                model="demo-mode",
+                dimensions=1536,
+                tokens_used=len(text.split()),
+                cached=False,
+                cost_usd=0.0,
+                processing_time_ms=10
             )
         
         # Check cache first
@@ -430,6 +457,35 @@ class OpenAIEmbeddingService:
         )
         
         try:
+            # In demo mode, return mock embeddings for all texts
+            if self.demo_mode:
+                import hashlib
+                embeddings = []
+                for text in texts:
+                    text_hash = hashlib.md5(text.encode()).hexdigest()
+                    mock_embedding = [float(int(text_hash[i:i+2], 16)) / 255.0 for i in range(0, min(len(text_hash), 64), 2)]
+                    mock_embedding.extend([0.5] * (1536 - len(mock_embedding)))
+                    
+                    embeddings.append(EmbeddingResult(
+                        embedding=mock_embedding,
+                        text_hash=text_hash[:16],
+                        model="demo-mode",
+                        dimensions=1536,
+                        tokens_used=len(text.split()),
+                        cached=False,
+                        cost_usd=0.0,
+                        processing_time_ms=10
+                    ))
+                
+                return BatchEmbeddingResult(
+                    embeddings=embeddings,
+                    total_tokens=sum(len(t.split()) for t in texts),
+                    total_cost_usd=0.0,
+                    processing_time_ms=int((time.time() - start_time) * 1000),
+                    cache_hits=0,
+                    api_calls=0
+                )
+            
             # Deduplicate and check cache
             unique_texts, text_mapping = self._deduplicate_texts(texts)
             cached_results, uncached_texts = await self._get_cached_embeddings(unique_texts)

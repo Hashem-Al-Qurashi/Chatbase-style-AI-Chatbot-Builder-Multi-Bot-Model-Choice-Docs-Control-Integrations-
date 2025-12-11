@@ -1,0 +1,15 @@
+Unique test document for file upload validation.
+
+This document contains specific information about:
+- Company policies for remote work
+- Employee benefits including health insurance
+- Technical specifications for our API endpoints
+- Customer service protocols and escalation procedures
+
+Specific details:
+- Remote work policy allows 3 days per week from home
+- Health insurance covers 80% of medical costs
+- API rate limit is 1000 requests per hour
+- Customer service response time target is 2 hours
+
+This content should be uniquely identifiable in RAG responses.

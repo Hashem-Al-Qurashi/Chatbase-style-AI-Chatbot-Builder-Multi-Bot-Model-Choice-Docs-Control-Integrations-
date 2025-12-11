@@ -10,7 +10,8 @@ import {
   BarChart3,
   Calendar,
   Users,
-  Clock
+  Clock,
+  Zap
 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
@@ -30,7 +31,7 @@ interface ChatbotDetailsModalProps {
   onChatbotUpdated: () => void
 }
 
-type TabType = 'overview' | 'knowledge' | 'settings' | 'analytics' | 'embed'
+type TabType = 'overview' | 'knowledge' | 'settings' | 'analytics' | 'embed' | 'integrations'
 
 export function ChatbotDetailsModal({ 
   isOpen, 
@@ -57,7 +58,8 @@ export function ChatbotDetailsModal({
     { id: 'knowledge' as TabType, label: 'Knowledge Sources', icon: Upload },
     { id: 'settings' as TabType, label: 'Settings', icon: Settings },
     { id: 'analytics' as TabType, label: 'Analytics', icon: BarChart3 },
-    { id: 'embed' as TabType, label: 'Embed', icon: Code }
+    { id: 'embed' as TabType, label: 'Embed', icon: Code },
+    { id: 'integrations' as TabType, label: 'Integrations', icon: Zap }
   ]
 
   const handleEditChatbot = () => {
@@ -96,119 +98,70 @@ export function ChatbotDetailsModal({
     switch (activeTab) {
       case 'overview':
         return (
-          <div className="space-y-6">
-            {/* Chatbot Header */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Bot className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">{chatbot.name}</h3>
-                  <p className="text-gray-600 mt-1">{chatbot.description}</p>
-                  <div className="flex items-center space-x-3 mt-2">
-                    {getStatusBadge(chatbot.status)}
-                    <span className="text-sm text-gray-500">
-                      Created {formatDate(chatbot.created_at)}
-                    </span>
-                  </div>
+          <div className="space-y-4">
+            {/* Chatbot Info */}
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900">{chatbot.name}</h3>
+                <p className="text-gray-600">{chatbot.description}</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  {getStatusBadge(chatbot.status)}
+                  <span className="text-sm text-gray-500">
+                    Created {formatDate(chatbot.created_at)}
+                  </span>
                 </div>
               </div>
-              <Button onClick={handleEditChatbot} variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Edit Settings
-              </Button>
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <MessageSquare className="w-6 h-6 text-primary-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">
-                    {chatbot.total_conversations || 0}
-                  </p>
-                  <p className="text-sm text-gray-500">Conversations</p>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-primary-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-gray-900">{chatbot.total_conversations || 0}</p>
+                <p className="text-xs text-gray-500">Conversations</p>
+              </div>
               
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Users className="w-6 h-6 text-accent-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">
-                    {chatbot.total_messages || 0}
-                  </p>
-                  <p className="text-sm text-gray-500">Messages</p>
-                </CardContent>
-              </Card>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <Users className="w-5 h-5 text-accent-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-gray-900">{chatbot.total_messages || 0}</p>
+                <p className="text-xs text-gray-500">Messages</p>
+              </div>
               
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Upload className="w-6 h-6 text-success-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">
-                    {chatbot.has_knowledge_sources ? '✓' : '0'}
-                  </p>
-                  <p className="text-sm text-gray-500">Knowledge Sources</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Clock className="w-6 h-6 text-warning-600 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-gray-900">&lt; 1s</p>
-                  <p className="text-sm text-gray-500">Avg Response</p>
-                </CardContent>
-              </Card>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <Upload className="w-5 h-5 text-success-600 mx-auto mb-1" />
+                <p className="text-lg font-bold text-gray-900">{chatbot.has_knowledge_sources ? '✓' : '0'}</p>
+                <p className="text-xs text-gray-500">Knowledge</p>
+              </div>
             </div>
 
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 text-sm">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-gray-600">Chatbot is active and responding</span>
-                    <span className="text-gray-400">2 minutes ago</span>
-                  </div>
-                  <div className="flex items-center space-x-3 text-sm">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-gray-600">New conversation started</span>
-                    <span className="text-gray-400">1 hour ago</span>
-                  </div>
-                  <div className="flex items-center space-x-3 text-sm">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="text-gray-600">Chatbot created</span>
-                    <span className="text-gray-400">{formatDate(chatbot.created_at)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Quick Actions */}
-            <div className="flex space-x-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
               <Button 
                 variant="gradient" 
                 onClick={() => window.open(`/chat/${chatbot.id}`, '_blank')}
+                className="w-full"
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
-                Test Chatbot
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => setShowEmbedModal(true)}
-              >
-                <Code className="w-4 h-4 mr-2" />
-                Get Embed Code
+                Test Chat
               </Button>
               <Button 
                 variant="outline"
                 onClick={() => setActiveTab('knowledge')}
+                className="w-full"
               >
                 <Upload className="w-4 h-4 mr-2" />
-                Manage Knowledge
+                Knowledge
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setActiveTab('embed')}
+                className="w-full"
+              >
+                <Code className="w-4 h-4 mr-2" />
+                Embed
               </Button>
             </div>
           </div>
@@ -317,24 +270,159 @@ export function ChatbotDetailsModal({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-600">
-                    Copy and paste this code into your website to embed your chatbot.
+                  <p className="text-gray-600">
+                    Get the embed code to add this chatbot to any website.
                   </p>
                   
-                  <div className="p-3 bg-gray-50 rounded border">
-                    <code className="text-sm text-gray-800">
-                      {`<script src="https://your-domain.com/widget/chatbot-widget.js"></script>
-<div id="chatbot-widget" data-chatbot-id="${chatbot.id}"></div>`}
-                    </code>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <Code className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium text-blue-900">Widget URL</h4>
+                        <p className="text-sm text-blue-700 mt-1">
+                          {window.location.origin}/widget/{chatbot.public_url_slug}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                   
                   <Button 
                     variant="gradient"
                     onClick={() => setShowEmbedModal(true)}
+                    className="w-full"
                   >
                     <Code className="w-4 h-4 mr-2" />
-                    Get Full Embed Code
+                    Get Embed Code
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
+
+      case 'integrations':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Connect Your Tools</h3>
+              <p className="text-gray-600 text-sm">
+                Automatically send leads and conversation data to your business tools.
+              </p>
+            </div>
+
+            {/* HubSpot Integration Card */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <CardTitle>HubSpot Integration</CardTitle>
+                    <p className="text-sm text-gray-600">Send leads directly to HubSpot CRM</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Status Toggle */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Status:</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-500">Disabled</span>
+                      <div className="relative">
+                        <input type="checkbox" className="sr-only" />
+                        <div className="w-10 h-6 bg-gray-200 rounded-full shadow-inner cursor-pointer">
+                          <div className="w-4 h-4 bg-white rounded-full shadow transform translate-x-1 translate-y-1 transition-transform"></div>
+                        </div>
+                      </div>
+                      <span className="text-sm text-gray-500">Enabled</span>
+                    </div>
+                  </div>
+
+                  {/* HubSpot Form URL */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      HubSpot Form URL
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://forms.hubspot.com/uploads/form/v2/your-portal-id/your-form-guid"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      ℹ️ Paste your HubSpot form submission URL from your forms settings
+                    </p>
+                  </div>
+
+                  {/* Trigger Settings */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      When to Send Leads
+                    </label>
+                    <div className="space-y-2">
+                      <label className="flex items-center">
+                        <input type="radio" name="trigger" className="mr-2" defaultChecked />
+                        <span className="text-sm text-gray-700">When email is captured in conversation</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input type="radio" name="trigger" className="mr-2" disabled />
+                        <span className="text-sm text-gray-400">Send all conversations (Coming Soon)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex space-x-3 pt-4">
+                    <Button variant="outline" size="sm">
+                      Test Connection
+                    </Button>
+                    <Button variant="primary" size="sm">
+                      Save Settings
+                    </Button>
+                  </div>
+
+                  {/* Status */}
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                      <span className="text-sm text-gray-600">Not configured</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Future Integrations */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Coming Soon</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-gray-50 rounded-lg opacity-60">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <Zap className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Zoho CRM</p>
+                    <p className="text-xs text-gray-500">Coming Soon</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-gray-50 rounded-lg opacity-60">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <Zap className="w-4 h-4 text-green-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Salesforce</p>
+                    <p className="text-xs text-gray-500">Coming Soon</p>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-gray-50 rounded-lg opacity-60">
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <MessageSquare className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">Slack</p>
+                    <p className="text-xs text-gray-500">Coming Soon</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -348,52 +436,48 @@ export function ChatbotDetailsModal({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="w-full max-w-6xl mx-auto">
-          <div className="bg-white rounded-xl shadow-xl">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Chatbot Details
-                </h2>
-                <button
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      <Modal 
+        isOpen={isOpen} 
+        onClose={onClose} 
+        size="xl"
+        title="Chatbot Settings"
+        showCloseButton={false}
+      >
+        <div className="space-y-6">
+          {/* Tabs */}
+          <div className="flex flex-wrap gap-2 bg-gray-100 rounded-lg p-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-white text-primary-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <tab.icon className="w-4 h-4 flex-shrink-0" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
 
-              {/* Tabs */}
-              <div className="mt-4 flex space-x-1 bg-gray-100 rounded-lg p-1">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-white text-primary-700 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <tab.icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                ))}
+          {/* Content */}
+          <div className="min-h-[300px] max-h-[60vh] overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner className="w-8 h-8" />
               </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <LoadingSpinner className="w-8 h-8" />
-                </div>
-              ) : (
-                renderTabContent()
-              )}
-            </div>
+            ) : (
+              renderTabContent()
+            )}
+          </div>
+          
+          {/* Close Button */}
+          <div className="flex justify-end pt-4 border-t border-gray-200">
+            <Button variant="ghost" onClick={onClose}>
+              Close
+            </Button>
           </div>
         </div>
       </Modal>

@@ -202,6 +202,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                   disabled={loading}
                   error={hasFieldError('first_name')}
                   className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
+                  data-testid="first-name"
                 />
                 {hasFieldError('first_name') && (
                   <p className="text-xs text-error-600 animate-slide-down">
@@ -224,6 +225,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                   disabled={loading}
                   error={hasFieldError('last_name')}
                   className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
+                  data-testid="last-name"
                 />
                 {hasFieldError('last_name') && (
                   <p className="text-xs text-error-600 animate-slide-down">
@@ -248,6 +250,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 disabled={loading}
                 error={hasFieldError('email')}
                 className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
+                data-testid="email"
               />
               {hasFieldError('email') && (
                 <p className="text-xs text-error-600 animate-slide-down">
@@ -275,6 +278,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                   disabled={loading}
                   error={hasFieldError('password')}
                   className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
+                  data-testid="password"
                 />
                 {hasFieldError('password') && (
                   <p className="text-xs text-error-600 animate-slide-down">
@@ -338,6 +342,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 disabled={loading}
                 error={passwordsDontMatch ? true : undefined}
                 className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
+                data-testid="password-confirm"
               />
               
               {/* Password Match Indicator */}
@@ -366,6 +371,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               icon={<UserPlus size={18} />}
               className="w-full mt-8"
               disabled={loading}
+              data-testid="register-button"
             >
               {loading ? 'Creating your account...' : 'Create Account'}
             </Button>

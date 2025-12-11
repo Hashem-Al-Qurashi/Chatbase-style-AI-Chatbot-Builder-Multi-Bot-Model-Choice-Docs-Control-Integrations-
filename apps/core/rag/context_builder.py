@@ -350,7 +350,9 @@ class ContextBuilder:
             if citable_sources:
                 context_parts.append("CITABLE SOURCES (can be referenced):")
                 for i, source in enumerate(citable_sources, 1):
-                    context_parts.append(f"[CITABLE-{i}] {source.content}")
+                    # Truncate content for cleaner context (full content in citation)
+                    truncated_content = source.content[:500] + "..." if len(source.content) > 500 else source.content
+                    context_parts.append(f"[CITABLE-{i}] {truncated_content}")
             
             # Add private sources (for reasoning only, not citation)
             if include_private and private_sources:
@@ -465,10 +467,15 @@ class ContextBuilder:
         
         for source in context_data.citable_sources:
             if source.citation_text:
-                citations.append(source.citation_text)
+                # Truncate citation text to first 200 chars for readability
+                citation = source.citation_text[:200] + "..." if len(source.citation_text) > 200 else source.citation_text
+                citations.append(citation)
             else:
-                # Generate basic citation
-                citations.append(f"Source: {source.document_id}")
+                # Generate concise citation from content
+                content_preview = source.content[:150] + "..." if len(source.content) > 150 else source.content
+                # Clean up whitespace
+                content_preview = ' '.join(content_preview.split())
+                citations.append(content_preview)
         
         return citations
     

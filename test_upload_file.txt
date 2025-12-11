@@ -1,0 +1,10 @@
+This is a test file for validating the file upload functionality in the ChatbotWizard.
+
+The content includes:
+- File upload testing
+- Drag and drop validation
+- Multi-file support verification
+- File type validation
+- Privacy controls testing
+
+This file should be processed by the document processing service and stored in the knowledge base.

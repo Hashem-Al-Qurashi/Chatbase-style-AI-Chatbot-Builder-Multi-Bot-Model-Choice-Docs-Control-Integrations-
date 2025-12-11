@@ -45,12 +45,12 @@ class TextChunk:
 @dataclass
 class ChunkingConfig:
     """Configuration for text chunking."""
-    chunk_size: int = 1000
-    chunk_overlap: int = 200
+    chunk_size: int = 500  # Smaller chunks for more precise citations
+    chunk_overlap: int = 100  # Less overlap for cleaner citations
     strategy: ChunkingStrategy = ChunkingStrategy.RECURSIVE_CHARACTER
     preserve_structure: bool = True
     min_chunk_size: int = 100
-    max_chunk_size: int = 2000
+    max_chunk_size: int = 800  # Smaller max for better granularity
     token_model: str = "cl100k_base"  # GPT-3.5/4 tokenizer
     quality_threshold: float = 0.5
     

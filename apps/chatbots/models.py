@@ -91,6 +91,20 @@ class Chatbot(BaseModel):
         blank=True,
         help_text="Secret for webhook authentication"
     )
+    crm_enabled = models.BooleanField(
+        default=False,
+        help_text="Enable CRM integration for this chatbot"
+    )
+    crm_provider = models.CharField(
+        max_length=50,
+        default="hubspot",
+        choices=[
+            ("hubspot", "HubSpot"),
+            ("zoho", "Zoho CRM"),
+            ("salesforce", "Salesforce"),
+        ],
+        help_text="CRM provider type"
+    )
     
     # Status and metrics
     status = models.CharField(

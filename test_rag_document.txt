@@ -1,0 +1,44 @@
+UNIQUE TEST DOCUMENT FOR RAG VALIDATION
+
+Company: TestCorp Industries Inc.
+Product: QuantumWidget Pro 3000
+Launch Date: March 15, 2025
+Price: $1,299.99
+
+UNIQUE FEATURES:
+- HyperFlux Technology for 99.7% efficiency
+- BioCrystal Core with 500-year lifespan
+- AutoSync Pro with quantum entanglement
+- WeatherShield coating resistant to acid rain
+- ChronoLock mechanism prevents time dilation
+
+TARGET MARKET:
+Primary: Research laboratories and universities
+Secondary: Industrial manufacturing facilities  
+Tertiary: Advanced hobbyist makers
+
+TECHNICAL SPECIFICATIONS:
+- Processing Speed: 847 TeraOps per second
+- Memory Capacity: 128 ExaBytes
+- Power Consumption: 0.3 watts idle, 12.7 watts full load
+- Operating Temperature: -40°C to 180°C
+- Dimensions: 15.2cm x 8.7cm x 3.1cm
+- Weight: 234 grams
+
+UNIQUE SAFETY PROTOCOLS:
+- Emergency quantum decoherence button
+- Automatic shutdown at 95% temporal flux
+- Built-in radiation shielding using NanoLead-X
+- Tamper-proof quantum encryption keys
+
+CUSTOMER TESTIMONIALS:
+"The QuantumWidget Pro 3000 revolutionized our particle acceleration research." - Dr. Sarah Chen, MIT Physics Lab
+
+"Never seen anything like the HyperFlux efficiency ratings." - Marcus Rodriguez, Tesla Manufacturing
+
+CONTACT INFORMATION:
+Email: orders@testcorp-industries.com
+Phone: +1-555-QUANTUM (1-555-782-6886)
+Address: 1247 Innovation Drive, Silicon Valley, CA 94043
+
+This document contains UNIQUE identifiable content for testing RAG functionality and ensuring uploaded documents are actually used in AI responses.

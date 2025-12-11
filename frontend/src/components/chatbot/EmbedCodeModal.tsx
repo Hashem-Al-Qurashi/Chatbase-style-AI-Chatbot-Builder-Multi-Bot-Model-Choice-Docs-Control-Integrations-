@@ -18,7 +18,7 @@ export function EmbedCodeModal({ chatbot, isOpen, onClose }: EmbedCodeModalProps
   // Generate embed code based on type
   const getEmbedCode = () => {
     const baseUrl = window.location.origin
-    const chatbotId = chatbot.id
+    const chatbotSlug = chatbot.public_url_slug || chatbot.id
     
     if (embedType === 'bubble') {
       return `<!-- Chatbot Widget - ${chatbot.name} -->
@@ -26,8 +26,9 @@ export function EmbedCodeModal({ chatbot, isOpen, onClose }: EmbedCodeModalProps
   (function() {
     var script = document.createElement('script');
     script.src = '${baseUrl}/widget/chatbot-widget.js';
-    script.setAttribute('data-chatbot-id', '${chatbotId}');
+    script.setAttribute('data-chatbot-slug', '${chatbotSlug}');
     script.setAttribute('data-position', 'bottom-right');
+    script.setAttribute('data-primary-color', '#007bff');
     script.async = true;
     document.head.appendChild(script);
   })();
@@ -36,11 +37,12 @@ export function EmbedCodeModal({ chatbot, isOpen, onClose }: EmbedCodeModalProps
     } else {
       return `<!-- Inline Chatbot - ${chatbot.name} -->
 <iframe
-  src="${baseUrl}/embed/${chatbotId}"
+  src="${baseUrl}/widget/${chatbotSlug}"
   width="100%"
   height="600"
   frameborder="0"
   style="border: 1px solid #e5e7eb; border-radius: 8px;"
+  title="${chatbot.name} - AI Assistant"
 ></iframe>
 <!-- End Inline Chatbot -->`
     }

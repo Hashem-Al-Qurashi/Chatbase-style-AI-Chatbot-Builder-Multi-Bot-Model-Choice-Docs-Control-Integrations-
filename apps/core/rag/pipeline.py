@@ -152,7 +152,7 @@ class ConversationManager:
             conversation_id: Conversation ID
             role: Message role (user/assistant)
             content: Message content
-            sources_used: Sources used for the message
+            sources_used: Sources used for the message (for tracking, not stored directly)
             metadata: Additional metadata
         """
         try:
@@ -160,14 +160,22 @@ class ConversationManager:
             
             conversation = ConversationModel.objects.get(id=conversation_id)
             
+            # Get the next sequence number
+            last_message = Message.objects.filter(conversation=conversation).order_by('-sequence_number').first()
+            sequence_number = (last_message.sequence_number + 1) if last_message else 1
+            
             message = Message.objects.create(
                 conversation=conversation,
                 role=role,
                 content=content,
-                sources_used=sources_used or [],
-                metadata=metadata or {},
-                created_at=timezone.now()
+                sequence_number=sequence_number,
+                metadata=metadata or {}
             )
+            
+            # Update conversation's last activity
+            conversation.last_message_at = timezone.now()
+            conversation.message_count += 1
+            conversation.save()
             
             logger.debug(f"Added {role} message to conversation {conversation_id}")
             
@@ -314,33 +322,56 @@ class RAGPipeline:
                     self.chatbot_id, session_id, user_id
                 )
             
-            # Stage 1: Generate query embedding
-            stage_start = time.time()
-            query_embedding = await self._generate_embedding(user_query)
-            stage_times[RAGStage.EMBEDDING_GENERATION.value] = time.time() - stage_start
+            # Check if this is a simple greeting or query that doesn't need document context
+            is_simple_query = self._is_simple_query(user_query)
             
-            # Stage 2: Vector search with privacy filtering (Layer 1)
-            stage_start = time.time()
-            search_results = await self.vector_search.search(
-                query_embedding=query_embedding,
-                query_text=user_query,
-                user_id=user_id,
-                top_k=10,
-                filter_citable=False,  # Get both citable and private for context
-                score_threshold=0.7
-            )
-            stage_times[RAGStage.VECTOR_SEARCH.value] = time.time() - stage_start
-            
-            # Stage 3: Build context with privacy separation
-            stage_start = time.time()
-            context = self.context_builder.build_context(
-                search_results=search_results,
-                query=user_query,
-                include_private=True,  # Include private for reasoning, not citation
-                ranking_strategy=RankingStrategy.HYBRID,
-                enable_diversity=True
-            )
-            stage_times[RAGStage.CONTEXT_BUILDING.value] = time.time() - stage_start
+            if is_simple_query:
+                # Skip vector search for simple queries
+                logger.info(f"Simple query detected, skipping document search: '{user_query[:30]}...'")
+                query_embedding = None
+                search_results = []
+                context = ContextData(
+                    full_context="",
+                    citable_sources=[],
+                    private_sources=[],
+                    token_count=0,
+                    total_sources=0,
+                    citable_count=0,
+                    private_count=0,
+                    context_score=0.0,
+                    search_metadata={"skipped": True, "reason": "simple_query"}
+                )
+                stage_times[RAGStage.EMBEDDING_GENERATION.value] = 0
+                stage_times[RAGStage.VECTOR_SEARCH.value] = 0
+                stage_times[RAGStage.CONTEXT_BUILDING.value] = 0
+            else:
+                # Stage 1: Generate query embedding
+                stage_start = time.time()
+                query_embedding = await self._generate_embedding(user_query)
+                stage_times[RAGStage.EMBEDDING_GENERATION.value] = time.time() - stage_start
+                
+                # Stage 2: Vector search with privacy filtering (Layer 1)
+                stage_start = time.time()
+                search_results = await self.vector_search.search(
+                    query_embedding=query_embedding,
+                    query_text=user_query,
+                    user_id=user_id,
+                    top_k=10,
+                    filter_citable=False,  # Get both citable and private for context
+                    score_threshold=0.7
+                )
+                stage_times[RAGStage.VECTOR_SEARCH.value] = time.time() - stage_start
+                
+                # Stage 3: Build context with privacy separation
+                stage_start = time.time()
+                context = self.context_builder.build_context(
+                    search_results=search_results,
+                    query=user_query,
+                    include_private=True,  # Include private for reasoning, not citation
+                    ranking_strategy=RankingStrategy.HYBRID,
+                    enable_diversity=True
+                )
+                stage_times[RAGStage.CONTEXT_BUILDING.value] = time.time() - stage_start
             
             # Validate context privacy before proceeding
             context_validation = self.context_builder.validate_context_privacy(context)
@@ -483,9 +514,11 @@ class RAGPipeline:
         context: ContextData
     ):
         """Save messages to conversation history."""
+        from asgiref.sync import sync_to_async
+        
         try:
-            # Save user message
-            ConversationManager.add_message(
+            # Save user message using sync_to_async
+            await sync_to_async(ConversationManager.add_message)(
                 conversation_id=conversation_id,
                 role="user",
                 content=user_query
@@ -502,7 +535,7 @@ class RAGPipeline:
                 for source in context.citable_sources
             ]
             
-            ConversationManager.add_message(
+            await sync_to_async(ConversationManager.add_message)(
                 conversation_id=conversation_id,
                 role="assistant",
                 content=response,
@@ -514,9 +547,74 @@ class RAGPipeline:
                 }
             )
             
+            logger.info(f"Successfully saved conversation messages to {conversation_id}")
+            
         except Exception as e:
             logger.error(f"Failed to save conversation: {str(e)}")
             # Don't raise - conversation saving shouldn't break pipeline
+    
+    def _is_simple_query(self, query: str) -> bool:
+        """
+        Determine if a query is simple (greeting, chitchat) that doesn't need document context.
+        
+        Args:
+            query: User's query text
+            
+        Returns:
+            bool: True if query doesn't need document search
+        """
+        # Normalize query for checking
+        normalized_query = query.lower().strip()
+        
+        # Common greetings and simple phrases
+        simple_patterns = [
+            # Greetings
+            'hi', 'hello', 'hey', 'hi there', 'hello there', 'hey there',
+            'good morning', 'good afternoon', 'good evening', 'good day',
+            'greetings', 'howdy', 'hola', 'bonjour', 'namaste',
+            
+            # How are you variants
+            'how are you', 'how are you doing', 'how are you today',
+            'how do you do', "how's it going", "how are things",
+            'how have you been', "what's up", 'whats up', 'wassup',
+            
+            # Thank you variants
+            'thanks', 'thank you', 'thank you so much', 'thanks a lot',
+            'thx', 'ty', 'appreciate it', 'much appreciated',
+            
+            # Goodbye variants
+            'bye', 'goodbye', 'see you', 'see ya', 'later', 
+            'bye bye', 'farewell', 'take care', 'ttyl', 'gtg',
+            
+            # Simple acknowledgments
+            'ok', 'okay', 'alright', 'got it', 'understood',
+            'sure', 'yes', 'no', 'yeah', 'yep', 'nope',
+            'cool', 'great', 'nice', 'awesome', 'perfect',
+            
+            # Meta questions about the bot
+            'who are you', 'what are you', 'what can you do',
+            'can you help me', 'are you a bot', 'are you ai',
+            'what is your name', 'what are your capabilities'
+        ]
+        
+        # Check for exact matches
+        if normalized_query in simple_patterns:
+            return True
+        
+        # Check if query starts with greeting patterns
+        greeting_starters = ['hi ', 'hello ', 'hey ', 'thanks for', 'thank you for']
+        for starter in greeting_starters:
+            if normalized_query.startswith(starter) and len(normalized_query.split()) <= 5:
+                return True
+        
+        # Check if it's a very short query (likely not about documents)
+        if len(normalized_query.split()) <= 2 and not any(
+            keyword in normalized_query for keyword in 
+            ['what', 'where', 'when', 'who', 'why', 'how', 'explain', 'tell', 'show', 'find']
+        ):
+            return True
+        
+        return False
     
     def _calculate_response_quality(
         self,

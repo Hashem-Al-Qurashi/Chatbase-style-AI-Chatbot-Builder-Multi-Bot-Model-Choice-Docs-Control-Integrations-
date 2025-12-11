@@ -1,0 +1,15 @@
+CORRUPTION TEST CONTENT - UNIQUE IDENTIFIER 2025-10-24
+This is a test file to validate that the file content corruption bug is actually fixed.
+The content should be preserved during upload and processing.
+
+Key test phrases:
+- CORRUPTION_TEST_VALIDATION_SUCCESS
+- FILE_CONTENT_PRESERVATION_WORKING  
+- BUFFER_CONSUMPTION_BUG_FIXED
+- TEXT_EXTRACTION_WORKING_PROPERLY
+
+This content must appear in the knowledge chunks if the fix actually works.
+If this content is not found in the processed chunks, the bug is NOT fixed.
+
+Test timestamp: 2025-10-24T14:26:00Z
+Test ID: GRUMPY_TESTER_VALIDATION_001

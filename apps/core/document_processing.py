@@ -98,6 +98,43 @@ class PDFProcessor(DocumentProcessor):
         """Check if can process PDF."""
         return content_type == "application/pdf" or file_extension.lower() == ".pdf"
     
+    def _clean_pdf_text(self, text: str) -> str:
+        """Clean up common PDF extraction issues."""
+        # Fix missing spaces between words (common in PDFs)
+        # Look for lowercase letter followed by uppercase without space
+        text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+        
+        # Fix missing spaces after periods
+        text = re.sub(r'\.([A-Z])', r'. \1', text)
+        
+        # Fix ligature issues (fi, fl, etc.)
+        ligatures = {
+            'ﬁ': 'fi',
+            'ﬂ': 'fl',
+            'ﬀ': 'ff',
+            'ﬃ': 'ffi',
+            'ﬄ': 'ffl'
+        }
+        for lig, replacement in ligatures.items():
+            text = text.replace(lig, replacement)
+        
+        # Remove excessive whitespace but preserve paragraph breaks
+        lines = text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            # Clean up each line
+            line = ' '.join(line.split())  # Normalize whitespace
+            if line:  # Only add non-empty lines
+                cleaned_lines.append(line)
+        
+        # Rejoin with proper paragraph breaks
+        text = '\n'.join(cleaned_lines)
+        
+        # Ensure proper spacing after punctuation
+        text = re.sub(r'([.!?])([A-Za-z])', r'\1 \2', text)
+        
+        return text
+    
     def extract_content(
         self,
         file_content: bytes,
@@ -109,12 +146,15 @@ class PDFProcessor(DocumentProcessor):
             pdf_file = io.BytesIO(file_content)
             pdf_reader = PdfReader(pdf_file)
             
-            # Extract text from all pages
+            # Extract text from all pages with improved formatting
             text_parts = []
-            for page in pdf_reader.pages:
+            for page_num, page in enumerate(pdf_reader.pages, 1):
                 text = page.extract_text()
                 if text.strip():
-                    text_parts.append(text)
+                    # Clean up common PDF extraction issues
+                    text = self._clean_pdf_text(text)
+                    # Add page separator for better chunking
+                    text_parts.append(f"--- Page {page_num} ---\n{text}")
             
             full_text = "\n\n".join(text_parts)
             

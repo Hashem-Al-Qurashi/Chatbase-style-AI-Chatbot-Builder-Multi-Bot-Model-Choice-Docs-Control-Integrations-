@@ -1,0 +1,13 @@
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMzFmMzc2NTItYmY2Mi00Y2ZmLThiODctOGUwM2YxMGEwZGEyIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsInRva2VuX3R5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NjEzMTY5NTksImlhdCI6MTc2MTMxNjA1OSwianRpIjoiMWMyZGViYzgtZDhlZS00ZjY5LWI5NTEtOWNjYjZhNDc3NjBlIiwic2NvcGVzIjpbInJlYWQiLCJ3cml0ZSJdfQ.uGbhJjOJrER-S6DXoUVhb2C1r73efOXmdWhUxmyfvRU",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMzFmMzc2NTItYmY2Mi00Y2ZmLThiODctOGUwM2YxMGEwZGEyIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsInRva2VuX3R5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNzYxOTIwODU5LCJpYXQiOjE3NjEzMTYwNTksImp0aSI6IjhjMWRlMGIyLWMzYzMtNDAwNi1iMGI0LTlkZjRkZDk1MzdiMCIsInNjb3BlcyI6WyJyZWFkIiwid3JpdGUiXX0.OhxZlPuXN60X35zQtvguHJiCt2DB9F1kDlYpyHuB4pY",
+  "user": {
+    "id": "31f37652-bf62-4cff-8b87-8e03f10a0da2",
+    "email": "admin@test.com",
+    "first_name": "Admin",
+    "last_name": "User",
+    "is_active": true,
+    "date_joined": "2025-10-23T14:27:07.725109+00:00"
+  },
+  "expires_in": 900
+}
