@@ -9,8 +9,8 @@ from rest_framework.response import Response
 from rest_framework import status
 import os
 
-# Configure Stripe with activated test key
-stripe.api_key = 'settings.STRIPE_SECRET_KEY'
+# Configure Stripe with environment variable
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -21,21 +21,21 @@ def create_checkout_session(request):
     try:
         plan = request.data.get('plan', '').lower()
         
-        # Plan pricing (we'll create products on-demand)
+        # Plan pricing with actual Stripe price IDs
         plan_configs = {
             'hobby': {
                 'name': 'Hobby Plan',
-                'price': 4000,  # $40.00
+                'price_id': 'price_1SdXtbB38w53JGJyp1hyGgGd',  # $40/month
                 'description': 'For solo founders and small projects'
             },
             'standard': {
                 'name': 'Standard Plan', 
-                'price': 15000,  # $150.00
+                'price_id': 'price_1Sejb6B38w53JGJyAwxR2GXn',  # $150/month
                 'description': 'For small teams and growing businesses'
             },
             'pro': {
                 'name': 'Pro Plan',
-                'price': 50000,  # $500.00
+                'price_id': 'price_1Sejb7B38w53JGJyT66TJbhW',  # $500/month
                 'description': 'For businesses needing advanced features'
             }
         }
@@ -48,19 +48,11 @@ def create_checkout_session(request):
         
         config = plan_configs[plan]
         
-        # Create checkout session with inline pricing
+        # Create checkout session with actual price IDs
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': config['name'],
-                        'description': config['description']
-                    },
-                    'unit_amount': config['price'],
-                    'recurring': {'interval': 'month'},
-                },
+                'price': config['price_id'],
                 'quantity': 1,
             }],
             mode='subscription',
@@ -74,11 +66,18 @@ def create_checkout_session(request):
             }
         )
         
+        # Get price for display
+        price_amount = {
+            'hobby': 40,
+            'standard': 150, 
+            'pro': 500
+        }[plan]
+        
         return Response({
             'checkout_url': checkout_session.url,
             'session_id': checkout_session.id,
             'plan': plan,
-            'price': config['price'] / 100,
+            'price': price_amount,
             'success': True
         })
         
