@@ -223,24 +223,48 @@ def private_chat_message(request, chatbot_id):
     message = serializer.validated_data['message']
     conversation_id = serializer.validated_data.get('conversation_id')
     
-    # Check user's credit limits before processing (Chatbase style)
-    from apps.core.plan_limits import PlanLimitsService
-    from apps.core.usage_tracking import UsageTrackingService
+    # Use the new conversation engine
+    from apps.core.conversation_engine import ConversationEngine
     
-    model_name = getattr(chatbot.settings, 'model', 'gpt-3.5-turbo')
-    can_proceed, reason = PlanLimitsService.can_send_message(request.user, 
-        PlanLimitsService.get_credit_cost_for_model(model_name))
+    # Initialize conversation engine
+    engine = ConversationEngine(chatbot)
     
-    if not can_proceed:
+    # Process message with full intelligence
+    result = engine.process_message(
+        user=request.user,
+        message=message,
+        conversation_id=conversation_id
+    )
+    
+    if not result.get('success'):
         return Response({
-            'error': 'Insufficient credits',
-            'reason': reason,
+            'error': result.get('error', 'Message processing failed'),
+            'reason': result.get('reason', ''),
+            'details': result.get('details', ''),
             'credits_remaining': request.user.credits_remaining,
-            'suggested_plan': PlanLimitsService.get_upgrade_suggestion(request.user, 'more_credits'),
-            'upgrade_url': '/pricing/'
-        }, status=status.HTTP_402_PAYMENT_REQUIRED)
+            'suggested_plan': result.get('suggested_plan')
+        }, status=status.HTTP_402_PAYMENT_REQUIRED if 'credit' in result.get('error', '') else status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    # Get or create conversation
+    # Return successful response
+    return Response({
+        'response': result['response'],
+        'conversation_id': result['conversation_id'],
+        'message_id': result['message_id'],
+        'usage': {
+            'input_tokens': result.get('tokens_used', 0) - result.get('output_tokens', 0),
+            'output_tokens': result.get('output_tokens', 0),
+            'estimated_cost': result.get('tokens_used', 0) * 0.000002,  # Rough estimate
+            'credits_consumed': result.get('credits_consumed', 0),
+            'credits_remaining': result.get('credits_remaining', 0)
+        },
+        'performance': {
+            'processing_time': result.get('processing_time', 0),
+            'model_used': result.get('model_used', 'unknown'),
+            'conversation_length': result.get('conversation_length', 0)
+        }
+    })
+
+# OLD CODE BELOW - REMOVE AFTER VALIDATION
     conversation = None
     if conversation_id:
         try:

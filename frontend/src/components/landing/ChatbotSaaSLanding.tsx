@@ -24,6 +24,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { checkoutService } from '../../services/checkout';
 
 interface ChatMessage {
   role: 'bot' | 'user';
@@ -42,6 +43,11 @@ const ChatbotSaaSLanding = () => {
     { role: 'user', text: "What are your business hours?" },
     { role: 'bot', text: "We're open Monday-Friday, 9 AM to 6 PM EST. You can also reach us 24/7 through this chat!", source: "Business Hours Policy.pdf" }
   ]);
+
+  // Check for pending upgrade after login
+  useEffect(() => {
+    checkoutService.checkPendingUpgrade()
+  }, [])
 
   const handleDemoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -590,7 +596,7 @@ const ChatbotSaaSLanding = () => {
                 <Button 
                   variant="gradient"
                   className="w-full"
-                  onClick={() => window.location.href = '/subscription'}
+                  onClick={() => checkoutService.upgradeToHobby()}
                 >
                   Upgrade to Hobby
                 </Button>
@@ -650,6 +656,7 @@ const ChatbotSaaSLanding = () => {
                 <Button 
                   variant="elegant" 
                   className="w-full"
+                  onClick={() => checkoutService.upgradeToStandard()}
                 >
                   Upgrade to Standard
                 </Button>
@@ -709,6 +716,7 @@ const ChatbotSaaSLanding = () => {
                 <Button 
                   variant="elegant" 
                   className="w-full"
+                  onClick={() => checkoutService.upgradeToPro()}
                 >
                   Upgrade to Pro
                 </Button>

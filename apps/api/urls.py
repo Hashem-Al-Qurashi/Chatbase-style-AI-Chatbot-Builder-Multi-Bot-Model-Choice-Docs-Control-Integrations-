@@ -13,6 +13,8 @@ from apps.conversations.api_views import ConversationViewSet
 from apps.chatbots import crm_views
 from apps.billing.api_views_chatbase import PricingViewSet, BillingViewSet as ChatbaseBillingViewSet
 from apps.billing.checkout_views import create_checkout_session, get_checkout_plans
+from apps.billing.checkout_api import create_checkout_session as simple_checkout
+from apps.billing.webhook_handler import stripe_webhook
 
 # Placeholder ViewSets for other apps
 from rest_framework import viewsets
@@ -86,13 +88,13 @@ urlpatterns = [
     
     # Stripe checkout endpoints  
     path('checkout/', include([
-        path('create/', create_checkout_session, name='create_checkout'),
+        path('create/', simple_checkout, name='simple_checkout'),
         path('plans/', get_checkout_plans, name='checkout_plans'),
     ])),
     
     # Webhook endpoints
     path('webhooks/', include([
-        path('stripe/', lambda request: JsonResponse({'todo': 'implement_stripe_webhook'}), name='stripe_webhook'),
+        path('stripe/', stripe_webhook, name='stripe_webhook'),
         path('crm/', lambda request: JsonResponse({'todo': 'implement_crm_webhook'}), name='crm_webhook'),
     ])),
     

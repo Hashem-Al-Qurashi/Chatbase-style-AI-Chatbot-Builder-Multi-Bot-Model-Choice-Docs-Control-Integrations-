@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stripe Checkout Test</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <h1>Stripe Checkout Test</h1>
+    <button id="checkout-button">Test Hobby Plan Checkout ($40/month)</button>
+    
+    <script>
+        const stripe = Stripe('pk_test_51SdXqnB38w53JGJyXh5BHfklYjWbTyNhOGGxEHLRJ1klLRQPYPsxLtL1hBuRIEIFfrOCuwXeEEcb8wiX9DIav8wb00F2EAZ1za');
+        
+        document.getElementById('checkout-button').addEventListener('click', async () => {
+            // Redirect to checkout session
+            const sessionId = 'cs_test_a102JQ5oEv0vuLU7gRFjv4EcJ27zsE1Am1F66z0BMczx5PBMn2zxxyzqd7';
+            
+            const result = await stripe.redirectToCheckout({
+                sessionId: sessionId
+            });
+            
+            if (result.error) {
+                console.error(result.error.message);
+                alert('Error: ' + result.error.message);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -32,6 +32,11 @@ export function Dashboard() {
   useEffect(() => {
     loadChatbots()
     loadUserPlan()
+    
+    // Check for pending upgrade after login
+    import('../../services/checkout').then(({ checkoutService }) => {
+      checkoutService.checkPendingUpgrade()
+    })
   }, [])
 
   const loadUserPlan = async () => {
@@ -150,7 +155,7 @@ export function Dashboard() {
                       of {planLoading ? '...' : (userPlan?.message_credits || 50)}
                     </div>
                   </div>
-                  {userPlan.credits_remaining < 10 && (
+                  {userPlan && userPlan.credits_remaining < 10 && (
                     <div className="mt-2">
                       <Button 
                         size="sm" 
