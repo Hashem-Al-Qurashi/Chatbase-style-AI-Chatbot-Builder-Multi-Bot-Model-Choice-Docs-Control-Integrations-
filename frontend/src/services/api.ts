@@ -371,6 +371,17 @@ class ApiService {
     await this.request(`/chatbots/${id}/`, { method: 'DELETE' });
   }
 
+  async getChatbotSettings(id: string): Promise<any> {
+    return this.request<any>(`/chatbots/${id}/get_settings/`);
+  }
+
+  async updateChatbotSettings(id: string, data: { system_prompt?: string; response_guidelines?: string }): Promise<any> {
+    return this.request<any>(`/chatbots/${id}/update_settings/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Conversation methods
   async getConversations(chatbotId?: string): Promise<Conversation[]> {
     const params = chatbotId ? `?chatbot=${chatbotId}` : '';
@@ -438,6 +449,11 @@ class ApiService {
       conversation_id: response.conversation_id,
       sources: response.citations || response.sources || []
     };
+  }
+
+  // Generic GET method
+  async get<T>(endpoint: string, useAuthURL = false): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET' }, useAuthURL);
   }
 
   // Knowledge file upload method - STEP 1 FIX: Frontend API disconnect

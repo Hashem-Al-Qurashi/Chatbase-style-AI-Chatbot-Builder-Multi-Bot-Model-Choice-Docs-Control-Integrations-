@@ -90,14 +90,29 @@ export const checkoutService = {
       const data = await response.json()
       
       console.log(`✅ Checkout session created:`, data)
-      return data
+      
+      // Ensure response has success field
+      return {
+        ...data,
+        success: data.success !== undefined ? data.success : true
+      }
       
     } catch (error: any) {
       console.error('❌ Checkout creation failed:', error)
       
+      // Try to extract error message from response if available
+      let errorMessage = 'Failed to create checkout session'
+      if (error.message) {
+        errorMessage = error.message
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to create checkout session',
+        error: errorMessage,
         checkout_url: '',
         session_id: '',
         plan: plan,

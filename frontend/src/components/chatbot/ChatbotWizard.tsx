@@ -41,7 +41,8 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
     name: '',
     description: '',
     welcome_message: 'Hello! How can I help you today?',
-    personality: 'professional' // 'professional' or 'casual'
+    personality: 'professional', // 'professional' or 'casual'
+    system_prompt: '' // Custom instructions for the AI
   })
 
   // Step 2: Knowledge Sources
@@ -56,10 +57,13 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
         name: existingChatbot.name || '',
         description: existingChatbot.description || '',
         welcome_message: existingChatbot.welcome_message || 'Hello! How can I help you today?',
-        personality: 'professional' // Default since this is a new field
+        personality: 'professional', // Default since this is a new field
+        system_prompt: '' // Will be loaded from settings
       })
       // Load existing knowledge sources if available
       loadExistingKnowledgeSources(existingChatbot.id)
+      // Load existing settings (including system_prompt)
+      loadExistingSettings(existingChatbot.id)
     }
   }, [existingChatbot])
 
@@ -70,6 +74,17 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
       setKnowledgeSources([])
     } catch (err) {
       console.error('Failed to load knowledge sources:', err)
+    }
+  }
+
+  const loadExistingSettings = async (chatbotId: string) => {
+    try {
+      const settings = await apiService.getChatbotSettings(chatbotId)
+      if (settings?.system_prompt) {
+        setChatbotData(prev => ({ ...prev, system_prompt: settings.system_prompt }))
+      }
+    } catch (err) {
+      console.error('Failed to load chatbot settings:', err)
     }
   }
 
@@ -224,10 +239,22 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
         })
       }
 
-      // Step 2: Upload knowledge sources
+      // Step 2: Save custom instructions (system prompt) if provided
+      if (chatbotData.system_prompt.trim()) {
+        try {
+          await apiService.updateChatbotSettings(chatbotId, {
+            system_prompt: chatbotData.system_prompt
+          })
+          console.log('Saved custom instructions')
+        } catch (err) {
+          console.error('Failed to save custom instructions:', err)
+        }
+      }
+
+      // Step 3: Upload knowledge sources
       for (const source of knowledgeSources) {
         if (source.status === 'ready') continue // Skip already processed sources
-        
+
         try {
           if (source.type === 'file' && source.file) {
             // Upload file using the correct API method signature
@@ -386,6 +413,21 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                       </span>
                     </label>
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="system_prompt">Custom Instructions (Optional)</Label>
+                  <textarea
+                    id="system_prompt"
+                    value={chatbotData.system_prompt}
+                    onChange={(e) => setChatbotData(prev => ({ ...prev, system_prompt: e.target.value }))}
+                    placeholder="Add custom instructions for your chatbot. For example:&#10;- You are a helpful customer support agent for [Company Name]&#10;- Always be polite and professional&#10;- If you don't know the answer, say so&#10;- Focus on helping users with [specific topics]"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    rows={5}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    These instructions tell the AI how to behave and respond. Leave empty to use default behavior.
+                  </p>
                 </div>
               </div>
             )}
@@ -550,6 +592,13 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                     <p className="text-sm text-gray-600 mt-1">
                       <strong>Personality:</strong> {chatbotData.personality === 'casual' ? 'Casual' : 'Professional'}
                     </p>
+                    {chatbotData.system_prompt && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        <strong>Custom Instructions:</strong> {chatbotData.system_prompt.length > 100
+                          ? chatbotData.system_prompt.substring(0, 100) + '...'
+                          : chatbotData.system_prompt}
+                      </p>
+                    )}
                   </div>
 
                   {knowledgeSources.length > 0 && (

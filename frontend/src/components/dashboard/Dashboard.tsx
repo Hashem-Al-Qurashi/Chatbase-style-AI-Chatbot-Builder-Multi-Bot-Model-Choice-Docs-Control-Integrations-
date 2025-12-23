@@ -42,8 +42,9 @@ export function Dashboard() {
   const loadUserPlan = async () => {
     try {
       setPlanLoading(true)
-      const response = await apiService.get('/api/v1/billing/current_plan/')
-      setUserPlan(response.data.plan)
+      const response = await apiService.get('/billing/current_plan/')
+      // API returns data directly, not wrapped in data property
+      setUserPlan(response.plan || response.data?.plan)
     } catch (error) {
       console.error('Failed to load user plan:', error)
       // Set default plan info if API fails

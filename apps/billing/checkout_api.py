@@ -7,10 +7,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-import os
+from chatbot_saas.config import get_settings
 
-# Configure Stripe with environment variable
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -19,8 +17,12 @@ def create_checkout_session(request):
     Create Stripe checkout session for plan upgrade.
     """
     try:
+        # Configure Stripe API key at runtime to ensure settings are loaded
+        settings = get_settings()
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+
         plan = request.data.get('plan', '').lower()
-        
+
         # Plan pricing with actual Stripe price IDs
         plan_configs = {
             'hobby': {
@@ -45,14 +47,14 @@ def create_checkout_session(request):
                 'error': 'Invalid plan',
                 'valid_plans': list(plan_configs.keys())
             }, status=status.HTTP_400_BAD_REQUEST)
-        
-        config = plan_configs[plan]
-        
+
+        plan_config = plan_configs[plan]
+
         # Create checkout session with actual price IDs
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
-                'price': config['price_id'],
+                'price': plan_config['price_id'],
                 'quantity': 1,
             }],
             mode='subscription',
@@ -81,7 +83,32 @@ def create_checkout_session(request):
             'success': True
         })
         
+    except stripe.error.StripeError as e:
+        import structlog
+        logger = structlog.get_logger()
+        logger.error(
+            "Stripe checkout error",
+            error=str(e),
+            error_type=type(e).__name__,
+            user_email=request.user.email,
+            plan=plan
+        )
+        return Response({
+            'error': f'Stripe error: {str(e)}',
+            'success': False
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
+        import structlog
+        import traceback
+        logger = structlog.get_logger()
+        logger.error(
+            "Checkout session creation failed",
+            error=str(e),
+            error_type=type(e).__name__,
+            traceback=traceback.format_exc(),
+            user_email=request.user.email,
+            plan=plan
+        )
         return Response({
             'error': str(e),
             'success': False
