@@ -67,7 +67,7 @@ urlpatterns = [
     path('health/', lambda request: JsonResponse({'status': 'ok'}), name='health'),
     
     # Widget endpoints - Public API for embeddable widgets
-    path('widget/', include('widget.urls', namespace='widget')),
+    path('widget/', include('apps.widget.urls', namespace='widget')),
     
     # CRM integration endpoints
     path('chatbots/<uuid:chatbot_id>/crm/', include([
