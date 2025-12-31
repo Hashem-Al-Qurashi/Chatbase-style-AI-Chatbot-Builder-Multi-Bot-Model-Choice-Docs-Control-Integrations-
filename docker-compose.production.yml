@@ -1,0 +1,108 @@
+# READY-TO-RUN Docker Compose - Just run: docker-compose -f docker-compose.production.yml up
+# All configuration is baked in - no .env file needed!
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: chatava_db
+    environment:
+      POSTGRES_DB: chatbot_saas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: chatava_secure_db_2024
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chatbot_saas"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: chatava_redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Django Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: chatava_backend
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://postgres:chatava_secure_db_2024@db:5432/chatbot_saas
+
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+
+      # Django Settings
+      DEBUG: "True"
+      ENVIRONMENT: development
+      SECRET_KEY: chatava-production-secret-key-change-this-in-real-production
+
+      # OpenAI - REQUIRED
+      OPENAI_API_KEY: your-openai-api-key-here
+
+      # Stripe - REQUIRED for billing
+      STRIPE_PUBLISHABLE_KEY: your-stripe-publishable-key-here
+      STRIPE_SECRET_KEY: your-stripe-secret-key-here
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+
+      # JWT Authentication
+      JWT_SECRET_KEY: chatava-jwt-secret-key-for-token-signing
+
+      # Celery - run tasks synchronously (no separate worker needed)
+      CELERY_TASK_ALWAYS_EAGER: "True"
+      CELERY_TASK_EAGER_PROPAGATES: "True"
+
+      # Disabled features (no keys available)
+      PINECONE_API_KEY: ""
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      GOOGLE_OAUTH_CLIENT_ID: ""
+      GOOGLE_OAUTH_CLIENT_SECRET: ""
+
+      # Rate limiting off for development
+      ENABLE_RATE_LIMITING: "False"
+      ENABLE_CACHING: "True"
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: chatava_frontend
+    ports:
+      - "3005:3005"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  media_volume:
