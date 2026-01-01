@@ -19,7 +19,7 @@
     "cypress": "cypress open",
     "cypress:run": "cypress run",
     "test:features": "cypress run --spec 'cypress/e2e/subscription-features.cy.js'",
-    "test:subscription": "cypress open --e2e"
+    "test:subscription:cypress": "cypress open --e2e"
   },
   "keywords": [],
   "author": "",
