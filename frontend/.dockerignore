@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+yarn-error.log
+.git
+.gitignore
+dist
+build
+.env
+.env.local
+.env.*.local
+coverage
+.nyc_output
+playwright-report
+test-results
+cypress/videos
+cypress/screenshots

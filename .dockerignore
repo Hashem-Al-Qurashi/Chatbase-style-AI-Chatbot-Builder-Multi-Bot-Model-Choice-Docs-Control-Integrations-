@@ -33,6 +33,12 @@ env/
 ENV/
 .venv/
 
+# Node.js
+node_modules/
+frontend/node_modules/
+npm-debug.log
+yarn-error.log
+
 # IDE
 .vscode/
 .idea/
