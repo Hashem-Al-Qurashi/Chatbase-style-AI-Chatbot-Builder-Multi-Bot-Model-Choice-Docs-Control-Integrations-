@@ -15,10 +15,10 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = Field("development", env="ENVIRONMENT")
     DEBUG: bool = Field(True, env="DEBUG")
-    SECRET_KEY: str = Field(..., env="SECRET_KEY")
+    SECRET_KEY: str = Field("local-dev-secret-key-change-in-production", env="SECRET_KEY")
     
     # Database
-    DATABASE_URL: str = Field(..., env="DATABASE_URL")
+    DATABASE_URL: str = Field("sqlite:///db.sqlite3", env="DATABASE_URL")
     DATABASE_POOL_SIZE: int = Field(20, env="DATABASE_POOL_SIZE")
     DATABASE_TIMEOUT: int = Field(30, env="DATABASE_TIMEOUT")
     
@@ -31,20 +31,20 @@ class Settings(BaseSettings):
     OPENAI_TIMEOUT: int = Field(30, env="OPENAI_TIMEOUT")
     OPENAI_BASE_URL: str = Field("https://api.openai.com/v1", env="OPENAI_BASE_URL")
     
-    # Pinecone
-    PINECONE_API_KEY: str = Field(..., env="PINECONE_API_KEY")
+    # Pinecone (optional - for vector search)
+    PINECONE_API_KEY: str = Field("", env="PINECONE_API_KEY")
     PINECONE_ENVIRONMENT: str = Field("us-west1-gcp", env="PINECONE_ENVIRONMENT")
-    
-    # AWS S3
-    AWS_ACCESS_KEY_ID: str = Field(..., env="AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY: str = Field(..., env="AWS_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME: str = Field(..., env="AWS_STORAGE_BUCKET_NAME")
+
+    # AWS S3 (optional - for file storage)
+    AWS_ACCESS_KEY_ID: str = Field("", env="AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY: str = Field("", env="AWS_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME: str = Field("", env="AWS_STORAGE_BUCKET_NAME")
     AWS_S3_REGION_NAME: str = Field("us-east-1", env="AWS_S3_REGION_NAME")
     
-    # Stripe
-    STRIPE_PUBLISHABLE_KEY: str = Field(..., env="STRIPE_PUBLISHABLE_KEY")
-    STRIPE_SECRET_KEY: str = Field(..., env="STRIPE_SECRET_KEY")
-    STRIPE_WEBHOOK_SECRET: str = Field(..., env="STRIPE_WEBHOOK_SECRET")
+    # Stripe (use test keys for development)
+    STRIPE_PUBLISHABLE_KEY: str = Field("", env="STRIPE_PUBLISHABLE_KEY")
+    STRIPE_SECRET_KEY: str = Field("", env="STRIPE_SECRET_KEY")
+    STRIPE_WEBHOOK_SECRET: str = Field("", env="STRIPE_WEBHOOK_SECRET")
     
     # Celery / Redis
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", env="CELERY_BROKER_URL")
@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     CELERY_TASK_RETRY_DELAYS: str = Field("60,120,300", env="CELERY_TASK_RETRY_DELAYS")  # Retry delays in seconds
     
     # Security
-    JWT_SECRET_KEY: str = Field(..., env="JWT_SECRET_KEY")
+    JWT_SECRET_KEY: str = Field("local-jwt-secret-change-in-production", env="JWT_SECRET_KEY")
     JWT_ACCESS_TOKEN_LIFETIME: int = Field(900, env="JWT_ACCESS_TOKEN_LIFETIME")  # 15 minutes
     JWT_REFRESH_TOKEN_LIFETIME: int = Field(604800, env="JWT_REFRESH_TOKEN_LIFETIME")  # 7 days
     
