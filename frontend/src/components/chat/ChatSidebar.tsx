@@ -1,30 +1,53 @@
 import React, { useState } from 'react'
-import { 
+import { motion, AnimatePresence, Variants } from 'framer-motion'
+import {
   X,
   Zap,
   Code,
   Settings,
   BarChart3,
   Upload,
-  ChevronDown,
-  ChevronUp,
   Copy,
   Check,
   TestTube,
   Eye,
-  EyeOff
+  EyeOff,
+  CheckCircle,
+  AlertCircle,
+  Globe,
+  Sparkles
 } from 'lucide-react'
-import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
-import { Badge } from '../ui/Badge'
 import { apiService } from '../../services/api'
 import { Chatbot } from '../../types'
+
+// Stagger animation variants for panel content
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1
+    }
+  }
+}
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, x: 20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { type: 'spring', stiffness: 400, damping: 25 }
+  }
+}
+
+// ChatSidebar can accept either full Chatbot or minimal props
+type ChatbotProp = Chatbot | { id: string; name: string; description?: string }
 
 interface ChatSidebarProps {
   isOpen: boolean
   onClose: () => void
-  chatbot: Chatbot
+  chatbot: ChatbotProp
   onChatbotUpdate?: () => void
 }
 
@@ -33,24 +56,23 @@ type SidebarPanel = 'crm' | 'embed' | 'settings' | 'stats' | 'knowledge'
 export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatSidebarProps) {
   const [activePanel, setActivePanel] = useState<SidebarPanel>('crm')
   const [loading, setLoading] = useState(false)
-  
+
   // CRM State
   const [crmEnabled, setCrmEnabled] = useState(false)
   const [crmUrl, setCrmUrl] = useState('')
   const [crmApiKey, setCrmApiKey] = useState('')
   const [showApiKey, setShowApiKey] = useState(false)
   const [crmStatus, setCrmStatus] = useState<'not_configured' | 'configured' | 'testing'>('not_configured')
-  
+
   // Embed State
   const [embedCopied, setEmbedCopied] = useState(false)
   const [embedType, setEmbedType] = useState<'iframe' | 'script'>('iframe')
 
-  // Load CRM settings when sidebar opens
   const loadCrmSettings = async () => {
     if (!chatbot.id) return
-    
+
     try {
-      const response = await apiService.request(`/chatbots/${chatbot.id}/crm/settings/`)
+      const response = await (apiService as any).request(`/chatbots/${chatbot.id}/crm/settings/`)
       setCrmEnabled(response.crm_enabled || false)
       setCrmUrl(response.crm_webhook_url || '')
       setCrmStatus(response.status || 'not_configured')
@@ -59,13 +81,12 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
     }
   }
 
-  // Save CRM settings
   const saveCrmSettings = async () => {
     if (!chatbot.id) return
-    
+
     try {
       setLoading(true)
-      await apiService.request(`/chatbots/${chatbot.id}/crm/settings/`, {
+      await (apiService as any).request(`/chatbots/${chatbot.id}/crm/settings/`, {
         method: 'POST',
         body: JSON.stringify({
           crm_enabled: crmEnabled,
@@ -83,13 +104,12 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
     }
   }
 
-  // Test CRM connection
   const testCrmConnection = async () => {
     if (!chatbot.id || !crmUrl) return
-    
+
     try {
       setCrmStatus('testing')
-      const response = await apiService.request(`/chatbots/${chatbot.id}/crm/test/`, {
+      const response = await (apiService as any).request(`/chatbots/${chatbot.id}/crm/test/`, {
         method: 'POST',
         body: JSON.stringify({
           provider: 'hubspot',
@@ -97,7 +117,7 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
           api_key: crmApiKey
         })
       })
-      
+
       if (response.success) {
         setCrmStatus('configured')
         alert('Connection successful!')
@@ -112,18 +132,17 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
     }
   }
 
-  // Generate embed code
   const getEmbedCode = () => {
     const baseUrl = window.location.origin
-    const slug = chatbot.public_url_slug || chatbot.id
-    
+    const slug = ('public_url_slug' in chatbot && chatbot.public_url_slug) || chatbot.id
+
     if (embedType === 'iframe') {
       return `<iframe
   src="${baseUrl}/widget/${slug}"
   width="100%"
   height="600"
   frameborder="0"
-  style="border: 1px solid #e5e7eb; border-radius: 8px;"
+  style="border: 1px solid #1e293b; border-radius: 12px;"
   title="${chatbot.name} - AI Assistant"
 ></iframe>`
     } else {
@@ -147,11 +166,11 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
   }
 
   const panels = [
-    { id: 'crm' as SidebarPanel, label: 'CRM', icon: Zap, color: 'text-orange-600' },
-    { id: 'embed' as SidebarPanel, label: 'Embed', icon: Code, color: 'text-blue-600' },
-    { id: 'settings' as SidebarPanel, label: 'Settings', icon: Settings, color: 'text-gray-600' },
-    { id: 'stats' as SidebarPanel, label: 'Stats', icon: BarChart3, color: 'text-green-600' },
-    { id: 'knowledge' as SidebarPanel, label: 'Knowledge', icon: Upload, color: 'text-purple-600' }
+    { id: 'crm' as SidebarPanel, label: 'CRM', icon: Zap, color: 'text-amber-400' },
+    { id: 'embed' as SidebarPanel, label: 'Embed', icon: Code, color: 'text-cyan-400' },
+    { id: 'settings' as SidebarPanel, label: 'Settings', icon: Settings, color: 'text-slate-400' },
+    { id: 'stats' as SidebarPanel, label: 'Stats', icon: BarChart3, color: 'text-emerald-400' },
+    { id: 'knowledge' as SidebarPanel, label: 'Knowledge', icon: Upload, color: 'text-violet-400' }
   ]
 
   const renderPanelContent = () => {
@@ -159,60 +178,70 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
       case 'crm':
         return (
           <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">HubSpot Integration</h3>
-              <p className="text-sm text-gray-600">Automatically send leads to your CRM when emails are captured.</p>
-            </div>
+            <motion.div variants={itemVariants}>
+              <h3 className="font-semibold text-white mb-1">HubSpot Integration</h3>
+              <p className="text-xs text-slate-500">Automatically send leads to your CRM.</p>
+            </motion.div>
 
             {/* Enable Toggle */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Enable CRM</span>
-              <button
+            <motion.div
+              variants={itemVariants}
+              className="flex items-center justify-between p-4 bg-white/[0.04] rounded-xl border border-white/10 hover:bg-white/[0.06] transition-colors"
+            >
+              <span className="text-sm font-medium text-slate-300">Enable CRM</span>
+              <motion.button
                 onClick={() => setCrmEnabled(!crmEnabled)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  crmEnabled ? 'bg-primary-600' : 'bg-gray-200'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    crmEnabled ? 'translate-x-6' : 'translate-x-1'
+                whileTap={{ scale: 0.95 }}
+                className={`relative w-12 h-7 rounded-full transition-all duration-300 ${crmEnabled
+                  ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25'
+                  : 'bg-white/10'
                   }`}
+              >
+                <motion.span
+                  layout
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md ${crmEnabled ? 'left-6' : 'left-1'
+                    }`}
                 />
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
             {crmEnabled && (
-              <>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-4"
+              >
                 {/* HubSpot URL */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">
                     HubSpot Form URL
                   </label>
-                  <Input
+                  <input
                     type="url"
                     placeholder="https://forms.hubspot.com/..."
                     value={crmUrl}
                     onChange={(e) => setCrmUrl(e.target.value)}
-                    className="text-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50"
                   />
                 </div>
 
                 {/* API Key */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">
                     API Key (Optional)
                   </label>
                   <div className="relative">
-                    <Input
+                    <input
                       type={showApiKey ? "text" : "password"}
                       placeholder="Optional API key"
                       value={crmApiKey}
                       onChange={(e) => setCrmApiKey(e.target.value)}
-                      className="text-sm pr-10"
+                      className="w-full px-3 py-2 pr-10 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50"
                     />
                     <button
                       onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400"
                     >
                       {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -220,40 +249,35 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
                 </div>
 
                 {/* Actions */}
-                <div className="flex space-x-2">
-                  <Button
+                <div className="flex gap-2">
+                  <button
                     onClick={testCrmConnection}
-                    variant="outline"
-                    size="sm"
                     disabled={!crmUrl || crmStatus === 'testing'}
-                    className="flex-1"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-slate-300 hover:bg-white/10 disabled:opacity-50 transition-colors"
                   >
-                    <TestTube className="w-4 h-4 mr-1" />
+                    <TestTube className="w-4 h-4" />
                     {crmStatus === 'testing' ? 'Testing...' : 'Test'}
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={saveCrmSettings}
-                    variant="primary"
-                    size="sm"
                     disabled={loading}
-                    className="flex-1"
+                    className="flex-1 px-3 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 text-sm text-white font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
                   >
                     Save
-                  </Button>
+                  </button>
                 </div>
 
                 {/* Status */}
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    crmStatus === 'configured' ? 'bg-green-500' : 
-                    crmStatus === 'testing' ? 'bg-yellow-500' : 'bg-gray-400'
-                  }`} />
-                  <span className="text-sm text-gray-600">
-                    {crmStatus === 'configured' ? 'Connected' : 
-                     crmStatus === 'testing' ? 'Testing...' : 'Not configured'}
+                <div className="flex items-center gap-2 p-2 bg-white/5 rounded-lg">
+                  <div className={`w-2 h-2 rounded-full ${crmStatus === 'configured' ? 'bg-emerald-500' :
+                      crmStatus === 'testing' ? 'bg-amber-500 animate-pulse' : 'bg-slate-500'
+                    }`} />
+                  <span className="text-xs text-slate-400">
+                    {crmStatus === 'configured' ? 'Connected' :
+                      crmStatus === 'testing' ? 'Testing...' : 'Not configured'}
                   </span>
                 </div>
-              </>
+              </motion.div>
             )}
           </div>
         )
@@ -262,66 +286,59 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
         return (
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Embed Widget</h3>
-              <p className="text-sm text-gray-600">Copy this code to add the chatbot to any website.</p>
+              <h3 className="font-semibold text-white mb-1">Embed Widget</h3>
+              <p className="text-xs text-slate-500">Add this chatbot to any website.</p>
             </div>
 
-            {/* Widget Preview URL */}
+            {/* Widget URL */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">
                 Widget URL
               </label>
-              <div className="p-2 bg-gray-50 rounded border text-sm font-mono text-gray-800">
-                {window.location.origin}/widget/{chatbot.public_url_slug}
+              <div className="flex items-center gap-2 p-2.5 bg-white/5 rounded-lg border border-white/10">
+                <Globe className="w-4 h-4 text-slate-500" />
+                <code className="text-xs text-cyan-400 truncate flex-1">
+                  {window.location.origin}/widget/{('public_url_slug' in chatbot && chatbot.public_url_slug) || chatbot.id}
+                </code>
               </div>
             </div>
 
             {/* Embed Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-slate-400 mb-2">
                 Embed Type
               </label>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setEmbedType('iframe')}
-                  className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-colors ${
-                    embedType === 'iframe' 
-                      ? 'bg-primary-50 border-primary-200 text-primary-700' 
-                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  Iframe
-                </button>
-                <button
-                  onClick={() => setEmbedType('script')}
-                  className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-colors ${
-                    embedType === 'script' 
-                      ? 'bg-primary-50 border-primary-200 text-primary-700' 
-                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  Script
-                </button>
+              <div className="flex gap-2">
+                {['iframe', 'script'].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setEmbedType(type as 'iframe' | 'script')}
+                    className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-colors ${embedType === type
+                        ? 'bg-violet-500/20 border-violet-500/50 text-violet-300'
+                        : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+                      }`}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Embed Code */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">
                 Code
               </label>
               <div className="relative">
-                <pre className="bg-gray-900 text-gray-100 text-xs p-3 rounded-lg overflow-x-auto max-h-32">
+                <pre className="bg-slate-900 text-slate-300 text-xs p-3 rounded-xl border border-white/10 overflow-x-auto max-h-32">
                   <code>{getEmbedCode()}</code>
                 </pre>
-                <Button
+                <button
                   onClick={copyEmbedCode}
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 text-gray-400 hover:text-gray-200"
+                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/10 text-slate-400 hover:text-white hover:bg-white/20 transition-colors"
                 >
-                  {embedCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </Button>
+                  {embedCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                </button>
               </div>
             </div>
           </div>
@@ -331,36 +348,36 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
         return (
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Quick Settings</h3>
-              <p className="text-sm text-gray-600">Adjust chatbot behavior during testing.</p>
+              <h3 className="font-semibold text-white mb-1">Quick Settings</h3>
+              <p className="text-xs text-slate-500">View chatbot configuration.</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">
                 Bot Name
               </label>
-              <Input
+              <input
                 value={chatbot.name}
                 disabled
-                className="text-sm bg-gray-50"
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">
                 Description
               </label>
               <textarea
                 value={chatbot.description || ''}
                 disabled
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 resize-none"
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 text-sm resize-none"
                 rows={2}
               />
             </div>
 
-            <div className="pt-2">
-              <p className="text-xs text-gray-500">
-                💡 To edit settings, go to Dashboard → Chatbot Settings
+            <div className="p-3 bg-violet-500/10 rounded-xl border border-violet-500/20">
+              <p className="text-xs text-violet-300">
+                To edit settings, go to Dashboard → Chatbot Settings
               </p>
             </div>
           </div>
@@ -370,26 +387,32 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
         return (
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Live Stats</h3>
-              <p className="text-sm text-gray-600">Real-time chatbot performance metrics.</p>
+              <h3 className="font-semibold text-white mb-1">Live Stats</h3>
+              <p className="text-xs text-slate-500">Real-time performance metrics.</p>
             </div>
 
             <div className="grid grid-cols-1 gap-3">
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-gray-900">{chatbot.total_conversations || 0}</div>
-                <div className="text-xs text-gray-500">Conversations</div>
+              <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+                <div className="text-2xl font-bold text-white">{('total_conversations' in chatbot && chatbot.total_conversations) || 0}</div>
+                <div className="text-xs text-slate-500 mt-1">Conversations</div>
               </div>
-              
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-gray-900">{chatbot.total_messages || 0}</div>
-                <div className="text-xs text-gray-500">Messages</div>
+
+              <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+                <div className="text-2xl font-bold text-white">{('total_messages' in chatbot && chatbot.total_messages) || 0}</div>
+                <div className="text-xs text-slate-500 mt-1">Messages</div>
               </div>
-              
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-gray-900">
-                  {chatbot.status === 'ready' ? '✓' : '○'}
+
+              <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  {('status' in chatbot && (chatbot.status === 'active' || chatbot.status === 'completed')) ? (
+                    <CheckCircle className="w-6 h-6 text-emerald-400" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 text-amber-400" />
+                  )}
                 </div>
-                <div className="text-xs text-gray-500">Status</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {('status' in chatbot && (chatbot.status === 'active' || chatbot.status === 'completed')) ? 'Active' : ('status' in chatbot ? chatbot.status : 'Unknown')}
+                </div>
               </div>
             </div>
           </div>
@@ -399,22 +422,25 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
         return (
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Knowledge Base</h3>
-              <p className="text-sm text-gray-600">Documents and sources this bot can reference.</p>
+              <h3 className="font-semibold text-white mb-1">Knowledge Base</h3>
+              <p className="text-xs text-slate-500">Documents and sources available.</p>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Knowledge Sources:</span>
-                <Badge variant={chatbot.has_knowledge_sources ? 'success' : 'secondary'}>
-                  {chatbot.has_knowledge_sources ? 'Active' : 'None'}
-                </Badge>
+            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-300">Knowledge Sources</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${('has_knowledge_sources' in chatbot && chatbot.has_knowledge_sources)
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : 'bg-slate-500/20 text-slate-400'
+                  }`}>
+                  {('has_knowledge_sources' in chatbot && chatbot.has_knowledge_sources) ? 'Active' : 'None'}
+                </span>
               </div>
             </div>
 
-            <div className="pt-2">
-              <p className="text-xs text-gray-500">
-                💡 To manage knowledge sources, go to Dashboard → Knowledge Sources
+            <div className="p-3 bg-violet-500/10 rounded-xl border border-violet-500/20">
+              <p className="text-xs text-violet-300">
+                To manage knowledge sources, go to Dashboard → Knowledge Sources
               </p>
             </div>
           </div>
@@ -425,50 +451,102 @@ export function ChatSidebar({ isOpen, onClose, chatbot, onChatbotUpdate }: ChatS
     }
   }
 
-  // Load CRM settings when sidebar opens
   React.useEffect(() => {
     if (isOpen && activePanel === 'crm') {
       loadCrmSettings()
     }
   }, [isOpen, activePanel])
 
-  if (!isOpen) return null
-
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-80 bg-white border-l border-gray-200 shadow-lg z-10">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <h2 className="font-semibold text-gray-900">Quick Actions</h2>
-        <button
-          onClick={onClose}
-          className="p-1 text-gray-400 hover:text-gray-600 rounded"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Panel Navigation */}
-      <div className="flex overflow-x-auto p-2 border-b border-gray-200 bg-gray-50">
-        {panels.map((panel) => (
-          <button
-            key={panel.id}
-            onClick={() => setActivePanel(panel.id)}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-              activePanel === panel.id
-                ? 'bg-white text-primary-700 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop blur */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-950/20 backdrop-blur-sm z-10"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ x: 320, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 320, opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+            className="absolute right-0 top-0 bottom-0 w-80 bg-slate-900/95 backdrop-blur-xl border-l border-white/10 shadow-2xl shadow-slate-950/50 z-20"
           >
-            <panel.icon className={`w-4 h-4 ${panel.color}`} />
-            <span>{panel.label}</span>
-          </button>
-        ))}
-      </div>
+            {/* Ambient glow inside sidebar */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/10 rounded-full blur-[60px]" />
+              <div className="absolute -bottom-20 -left-20 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-[50px]" />
+            </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {renderPanelContent()}
-      </div>
-    </div>
+            {/* Header */}
+            <motion.div
+              initial={{ y: -10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="relative flex items-center justify-between px-4 py-4 border-b border-white/10 bg-gradient-to-r from-white/5 via-white/[0.07] to-white/5"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <h2 className="font-semibold text-white">Quick Actions</h2>
+              </div>
+              <motion.button
+                onClick={onClose}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </motion.button>
+            </motion.div>
+
+            {/* Panel Navigation */}
+            <div className="relative flex overflow-x-auto p-2 border-b border-white/10 bg-white/[0.03] gap-1 scrollbar-hide">
+              {panels.map((panel) => (
+                <motion.button
+                  key={panel.id}
+                  onClick={() => setActivePanel(panel.id)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`relative flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 whitespace-nowrap ${activePanel === panel.id
+                      ? 'bg-white/10 text-white shadow-lg'
+                      : 'text-slate-500 hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                  {activePanel === panel.id && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute inset-0 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 rounded-xl border border-violet-500/20"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <panel.icon className={`w-3.5 h-3.5 relative z-10 ${activePanel === panel.id ? panel.color : ''}`} />
+                  <span className="relative z-10">{panel.label}</span>
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div className="relative flex-1 overflow-y-auto p-4">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activePanel}
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                >
+                  {renderPanelContent()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   )
 }

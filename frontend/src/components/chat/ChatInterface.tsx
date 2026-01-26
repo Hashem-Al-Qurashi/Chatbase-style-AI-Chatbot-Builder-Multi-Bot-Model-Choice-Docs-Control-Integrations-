@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { 
-  Send, 
-  Bot, 
-  User, 
-  Loader2, 
+import { motion, AnimatePresence, Variants } from 'framer-motion'
+import {
+  Send,
+  Bot,
+  User,
+  Loader2,
   X,
   Minimize2,
   Paperclip,
@@ -12,15 +13,34 @@ import {
   AlertCircle,
   Upload,
   ChevronDown,
-  ChevronUp,
-  Menu
+  Menu,
+  Sparkles
 } from 'lucide-react'
-import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
 import { apiService } from '../../services/api'
 import { ChatSidebar } from './ChatSidebar'
+import { Chatbot, Conversation, Message as ApiMessage } from '../../types'
 
-interface Message {
+// Animation variants for premium micro-interactions
+const messageVariants: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 400,
+      damping: 30
+    }
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: { duration: 0.2 }
+  }
+}
+
+interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
@@ -32,6 +52,14 @@ interface Message {
   }>
 }
 
+// API response can be array or paginated
+interface PaginatedResponse<T> {
+  results: T[]
+  count?: number
+  next?: string | null
+  previous?: string | null
+}
+
 interface UploadedFile {
   id: string
   name: string
@@ -41,24 +69,23 @@ interface UploadedFile {
   error?: string
 }
 
+// ChatInterface can accept either full Chatbot or minimal props
+type ChatbotProp = Chatbot | { id: string; name: string; description?: string }
+
 interface ChatInterfaceProps {
-  chatbot?: {
-    id: string
-    name: string
-    description?: string
-  }
+  chatbot?: ChatbotProp
   onClose?: () => void
   isMinimized?: boolean
   onToggleMinimize?: () => void
 }
 
-export function ChatInterface({ 
-  chatbot, 
-  onClose, 
-  isMinimized, 
-  onToggleMinimize 
+export function ChatInterface({
+  chatbot,
+  onClose,
+  isMinimized,
+  onToggleMinimize
 }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingHistory, setIsLoadingHistory] = useState(true)
@@ -76,7 +103,6 @@ export function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // Load conversation history when component mounts
   useEffect(() => {
     if (chatbot?.id) {
       loadConversationHistory()
@@ -94,39 +120,35 @@ export function ChatInterface({
       setIsLoadingHistory(true)
       setError(null)
 
-      // Get existing conversations for this chatbot
-      const conversationsResponse = await apiService.getConversations(chatbot.id)
-      
-      // Handle paginated response
-      const conversations = Array.isArray(conversationsResponse) 
-        ? conversationsResponse 
-        : conversationsResponse.results || []
-      
+      const conversationsResponse = await apiService.getConversations(chatbot.id) as Conversation[] | PaginatedResponse<Conversation>
+      const conversations: Conversation[] = Array.isArray(conversationsResponse)
+        ? conversationsResponse
+        : (conversationsResponse as PaginatedResponse<Conversation>).results || []
+
       if (conversations && conversations.length > 0) {
-        // Get the most recent conversation
         const latestConversation = conversations[0]
         setCurrentConversationId(latestConversation.id)
-        
-        // Load messages from the latest conversation
+
         const conversationMessages = await apiService.getConversationMessages(latestConversation.id)
-        
+
         if (conversationMessages && conversationMessages.length > 0) {
-          // Convert API messages to component message format
-          const formattedMessages: Message[] = conversationMessages.map(msg => ({
+          const formattedMessages: ChatMessage[] = conversationMessages.map((msg: ApiMessage & { sources?: string[] }) => ({
             id: msg.id,
             role: msg.role as 'user' | 'assistant',
             content: msg.content,
             timestamp: new Date(msg.created_at),
-            sources: msg.sources || []
+            sources: (msg.sources || []).map((source, idx) => ({
+              id: idx.toString(),
+              title: typeof source === 'string' ? source : String(source),
+              url: undefined
+            }))
           }))
-          
+
           setMessages(formattedMessages)
         } else {
-          // No messages in conversation, add welcome message
           addWelcomeMessage()
         }
       } else {
-        // No existing conversations, add welcome message
         addWelcomeMessage()
       }
     } catch (err: any) {
@@ -139,7 +161,7 @@ export function ChatInterface({
   }
 
   const addWelcomeMessage = () => {
-    const welcomeMessage: Message = {
+    const welcomeMessage: ChatMessage = {
       id: 'welcome',
       role: 'assistant',
       content: `Hello! I'm ${chatbot?.name || 'your AI assistant'}. How can I help you today?`,
@@ -152,7 +174,7 @@ export function ChatInterface({
     e.preventDefault()
     if (!input.trim() || isLoading || !chatbot?.id) return
 
-    const userMessage: Message = {
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
       content: input.trim(),
@@ -169,20 +191,19 @@ export function ChatInterface({
         message: userMessage.content,
         conversation_id: currentConversationId || undefined
       })
-      
-      // Update conversation ID if this is a new conversation
+
       if (response.conversation_id && !currentConversationId) {
         setCurrentConversationId(response.conversation_id)
       }
-      
-      const assistantMessage: Message = {
+
+      const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response.response || 'No response generated',
         timestamp: new Date(),
-        sources: response.sources?.map((source, index) => ({
+        sources: response.sources?.map((source: any, index: number) => ({
           id: index.toString(),
-          title: source,
+          title: typeof source === 'string' ? source : String(source),
           url: undefined
         })) || []
       }
@@ -206,9 +227,9 @@ export function ChatInterface({
 
   const handleFileSelect = useCallback(async (files: FileList) => {
     if (!chatbot?.id) return
-    
+
     const fileArray = Array.from(files)
-    
+
     const newFiles: UploadedFile[] = fileArray.map(file => ({
       id: Date.now().toString() + Math.random().toString(36),
       name: file.name,
@@ -216,50 +237,50 @@ export function ChatInterface({
       status: 'uploading',
       progress: 0
     }))
-    
+
     setUploadedFiles(prev => [...prev, ...newFiles])
-    
+
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i]
       const uploadFile = newFiles[i]
-      
+
       try {
         await apiService.uploadKnowledgeFile(chatbot.id, file, {
           name: file.name,
           is_citable: true
         })
-        
-        setUploadedFiles(prev => 
-          prev.map(f => 
-            f.id === uploadFile.id 
+
+        setUploadedFiles(prev =>
+          prev.map(f =>
+            f.id === uploadFile.id
               ? { ...f, status: 'success', progress: 100 }
               : f
           )
         )
-        
-        const successMessage: Message = {
+
+        const successMessage: ChatMessage = {
           id: (Date.now() + i).toString(),
           role: 'assistant',
-          content: `✅ Successfully uploaded "${file.name}". The document has been processed and is now available for questions!`,
+          content: `Successfully uploaded "${file.name}". The document has been processed and is now available for questions!`,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, successMessage])
-        
+
       } catch (error: any) {
         console.error('File upload error:', error)
-        
-        setUploadedFiles(prev => 
-          prev.map(f => 
-            f.id === uploadFile.id 
+
+        setUploadedFiles(prev =>
+          prev.map(f =>
+            f.id === uploadFile.id
               ? { ...f, status: 'error', error: error.message || 'Upload failed' }
               : f
           )
         )
-        
-        const errorMessage: Message = {
+
+        const errorMessage: ChatMessage = {
           id: (Date.now() + i + 1000).toString(),
-          role: 'assistant', 
-          content: `❌ Failed to upload "${file.name}": ${error.message || 'Upload failed'}`,
+          role: 'assistant',
+          content: `Failed to upload "${file.name}": ${error.message || 'Upload failed'}`,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, errorMessage])
@@ -286,7 +307,7 @@ export function ChatInterface({
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileSelect(e.dataTransfer.files)
     }
@@ -306,310 +327,460 @@ export function ChatInterface({
 
   if (isMinimized) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+        className="fixed bottom-6 right-6 z-50"
+      >
+        <motion.button
           onClick={onToggleMinimize}
-          className="w-14 h-14 rounded-full bg-gray-900 hover:bg-gray-800 text-white shadow-lg"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          animate={{
+            boxShadow: [
+              '0 0 20px rgba(139, 92, 246, 0.3)',
+              '0 0 40px rgba(139, 92, 246, 0.5)',
+              '0 0 20px rgba(139, 92, 246, 0.3)'
+            ]
+          }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-violet-600 text-white shadow-2xl shadow-violet-500/40 flex items-center justify-center group overflow-hidden"
         >
-          <Bot className="w-6 h-6" />
-        </Button>
-      </div>
+          {/* Shimmer effect */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            animate={{ x: ['-200%', '200%'] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+          />
+          <Bot className="w-7 h-7 relative z-10" />
+          {/* Notification dot */}
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-950 flex items-center justify-center">
+            <span className="w-2 h-2 bg-emerald-300 rounded-full animate-ping" />
+          </span>
+        </motion.button>
+      </motion.div>
     )
   }
 
   return (
-    <div 
-      className={`relative flex flex-col h-full ${
-        isDragOver ? 'bg-blue-50/30' : ''
-      }`}
+    <div
+      className={`relative flex flex-col h-full bg-slate-950 ${isDragOver ? 'ring-2 ring-violet-500/50' : ''
+        }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Modern Background with Journal Texture */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100" />
-      <div 
-        className="absolute inset-0 bg-dot-pattern opacity-50"
-        style={{
-          backgroundSize: '24px 24px'
-        }}
-      />
-      
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-br from-primary-400/20 to-accent-400/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute -top-20 -right-40 w-96 h-96 bg-gradient-to-br from-accent-400/15 to-primary-400/15 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}} />
-        <div className="absolute -bottom-40 -left-20 w-96 h-96 bg-gradient-to-br from-primary-400/10 to-accent-400/10 rounded-full blur-3xl animate-float" style={{animationDelay: '4s'}} />
-        <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-gradient-to-br from-accent-300/20 to-primary-300/20 rounded-full blur-2xl animate-pulse-gentle" />
+      {/* Ambient Background Effects - Premium layered glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Primary violet glow - top left */}
+        <motion.div
+          className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-violet-500/8 rounded-full blur-[120px]"
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.8, 1, 0.8],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        {/* Secondary fuchsia glow - bottom right */}
+        <motion.div
+          className="absolute -bottom-20 -right-20 w-[400px] h-[400px] bg-fuchsia-500/8 rounded-full blur-[100px]"
+          animate={{
+            scale: [1.1, 1, 1.1],
+            opacity: [0.6, 0.9, 0.6],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+        />
+        {/* Tertiary cyan accent - center */}
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-cyan-500/5 rounded-full blur-[150px]"
+          animate={{
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+        />
+        {/* Subtle grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+            backgroundSize: '60px 60px'
+          }}
+        />
       </div>
 
       {/* Content */}
       <div className="relative z-10 flex h-full">
         {/* Main Chat Area */}
         <div className="flex flex-col flex-1">
-          {/* Chatbase-style Header - Very Minimal */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
+          {/* Header - Premium glass morphism */}
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-gradient-to-r from-white/5 via-white/[0.07] to-white/5 backdrop-blur-xl"
+          >
+            <div className="flex items-center gap-4">
+              {/* Animated bot avatar */}
+              <motion.div
+                whileHover={{ scale: 1.05, rotate: 5 }}
+                className="relative w-12 h-12 bg-gradient-to-br from-violet-500 via-fuchsia-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-xl shadow-violet-500/30"
+              >
+                <Bot className="w-6 h-6 text-white" />
+                {/* Status ring */}
+                <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-slate-950 rounded-full flex items-center justify-center">
+                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+                </span>
+              </motion.div>
+              <div>
+                <h2 className="font-semibold text-white text-lg tracking-tight">
+                  {chatbot?.name || 'AI Assistant'}
+                </h2>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                    Online
+                  </span>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-xs text-slate-500">Ready to help</span>
+                </div>
               </div>
-              <span className="font-medium text-gray-900">
-                {chatbot?.name || 'AI Assistant'}
-              </span>
             </div>
-            
-            <div className="flex items-center space-x-1">
-              {/* Sidebar Toggle */}
-              <button
+
+            <div className="flex items-center gap-1">
+              <motion.button
                 onClick={() => setShowSidebar(!showSidebar)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`p-2.5 rounded-xl transition-all duration-200 ${showSidebar
+                  ? 'bg-violet-500/20 text-violet-400 ring-1 ring-violet-500/30'
+                  : 'text-slate-500 hover:text-white hover:bg-white/10'
+                  }`}
                 title="Quick Actions"
               >
-                <Menu className="w-4 h-4 text-gray-500" />
-              </button>
-              
+                <Menu className="w-5 h-5" />
+              </motion.button>
+
               {onToggleMinimize && (
-                <button
+                <motion.button
                   onClick={onToggleMinimize}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-2.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
                 >
-                  <Minimize2 className="w-4 h-4 text-gray-500" />
-                </button>
+                  <Minimize2 className="w-5 h-5" />
+                </motion.button>
               )}
               {onClose && (
-                <button
+                <motion.button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-2.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all duration-200"
                 >
-                  <X className="w-4 h-4 text-gray-500" />
-                </button>
+                  <X className="w-5 h-5" />
+                </motion.button>
               )}
             </div>
-          </div>
+          </motion.div>
 
-          {/* Messages - ChatGPT-like Layout */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
-          {/* Loading conversation history */}
-          {isLoadingHistory && (
-            <div className="flex items-center justify-center py-8">
-              <div className="flex items-center space-x-3">
-                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                <span className="text-gray-500">Loading conversation history...</span>
-              </div>
-            </div>
-          )}
-          
           {/* Messages */}
-          {!isLoadingHistory && messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex items-start space-x-4 ${
-                message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-              }`}
-            >
-              {/* Avatar */}
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                message.role === 'user' 
-                  ? 'bg-blue-500'
-                  : 'bg-gray-900'
-              }`}>
-                {message.role === 'user' ? (
-                  <User className="w-4 h-4 text-white" />
-                ) : (
-                  <Bot className="w-4 h-4 text-white" />
-                )}
-              </div>
-
-              {/* Message Content */}
-              <div className="flex-1 max-w-2xl">
-                <div className={`p-4 rounded-lg ${
-                  message.role === 'user' 
-                    ? 'bg-blue-50 ml-12' 
-                    : 'bg-gray-50'
-                }`}>
-                  <p className="text-gray-800 whitespace-pre-wrap">
-                    {message.content}
-                  </p>
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+              {/* Loading History */}
+              {isLoadingHistory && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
+                    <span className="text-slate-500">Loading conversation...</span>
+                  </div>
                 </div>
+              )}
 
-                {/* Sources Button */}
-                {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
-                  <div className="px-4">
-                    <button
-                      onClick={() => toggleSources(message.id)}
-                      className="inline-flex items-center space-x-1 mt-2 text-sm text-gray-600 hover:text-gray-800 transition-colors group"
+              {/* Messages */}
+              <AnimatePresence mode="popLayout">
+                {!isLoadingHistory && messages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    variants={messageVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    layout
+                    className={`flex items-start gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
+                  >
+                    {/* Avatar with hover effect */}
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg ${message.role === 'user'
+                        ? 'bg-gradient-to-br from-cyan-500 via-blue-500 to-cyan-600 shadow-cyan-500/25'
+                        : 'bg-gradient-to-br from-violet-500 via-fuchsia-500 to-violet-600 shadow-violet-500/25'
+                      }`}
                     >
-                      <span className="text-xs">
-                        {message.sources.length} source{message.sources.length > 1 ? 's' : ''}
-                      </span>
-                      {expandedSources.has(message.id) ? (
-                        <ChevronUp className="w-3 h-3 group-hover:text-gray-700" />
+                      {message.role === 'user' ? (
+                        <User className="w-4 h-4 text-white" />
                       ) : (
-                        <ChevronDown className="w-3 h-3 group-hover:text-gray-700" />
+                        <Bot className="w-4 h-4 text-white" />
                       )}
-                    </button>
+                    </motion.div>
 
-                    {/* Expandable Sources */}
-                    {expandedSources.has(message.id) && (
-                      <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 transform transition-all duration-200 ease-out">
-                        <div className="space-y-2">
-                          {message.sources.map((source) => (
-                            <div key={source.id} className="flex items-start space-x-2 text-sm">
-                              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 flex-shrink-0" />
-                              <div className="flex-1">
-                                <p className="text-gray-700 leading-relaxed">
-                                  {source.title}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                    {/* Message Content */}
+                    <div className={`flex-1 max-w-[80%] ${message.role === 'user' ? 'text-right' : ''}`}>
+                      <motion.div
+                        whileHover={{ scale: 1.01 }}
+                        className={`inline-block p-4 rounded-2xl relative overflow-hidden ${message.role === 'user'
+                          ? 'bg-gradient-to-br from-violet-500 via-fuchsia-500 to-violet-600 text-white shadow-lg shadow-violet-500/20'
+                          : 'bg-white/[0.06] border border-white/10 text-slate-200 backdrop-blur-sm'
+                        }`}
+                      >
+                        {/* Subtle inner glow for assistant messages */}
+                        {message.role === 'assistant' && (
+                          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-fuchsia-500/5 pointer-events-none" />
+                        )}
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed relative z-10">
+                          {message.content}
+                        </p>
+                      </motion.div>
+
+                      {/* Sources - Enhanced */}
+                      {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.3 }}
+                          className="mt-2"
+                        >
+                          <motion.button
+                            onClick={() => toggleSources(message.id)}
+                            whileHover={{ scale: 1.02 }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-500/10 text-xs text-violet-400 hover:bg-violet-500/15 transition-colors"
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            <span>{message.sources.length} source{message.sources.length > 1 ? 's' : ''}</span>
+                            <motion.span
+                              animate={{ rotate: expandedSources.has(message.id) ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <ChevronDown className="w-3 h-3" />
+                            </motion.span>
+                          </motion.button>
+
+                          <AnimatePresence>
+                            {expandedSources.has(message.id) && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0, y: -10 }}
+                                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                                exit={{ opacity: 0, height: 0, y: -10 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                                className="mt-2 p-3 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm"
+                              >
+                                <div className="space-y-2">
+                                  {message.sources.map((source, idx) => (
+                                    <motion.div
+                                      key={source.id}
+                                      initial={{ opacity: 0, x: -10 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: idx * 0.05 }}
+                                      className="flex items-start gap-2 text-xs group"
+                                    >
+                                      <div className="w-1.5 h-1.5 bg-gradient-to-r from-violet-400 to-fuchsia-400 rounded-full mt-1.5 flex-shrink-0 group-hover:scale-125 transition-transform" />
+                                      <p className="text-slate-400 group-hover:text-slate-300 transition-colors">{source.title}</p>
+                                    </motion.div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
+                      )}
+
+                      <p className="text-[10px] text-slate-600 mt-2 font-medium">
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {/* Loading Indicator - Premium thinking animation */}
+              {isLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  className="flex items-start gap-3"
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-9 h-9 bg-gradient-to-br from-violet-500 via-fuchsia-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/25"
+                  >
+                    <Bot className="w-4 h-4 text-white" />
+                  </motion.div>
+                  <div className="p-4 rounded-2xl bg-white/[0.06] border border-white/10 backdrop-blur-sm">
+                    <div className="flex items-center gap-3">
+                      {/* Animated thinking dots */}
+                      <div className="flex gap-1.5">
+                        {[0, 1, 2].map((i) => (
+                          <motion.div
+                            key={i}
+                            className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-violet-400 to-fuchsia-400"
+                            animate={{
+                              y: [-2, 2, -2],
+                              opacity: [0.5, 1, 0.5],
+                              scale: [0.9, 1.1, 0.9],
+                            }}
+                            transition={{
+                              duration: 0.8,
+                              repeat: Infinity,
+                              delay: i * 0.15,
+                              ease: 'easeInOut',
+                            }}
+                          />
+                        ))}
                       </div>
-                    )}
+                      <span className="text-sm text-slate-400 font-medium">
+                        <motion.span
+                          animate={{ opacity: [1, 0.5, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                          Thinking...
+                        </motion.span>
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* File Upload Area */}
+          <AnimatePresence>
+            {showFileUpload && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="border-t border-white/10 p-4 bg-white/5"
+              >
+                <div
+                  className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${isDragOver
+                      ? 'border-violet-500 bg-violet-500/10'
+                      : 'border-white/20 hover:border-violet-500/50 bg-white/5'
+                    }`}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragOver ? 'text-violet-400' : 'text-slate-500'}`} />
+                  <p className="text-sm text-slate-400 mb-1">
+                    Drop files here or <span className="text-violet-400 font-medium">browse</span>
+                  </p>
+                  <p className="text-xs text-slate-600">PDF, DOC, TXT files supported</p>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.txt,.md"
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                />
+
+                {uploadedFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {uploadedFiles.map((file) => (
+                      <div key={file.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${file.status === 'success' ? 'bg-emerald-500/20' :
+                              file.status === 'error' ? 'bg-rose-500/20' : 'bg-violet-500/20'
+                            }`}>
+                            {file.status === 'success' ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            ) : file.status === 'error' ? (
+                              <AlertCircle className="w-4 h-4 text-rose-400" />
+                            ) : (
+                              <File className="w-4 h-4 text-violet-400" />
+                            )}
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-medium text-white">{file.name}</p>
+                            <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+                          </div>
+                        </div>
+
+                        {file.status === 'uploading' && (
+                          <span className="text-xs text-violet-400">{file.progress}%</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
-                
-                <div className="text-xs text-gray-400 mt-2 px-4">
-                  {message.timestamp.toLocaleTimeString()}
-                </div>
-              </div>
-            </div>
-          ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="flex items-start space-x-4">
-              <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 max-w-2xl">
-                <div className="p-4 rounded-lg bg-gray-50">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                    </div>
-                    <span className="text-gray-600 text-sm">Thinking...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-        </div>
-
-        {/* File Upload Area */}
-        {showFileUpload && (
-        <div className="border-t border-gray-200 p-4 bg-gray-50">
-          <div 
-            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-              isDragOver 
-                ? 'border-blue-300 bg-blue-50' 
-                : 'border-gray-300 hover:border-blue-300'
-            }`}
-            onClick={() => fileInputRef.current?.click()}
+          {/* Input Area - Premium glass morphism */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="p-4 border-t border-white/10 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent backdrop-blur-xl"
           >
-            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-            <p className="text-sm text-gray-600 mb-1">
-              Drop files here or <span className="text-blue-500 cursor-pointer font-medium">browse</span>
-            </p>
-            <p className="text-xs text-gray-500">PDF, DOC, TXT files supported</p>
-          </div>
-          
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".pdf,.doc,.docx,.txt,.md"
-            onChange={handleFileInputChange}
-            className="hidden"
-          />
-          
-          {uploadedFiles.length > 0 && (
-            <div className="mt-4 space-y-2">
-              {uploadedFiles.map((file) => (
-                <div key={file.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                      file.status === 'success' ? 'bg-green-100' : 
-                      file.status === 'error' ? 'bg-red-100' : 'bg-blue-100'
-                    }`}>
-                      {file.status === 'success' ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      ) : file.status === 'error' ? (
-                        <AlertCircle className="w-4 h-4 text-red-600" />
-                      ) : (
-                        <File className="w-4 h-4 text-blue-600" />
-                      )}
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                      <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                    </div>
-                  </div>
-                  
-                  {file.status === 'uploading' && (
-                    <div className="text-xs text-blue-600">{file.progress}%</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        )}
-
-          {/* Input Area - ChatGPT Style */}
-          <div className="p-4 border-t border-gray-200">
             <div className="max-w-3xl mx-auto">
               <form onSubmit={handleSubmit}>
-                <div className="flex items-end space-x-3">
-                  <button
+                <div className="flex items-end gap-3">
+                  <motion.button
                     type="button"
                     onClick={() => setShowFileUpload(!showFileUpload)}
-                    className={`p-3 rounded-lg transition-colors ${
-                      showFileUpload 
-                        ? 'bg-gray-200 text-gray-700' 
-                        : 'hover:bg-gray-100 text-gray-500'
-                    }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`p-3 rounded-xl transition-all duration-200 ${showFileUpload
+                        ? 'bg-violet-500/20 text-violet-400 ring-1 ring-violet-500/30'
+                        : 'bg-white/5 text-slate-500 hover:text-white hover:bg-white/10 border border-white/10'
+                      }`}
                   >
                     <Paperclip className="w-5 h-5" />
-                  </button>
-                  
-                  <div className="flex-1 relative">
-                    <Input
+                  </motion.button>
+
+                  <div className="flex-1 relative group">
+                    {/* Input glow effect on focus */}
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500/0 via-violet-500/0 to-fuchsia-500/0 rounded-xl blur opacity-0 group-focus-within:opacity-50 group-focus-within:from-violet-500/30 group-focus-within:to-fuchsia-500/30 transition-all duration-300" />
+                    <input
                       type="text"
-                      placeholder="Message"
+                      placeholder="Type your message..."
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       disabled={isLoading}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                      className="relative w-full px-5 py-3.5 pr-14 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all duration-200 disabled:opacity-50"
                     />
-                    
-                    <button
+
+                    <motion.button
                       type="submit"
                       disabled={!input.trim() || isLoading}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      whileHover={{ scale: input.trim() && !isLoading ? 1.05 : 1 }}
+                      whileTap={{ scale: input.trim() && !isLoading ? 0.95 : 1 }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-600 text-white rounded-lg shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-200"
                     >
                       {isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Send className="w-4 h-4" />
                       )}
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
               </form>
-              
-              <p className="text-xs text-gray-500 text-center mt-2">
-                AI can make mistakes. Check important info.
-              </p>
+
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <div className="w-1 h-1 rounded-full bg-slate-700" />
+                <p className="text-[10px] text-slate-600 font-medium">
+                  AI can make mistakes. Verify important information.
+                </p>
+                <div className="w-1 h-1 rounded-full bg-slate-700" />
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Sidebar */}
@@ -619,7 +790,6 @@ export function ChatInterface({
             onClose={() => setShowSidebar(false)}
             chatbot={chatbot}
             onChatbotUpdate={() => {
-              // Refresh chatbot data if needed
               console.log('Chatbot updated via sidebar')
             }}
           />
@@ -627,32 +797,49 @@ export function ChatInterface({
       </div>
 
       {/* Drag Overlay */}
-      {isDragOver && (
-        <div className="absolute inset-0 bg-blue-50/80 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 shadow-lg border text-center">
-            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mx-auto mb-3">
-              <Upload className="w-6 h-6 text-white" />
+      <AnimatePresence>
+        {isDragOver && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-slate-950/90 flex items-center justify-center z-50"
+          >
+            <div className="bg-white/5 rounded-2xl p-8 border-2 border-dashed border-violet-500 text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Upload className="w-8 h-8 text-white" />
+              </div>
+              <p className="font-semibold text-white mb-1">Drop files to upload</p>
+              <p className="text-sm text-slate-400">Add knowledge to your chatbot</p>
             </div>
-            <p className="font-medium text-gray-900 mb-1">Drop files to upload</p>
-            <p className="text-sm text-gray-600">Add knowledge to your chatbot</p>
-          </div>
-        </div>
-      )}
-      
-      {/* Error message */}
-      {error && (
-        <div className="p-4 bg-red-50 border-t border-red-200">
-          <div className="max-w-3xl mx-auto flex items-center justify-between">
-            <p className="text-sm text-red-700">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-700 p-1"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error Message */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute bottom-20 left-4 right-4 z-50"
+          >
+            <div className="max-w-3xl mx-auto p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400" />
+                <p className="text-sm text-rose-400">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="p-1 text-rose-400 hover:text-rose-300 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

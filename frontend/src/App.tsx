@@ -31,51 +31,53 @@ function AuthPage() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Modern Background with Journal Texture */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100" />
-      <div 
-        className="absolute inset-0 bg-dot-pattern opacity-50"
+    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+      {/* Ambient Background Effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-violet-500/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-fuchsia-500/15 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 rounded-full blur-[150px]" />
+      </div>
+
+      {/* Grid Pattern Overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-[0.02]"
         style={{
-          backgroundSize: '24px 24px'
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '50px 50px'
         }}
       />
-      
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-br from-primary-400/20 to-accent-400/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute -top-20 -right-40 w-96 h-96 bg-gradient-to-br from-accent-400/15 to-primary-400/15 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}} />
-        <div className="absolute -bottom-40 -left-20 w-96 h-96 bg-gradient-to-br from-primary-400/10 to-accent-400/10 rounded-full blur-3xl animate-float" style={{animationDelay: '4s'}} />
-        <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-gradient-to-br from-accent-300/20 to-primary-300/20 rounded-full blur-2xl animate-pulse-gentle" />
-      </div>
 
       {/* Content */}
       <div className="relative z-10 min-h-screen">
         <div className="container mx-auto px-4 py-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center min-h-screen">
-            
+
             {/* Brand Section */}
             <div className="space-y-8 animate-slide-up">
               {/* Logo and Brand */}
               <div className="space-y-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25">
+                  <div className="relative w-12 h-12 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/25">
                     <Bot className="w-6 h-6 text-white" />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-950 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    </div>
                   </div>
-                  <h1 className="text-3xl font-bold gradient-text-elegant">
-                    Chatbot SaaS
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                    Chatava
                   </h1>
                 </div>
-                
-                <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+
+                <h2 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
                   AI-Powered Customer Support{' '}
-                  <span className="gradient-text">
+                  <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
                     Platform
                   </span>
                 </h2>
-                
-                <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
-                  Transform your customer support with intelligent chatbots that learn, 
+
+                <p className="text-xl text-slate-400 leading-relaxed max-w-lg">
+                  Transform your customer support with intelligent chatbots that learn,
                   adapt, and deliver exceptional experiences 24/7.
                 </p>
               </div>
@@ -83,42 +85,42 @@ function AuthPage() {
               {/* Feature Highlights */}
               <div className="grid sm:grid-cols-2 gap-6">
                 <div className="flex items-start space-x-3 group">
-                  <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200">
-                    <Zap className="w-5 h-5 text-primary-600" />
+                  <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center group-hover:bg-violet-500/30 transition-colors duration-200">
+                    <Zap className="w-5 h-5 text-violet-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Real-time Chat</h3>
-                    <p className="text-sm text-gray-600">WebSocket-powered instant messaging</p>
+                    <h3 className="font-semibold text-white">Real-time Chat</h3>
+                    <p className="text-sm text-slate-500">WebSocket-powered instant messaging</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-3 group">
-                  <div className="w-10 h-10 bg-accent-100 rounded-lg flex items-center justify-center group-hover:bg-accent-200 transition-colors duration-200">
-                    <Shield className="w-5 h-5 text-accent-600" />
+                  <div className="w-10 h-10 bg-fuchsia-500/20 rounded-xl flex items-center justify-center group-hover:bg-fuchsia-500/30 transition-colors duration-200">
+                    <Shield className="w-5 h-5 text-fuchsia-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Secure & Private</h3>
-                    <p className="text-sm text-gray-600">Enterprise-grade security</p>
+                    <h3 className="font-semibold text-white">Secure & Private</h3>
+                    <p className="text-sm text-slate-500">Enterprise-grade security</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-3 group">
-                  <div className="w-10 h-10 bg-success-100 rounded-lg flex items-center justify-center group-hover:bg-success-200 transition-colors duration-200">
-                    <Bot className="w-5 h-5 text-success-600" />
+                  <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors duration-200">
+                    <Bot className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Smart Automation</h3>
-                    <p className="text-sm text-gray-600">AI-driven conversation management</p>
+                    <h3 className="font-semibold text-white">Smart Automation</h3>
+                    <p className="text-sm text-slate-500">AI-driven conversation management</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start space-x-3 group">
-                  <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200">
-                    <Users className="w-5 h-5 text-primary-600" />
+                  <div className="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors duration-200">
+                    <Users className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Team Collaboration</h3>
-                    <p className="text-sm text-gray-600">Live conversation monitoring</p>
+                    <h3 className="font-semibold text-white">Team Collaboration</h3>
+                    <p className="text-sm text-slate-500">Live conversation monitoring</p>
                   </div>
                 </div>
               </div>
@@ -126,16 +128,16 @@ function AuthPage() {
               {/* Social Proof */}
               <div className="flex items-center space-x-8 pt-8">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">10k+</div>
-                  <div className="text-sm text-gray-600">Active Users</div>
+                  <div className="text-2xl font-bold text-white">10k+</div>
+                  <div className="text-sm text-slate-500">Active Users</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">99.9%</div>
-                  <div className="text-sm text-gray-600">Uptime</div>
+                  <div className="text-2xl font-bold text-white">99.9%</div>
+                  <div className="text-sm text-slate-500">Uptime</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">24/7</div>
-                  <div className="text-sm text-gray-600">Support</div>
+                  <div className="text-2xl font-bold text-white">24/7</div>
+                  <div className="text-sm text-slate-500">Support</div>
                 </div>
               </div>
             </div>
@@ -143,13 +145,13 @@ function AuthPage() {
             {/* Authentication Section */}
             <div className="flex items-center justify-center animate-slide-up" style={{animationDelay: '0.2s'}}>
               {authMode === 'login' ? (
-                <LoginForm 
-                  onSuccess={() => {}} 
+                <LoginForm
+                  onSuccess={() => {}}
                   onSwitchToRegister={() => setAuthMode('register')}
                 />
               ) : (
-                <RegisterForm 
-                  onSuccess={() => {}} 
+                <RegisterForm
+                  onSuccess={() => {}}
                   onSwitchToLogin={() => setAuthMode('login')}
                 />
               )}
@@ -159,9 +161,9 @@ function AuthPage() {
       </div>
 
       {/* Decorative Elements */}
-      <div className="absolute top-10 right-10 w-2 h-2 bg-primary-400 rounded-full animate-pulse opacity-60" />
-      <div className="absolute bottom-20 left-10 w-3 h-3 bg-accent-400 rounded-full animate-bounce-gentle opacity-50" />
-      <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-primary-500 rounded-full animate-pulse opacity-40" />
+      <div className="absolute top-10 right-10 w-2 h-2 bg-violet-400 rounded-full animate-pulse opacity-60" />
+      <div className="absolute bottom-20 left-10 w-3 h-3 bg-fuchsia-400 rounded-full animate-bounce-gentle opacity-50" />
+      <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-cyan-500 rounded-full animate-pulse opacity-40" />
     </div>
   )
 }

@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { 
-  X, Bot, ChevronRight, ChevronLeft, Upload, Link, 
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  X, Bot, ChevronRight, ChevronLeft, Upload, Link,
   FileText, Globe, Lock, Unlock, Check, AlertCircle,
-  Loader2, Trash2
+  Loader2, Trash2, Sparkles, MessageSquare, Brain
 } from 'lucide-react'
-import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
-import { Label } from '../ui/Label'
-import { Modal } from '../ui/Modal'
-import { Card } from '../ui/Card'
 import { apiService } from '../../services/api'
 import { Chatbot } from '../../types'
 
@@ -41,8 +37,8 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
     name: '',
     description: '',
     welcome_message: 'Hello! How can I help you today?',
-    personality: 'professional', // 'professional' or 'casual'
-    system_prompt: '' // Custom instructions for the AI
+    personality: 'professional',
+    system_prompt: ''
   })
 
   // Step 2: Knowledge Sources
@@ -57,20 +53,17 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
         name: existingChatbot.name || '',
         description: existingChatbot.description || '',
         welcome_message: existingChatbot.welcome_message || 'Hello! How can I help you today?',
-        personality: 'professional', // Default since this is a new field
-        system_prompt: '' // Will be loaded from settings
+        personality: 'professional',
+        system_prompt: ''
       })
-      // Load existing knowledge sources if available
       loadExistingKnowledgeSources(existingChatbot.id)
-      // Load existing settings (including system_prompt)
       loadExistingSettings(existingChatbot.id)
     }
   }, [existingChatbot])
 
-  const loadExistingKnowledgeSources = async (chatbotId: string) => {
+  const loadExistingKnowledgeSources = async (_chatbotId: string) => {
     try {
-      // This would load existing knowledge sources from the API
-      // For now, we'll just initialize empty
+      // TODO: Load existing knowledge sources from API
       setKnowledgeSources([])
     } catch (err) {
       console.error('Failed to load knowledge sources:', err)
@@ -103,7 +96,6 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFiles(e.dataTransfer.files)
     }
@@ -117,21 +109,19 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
 
   const handleFiles = (files: FileList) => {
     const newSources: KnowledgeSource[] = []
-    
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
-      // Validate file type
       const validTypes = ['.pdf', '.docx', '.txt', '.doc']
       const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
-      
+
       if (!validTypes.includes(fileExtension)) {
-        setError(`File type ${fileExtension} not supported. Please use PDF, DOCX, or TXT files.`)
+        setError(`File type ${fileExtension} not supported. Use PDF, DOCX, or TXT.`)
         continue
       }
 
-      // Validate file size (10MB max)
       if (file.size > 10 * 1024 * 1024) {
-        setError(`File "${file.name}" is too large. Maximum size is 10MB.`)
+        setError(`File "${file.name}" is too large. Max 10MB.`)
         continue
       }
 
@@ -139,7 +129,7 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
         type: 'file',
         name: file.name,
         file: file,
-        is_citable: true, // Default to citable
+        is_citable: true,
         status: 'pending'
       })
     }
@@ -148,13 +138,11 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
     setError(null)
   }
 
-  // URL Processing
   const handleAddUrls = () => {
     const urls = urlInput.split('\n').filter(url => url.trim())
     const newSources: KnowledgeSource[] = []
 
     for (const url of urls) {
-      // Basic URL validation
       try {
         new URL(url.trim())
         newSources.push({
@@ -177,19 +165,16 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
     }
   }
 
-  // Toggle privacy for a source
   const toggleSourcePrivacy = (index: number) => {
-    setKnowledgeSources(prev => prev.map((source, i) => 
+    setKnowledgeSources(prev => prev.map((source, i) =>
       i === index ? { ...source, is_citable: !source.is_citable } : source
     ))
   }
 
-  // Remove a source
   const removeSource = (index: number) => {
     setKnowledgeSources(prev => prev.filter((_, i) => i !== index))
   }
 
-  // Navigation
   const handleNext = () => {
     if (currentStep === 1) {
       if (!chatbotData.name.trim()) {
@@ -206,17 +191,14 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
     setCurrentStep(prev => Math.max(prev - 1, 1))
   }
 
-  // Save chatbot
   const handleSave = async () => {
     setError(null)
     setLoading(true)
 
     try {
-      // Step 1: Create or update the chatbot
       let chatbotId = existingChatbot?.id
-      
+
       if (!chatbotId) {
-        // Create new chatbot
         const chatbotPayload = {
           name: chatbotData.name,
           description: chatbotData.description,
@@ -226,11 +208,10 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
           max_tokens: 150,
           enable_citations: true
         }
-        
+
         const newChatbot = await apiService.createChatbot(chatbotPayload)
         chatbotId = newChatbot.id
       } else {
-        // Update existing chatbot
         await apiService.updateChatbot(chatbotId, {
           name: chatbotData.name,
           description: chatbotData.description,
@@ -239,38 +220,31 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
         })
       }
 
-      // Step 2: Save custom instructions (system prompt) if provided
       if (chatbotData.system_prompt.trim()) {
         try {
           await apiService.updateChatbotSettings(chatbotId, {
             system_prompt: chatbotData.system_prompt
           })
-          console.log('Saved custom instructions')
         } catch (err) {
           console.error('Failed to save custom instructions:', err)
         }
       }
 
-      // Step 3: Upload knowledge sources
       for (const source of knowledgeSources) {
-        if (source.status === 'ready') continue // Skip already processed sources
+        if (source.status === 'ready') continue
 
         try {
           if (source.type === 'file' && source.file) {
-            // Upload file using the correct API method signature
             await apiService.uploadKnowledgeFile(chatbotId, source.file, {
               name: source.name,
               is_citable: source.is_citable
             })
-            console.log('Uploaded file:', source.name)
           } else if (source.type === 'url' && source.url) {
-            // Process URL
             await apiService.addKnowledgeUrl(chatbotId, {
               url: source.url,
               is_citable: source.is_citable,
               name: source.name
             })
-            console.log('Processing URL:', source.url)
           }
         } catch (err) {
           console.error(`Failed to process ${source.name}:`, err)
@@ -288,396 +262,512 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
 
   if (!isOpen) return null
 
+  const steps = [
+    { num: 1, label: 'Basics', icon: Bot },
+    { num: 2, label: 'Knowledge', icon: Brain },
+    { num: 3, label: 'Review', icon: Sparkles }
+  ]
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="w-full max-w-4xl mx-auto">
-        <div className="bg-white rounded-xl shadow-xl">
-          {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {existingChatbot ? 'Edit Chatbot' : 'Create Your Chatbot'}
-                  </h2>
-                  <p className="text-sm text-gray-500">Step {currentStep} of 3</p>
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={onClose}
+          />
 
-            {/* Progress Bar */}
-            <div className="mt-4 flex items-center space-x-2">
-              <div className={`flex-1 h-2 rounded-full ${currentStep >= 1 ? 'bg-primary-600' : 'bg-gray-200'}`} />
-              <div className={`flex-1 h-2 rounded-full ${currentStep >= 2 ? 'bg-primary-600' : 'bg-gray-200'}`} />
-              <div className={`flex-1 h-2 rounded-full ${currentStep >= 3 ? 'bg-primary-600' : 'bg-gray-200'}`} />
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-6">
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            )}
-
-            {/* Step 1: Basic Information */}
-            {currentStep === 1 && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Let's start with the basics
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-6">
-                    Give your chatbot a name and describe what it will help with.
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="name">Chatbot Name *</Label>
-                  <Input
-                    id="name"
-                    value={chatbotData.name}
-                    onChange={(e) => setChatbotData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="e.g., Customer Support Bot"
-                    className="mt-1"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Choose a clear name that describes your chatbot's purpose
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description (Optional)</Label>
-                  <textarea
-                    id="description"
-                    value={chatbotData.description}
-                    onChange={(e) => setChatbotData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="This chatbot helps customers with product questions and support issues..."
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="welcome">Welcome Message</Label>
-                  <Input
-                    id="welcome"
-                    value={chatbotData.welcome_message}
-                    onChange={(e) => setChatbotData(prev => ({ ...prev, welcome_message: e.target.value }))}
-                    placeholder="Hello! How can I help you today?"
-                    className="mt-1"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    The first message your visitors will see
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Personality</Label>
-                  <div className="mt-2 space-y-2">
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="personality"
-                        value="professional"
-                        checked={chatbotData.personality === 'professional'}
-                        onChange={(e) => setChatbotData(prev => ({ ...prev, personality: e.target.value }))}
-                        className="w-4 h-4 text-primary-600"
-                      />
-                      <span className="text-sm text-gray-700">
-                        <span className="font-medium">Professional</span> - Formal and business-like
-                      </span>
-                    </label>
-                    <label className="flex items-center space-x-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="personality"
-                        value="casual"
-                        checked={chatbotData.personality === 'casual'}
-                        onChange={(e) => setChatbotData(prev => ({ ...prev, personality: e.target.value }))}
-                        className="w-4 h-4 text-primary-600"
-                      />
-                      <span className="text-sm text-gray-700">
-                        <span className="font-medium">Casual</span> - Friendly and conversational
-                      </span>
-                    </label>
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', duration: 0.5 }}
+            className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl border border-white/10 shadow-2xl shadow-violet-500/10 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-white/10 bg-white/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/25">
+                    <Bot className="w-5 h-5 text-white" />
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="system_prompt">Custom Instructions (Optional)</Label>
-                  <textarea
-                    id="system_prompt"
-                    value={chatbotData.system_prompt}
-                    onChange={(e) => setChatbotData(prev => ({ ...prev, system_prompt: e.target.value }))}
-                    placeholder="Add custom instructions for your chatbot. For example:&#10;- You are a helpful customer support agent for [Company Name]&#10;- Always be polite and professional&#10;- If you don't know the answer, say so&#10;- Focus on helping users with [specific topics]"
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    rows={5}
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    These instructions tell the AI how to behave and respond. Leave empty to use default behavior.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Knowledge Sources */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Add Knowledge Sources
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-6">
-                    Upload documents or add website URLs for your chatbot to learn from.
-                    You can control what information is shown to users.
-                  </p>
-                </div>
-
-                {/* File Upload Area */}
-                <div>
-                  <Label>Upload Documents</Label>
-                  <div
-                    className={`mt-2 border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                      dragActive ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    onDragEnter={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDragOver={handleDrag}
-                    onDrop={handleDrop}
-                  >
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      Drag and drop files here, or click to browse
-                    </p>
-                    <p className="text-xs text-gray-500 mb-3">
-                      Supports PDF, DOCX, and TXT files (max 10MB each)
-                    </p>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.docx,.doc,.txt"
-                      onChange={handleFileInput}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => document.getElementById('file-upload')?.click()}
-                    >
-                      Choose Files
-                    </Button>
-                  </div>
-                </div>
-
-                {/* URL Input */}
-                <div>
-                  <Label>Add Website URLs</Label>
-                  <div className="mt-2 space-y-2">
-                    <textarea
-                      value={urlInput}
-                      onChange={(e) => setUrlInput(e.target.value)}
-                      placeholder="Enter URLs (one per line)&#10;https://example.com/about&#10;https://example.com/faq"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      rows={3}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleAddUrls}
-                      disabled={!urlInput.trim()}
-                    >
-                      <Link className="w-4 h-4 mr-2" />
-                      Add URLs
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Knowledge Sources List */}
-                {knowledgeSources.length > 0 && (
                   <div>
-                    <Label>Knowledge Sources ({knowledgeSources.length})</Label>
-                    <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
-                      {knowledgeSources.map((source, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-3 flex-1">
-                            {source.type === 'file' ? (
-                              <FileText className="w-4 h-4 text-gray-400" />
-                            ) : (
-                              <Globe className="w-4 h-4 text-gray-400" />
-                            )}
-                            <span className="text-sm text-gray-700 truncate flex-1">
-                              {source.name}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => toggleSourcePrivacy(index)}
-                              className="flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium transition-colors"
-                              title={source.is_citable ? 'Content can be shown to users' : 'Content is private (learning only)'}
-                            >
-                              {source.is_citable ? (
-                                <>
-                                  <Unlock className="w-3 h-3 text-green-600" />
-                                  <span className="text-green-700">Citable</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Lock className="w-3 h-3 text-orange-600" />
-                                  <span className="text-orange-700">Learn Only</span>
-                                </>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => removeSource(index)}
-                              className="text-red-500 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-xs text-blue-800">
-                        <strong>Privacy Settings:</strong><br />
-                        • <strong>Citable:</strong> Content can be quoted and shown to users<br />
-                        • <strong>Learn Only:</strong> Used for context but never revealed to users
-                      </p>
-                    </div>
+                    <h2 className="text-lg font-semibold text-white">
+                      {existingChatbot ? 'Edit Chatbot' : 'Create Chatbot'}
+                    </h2>
+                    <p className="text-xs text-slate-500">Step {currentStep} of 3</p>
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 3: Review */}
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Review Your Chatbot
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-6">
-                    Everything looks good? Let's create your chatbot!
-                  </p>
                 </div>
 
-                <Card className="p-4 space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <Bot className="w-5 h-5 text-primary-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">{chatbotData.name}</p>
-                      <p className="text-sm text-gray-500">{chatbotData.description || 'No description'}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="pt-3 border-t border-gray-100">
-                    <p className="text-sm text-gray-600">
-                      <strong>Welcome Message:</strong> {chatbotData.welcome_message}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      <strong>Personality:</strong> {chatbotData.personality === 'casual' ? 'Casual' : 'Professional'}
-                    </p>
-                    {chatbotData.system_prompt && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        <strong>Custom Instructions:</strong> {chatbotData.system_prompt.length > 100
-                          ? chatbotData.system_prompt.substring(0, 100) + '...'
-                          : chatbotData.system_prompt}
-                      </p>
-                    )}
-                  </div>
+                {/* Step Indicators */}
+                <div className="hidden sm:flex items-center gap-2">
+                  {steps.map((step, idx) => {
+                    const StepIcon = step.icon
+                    const isActive = currentStep === step.num
+                    const isCompleted = currentStep > step.num
+                    return (
+                      <div key={step.num} className="flex items-center">
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
+                          isActive ? 'bg-violet-500/20 border border-violet-500/30' :
+                          isCompleted ? 'bg-emerald-500/10' : 'bg-white/5'
+                        }`}>
+                          <StepIcon className={`w-4 h-4 ${
+                            isActive ? 'text-violet-400' :
+                            isCompleted ? 'text-emerald-400' : 'text-slate-500'
+                          }`} />
+                          <span className={`text-xs font-medium ${
+                            isActive ? 'text-violet-300' :
+                            isCompleted ? 'text-emerald-400' : 'text-slate-500'
+                          }`}>{step.label}</span>
+                        </div>
+                        {idx < steps.length - 1 && (
+                          <ChevronRight className="w-4 h-4 text-slate-600 mx-1" />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
 
-                  {knowledgeSources.length > 0 && (
-                    <div className="pt-3 border-t border-gray-100">
-                      <p className="text-sm font-medium text-gray-700 mb-2">
-                        Knowledge Sources ({knowledgeSources.length})
-                      </p>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-600">
-                          • {knowledgeSources.filter(s => s.is_citable).length} citable sources
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          • {knowledgeSources.filter(s => !s.is_citable).length} private sources (learn only)
-                        </p>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Error Message */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-2"
+                  >
+                    <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                    <p className="text-sm text-rose-400">{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Step 1: Basic Information */}
+              <AnimatePresence mode="wait">
+                {currentStep === 1 && (
+                  <motion.div
+                    key="step1"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                  >
+                    {/* Left Column */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                          Chatbot Name <span className="text-rose-400">*</span>
+                        </label>
+                        <input
+                          value={chatbotData.name}
+                          onChange={(e) => setChatbotData(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="e.g., Customer Support Bot"
+                          className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                          Description
+                        </label>
+                        <textarea
+                          value={chatbotData.description}
+                          onChange={(e) => setChatbotData(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="What does your chatbot help with?"
+                          className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all text-sm resize-none"
+                          rows={2}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                          Welcome Message
+                        </label>
+                        <div className="relative">
+                          <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                          <input
+                            value={chatbotData.welcome_message}
+                            onChange={(e) => setChatbotData(prev => ({ ...prev, welcome_message: e.target.value }))}
+                            placeholder="Hello! How can I help you?"
+                            className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                          Personality
+                        </label>
+                        <div className="flex gap-3">
+                          {[
+                            { value: 'professional', label: 'Professional', desc: 'Formal tone' },
+                            { value: 'casual', label: 'Casual', desc: 'Friendly tone' }
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => setChatbotData(prev => ({ ...prev, personality: option.value }))}
+                              className={`flex-1 p-3 rounded-xl border transition-all text-left ${
+                                chatbotData.personality === option.value
+                                  ? 'bg-violet-500/20 border-violet-500/50 ring-1 ring-violet-500/30'
+                                  : 'bg-white/5 border-white/10 hover:border-white/20'
+                              }`}
+                            >
+                              <span className={`block text-sm font-medium ${
+                                chatbotData.personality === option.value ? 'text-violet-300' : 'text-white'
+                              }`}>{option.label}</span>
+                              <span className="text-xs text-slate-500">{option.desc}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  )}
-                </Card>
 
-                <div className="flex items-start space-x-2">
-                  <Check className="w-5 h-5 text-green-600 mt-0.5" />
-                  <div className="text-sm text-gray-600">
-                    <p className="font-medium text-gray-900 mb-1">Ready to go!</p>
-                    <p>Your chatbot will be created and you can start testing it immediately.</p>
-                    <p className="mt-2">After creation, you'll be able to:</p>
-                    <ul className="mt-1 space-y-1 ml-4">
-                      <li>• Test your chatbot with real conversations</li>
-                      <li>• Get the embed code for your website</li>
-                      <li>• Add more knowledge sources anytime</li>
-                      <li>• Track usage and conversations</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-between">
-            <Button
-              variant="ghost"
-              onClick={handlePrevious}
-              disabled={currentStep === 1 || loading}
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Previous
-            </Button>
-            
-            {currentStep < 3 ? (
-              <Button
-                variant="primary"
-                onClick={handleNext}
-                disabled={loading}
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                onClick={handleSave}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    {existingChatbot ? 'Save Changes' : 'Create Chatbot'}
-                    <Check className="w-4 h-4 ml-2" />
-                  </>
+                    {/* Right Column */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                        Custom Instructions
+                      </label>
+                      <textarea
+                        value={chatbotData.system_prompt}
+                        onChange={(e) => setChatbotData(prev => ({ ...prev, system_prompt: e.target.value }))}
+                        placeholder="Add custom instructions for your chatbot...&#10;&#10;Examples:&#10;• You are a helpful support agent for [Company]&#10;• Always be polite and professional&#10;• Focus on helping with [topics]"
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all text-sm resize-none h-[calc(100%-2rem)]"
+                        style={{ minHeight: '220px' }}
+                      />
+                    </div>
+                  </motion.div>
                 )}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    </Modal>
+
+                {/* Step 2: Knowledge Sources */}
+                {currentStep === 2 && (
+                  <motion.div
+                    key="step2"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                  >
+                    {/* Left: Upload Area */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                          Upload Documents
+                        </label>
+                        <div
+                          className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                            dragActive
+                              ? 'border-violet-500 bg-violet-500/10'
+                              : 'border-white/20 hover:border-white/30 bg-white/5'
+                          }`}
+                          onDragEnter={handleDrag}
+                          onDragLeave={handleDrag}
+                          onDragOver={handleDrag}
+                          onDrop={handleDrop}
+                        >
+                          <Upload className={`w-8 h-8 mx-auto mb-2 ${dragActive ? 'text-violet-400' : 'text-slate-500'}`} />
+                          <p className="text-sm text-slate-400 mb-1">
+                            Drag & drop files here
+                          </p>
+                          <p className="text-xs text-slate-500 mb-3">
+                            PDF, DOCX, TXT (max 10MB)
+                          </p>
+                          <input
+                            type="file"
+                            multiple
+                            accept=".pdf,.docx,.doc,.txt"
+                            onChange={handleFileInput}
+                            className="hidden"
+                            id="file-upload"
+                          />
+                          <button
+                            onClick={() => document.getElementById('file-upload')?.click()}
+                            className="px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-sm text-white hover:bg-white/20 transition-colors"
+                          >
+                            Browse Files
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                          Add URLs
+                        </label>
+                        <div className="space-y-2">
+                          <textarea
+                            value={urlInput}
+                            onChange={(e) => setUrlInput(e.target.value)}
+                            placeholder="Enter URLs (one per line)&#10;https://example.com/about"
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 text-sm resize-none"
+                            rows={3}
+                          />
+                          <button
+                            onClick={handleAddUrls}
+                            disabled={!urlInput.trim()}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-sm text-white hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Link className="w-4 h-4" />
+                            Add URLs
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Sources List */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-medium text-slate-300">
+                          Knowledge Sources
+                        </label>
+                        <span className="text-xs text-slate-500">
+                          {knowledgeSources.length} source{knowledgeSources.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+
+                      <div className="bg-white/5 rounded-xl border border-white/10 overflow-hidden" style={{ height: '280px' }}>
+                        {knowledgeSources.length === 0 ? (
+                          <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                            <Brain className="w-10 h-10 text-slate-600 mb-3" />
+                            <p className="text-sm text-slate-500">No sources added yet</p>
+                            <p className="text-xs text-slate-600 mt-1">Upload files or add URLs to train your chatbot</p>
+                          </div>
+                        ) : (
+                          <div className="h-full overflow-y-auto p-2 space-y-2">
+                            {knowledgeSources.map((source, index) => (
+                              <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center justify-between p-2.5 bg-white/5 rounded-lg group"
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  {source.type === 'file' ? (
+                                    <FileText className="w-4 h-4 text-violet-400 flex-shrink-0" />
+                                  ) : (
+                                    <Globe className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                                  )}
+                                  <span className="text-sm text-slate-300 truncate">
+                                    {source.name}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => toggleSourcePrivacy(index)}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                                      source.is_citable
+                                        ? 'text-emerald-400 hover:bg-emerald-500/10'
+                                        : 'text-amber-400 hover:bg-amber-500/10'
+                                    }`}
+                                    title={source.is_citable ? 'Citable' : 'Learn Only'}
+                                  >
+                                    {source.is_citable ? (
+                                      <Unlock className="w-3 h-3" />
+                                    ) : (
+                                      <Lock className="w-3 h-3" />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => removeSource(index)}
+                                    className="p-1.5 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Privacy Legend */}
+                      <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
+                        <div className="flex items-center gap-1">
+                          <Unlock className="w-3 h-3 text-emerald-400" />
+                          <span>Citable - Can be quoted</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-amber-400" />
+                          <span>Learn Only - Private</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Step 3: Review */}
+                {currentStep === 3 && (
+                  <motion.div
+                    key="step3"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                  >
+                    {/* Left: Summary */}
+                    <div className="space-y-4">
+                      <div className="bg-white/5 rounded-xl border border-white/10 p-4">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
+                            <Bot className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">{chatbotData.name}</h3>
+                            <p className="text-sm text-slate-500">{chatbotData.description || 'No description'}</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 pt-3 border-t border-white/10">
+                          <div className="flex items-start gap-2">
+                            <MessageSquare className="w-4 h-4 text-slate-500 mt-0.5" />
+                            <div>
+                              <p className="text-xs text-slate-500">Welcome Message</p>
+                              <p className="text-sm text-slate-300">{chatbotData.welcome_message}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-slate-500" />
+                            <div>
+                              <p className="text-xs text-slate-500">Personality</p>
+                              <p className="text-sm text-slate-300">
+                                {chatbotData.personality === 'casual' ? 'Casual' : 'Professional'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {chatbotData.system_prompt && (
+                            <div className="flex items-start gap-2">
+                              <Brain className="w-4 h-4 text-slate-500 mt-0.5" />
+                              <div>
+                                <p className="text-xs text-slate-500">Custom Instructions</p>
+                                <p className="text-sm text-slate-300 line-clamp-2">{chatbotData.system_prompt}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Knowledge Summary */}
+                      <div className="bg-white/5 rounded-xl border border-white/10 p-4">
+                        <h4 className="text-sm font-medium text-slate-300 mb-3">Knowledge Sources</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-emerald-500/10 rounded-lg p-3 text-center">
+                            <p className="text-2xl font-bold text-emerald-400">
+                              {knowledgeSources.filter(s => s.is_citable).length}
+                            </p>
+                            <p className="text-xs text-emerald-400/70">Citable</p>
+                          </div>
+                          <div className="bg-amber-500/10 rounded-lg p-3 text-center">
+                            <p className="text-2xl font-bold text-amber-400">
+                              {knowledgeSources.filter(s => !s.is_citable).length}
+                            </p>
+                            <p className="text-xs text-amber-400/70">Private</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Ready State */}
+                    <div className="flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 rounded-xl border border-violet-500/20">
+                      <motion.div
+                        animate={{ y: [0, -8, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="w-20 h-20 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-violet-500/25"
+                      >
+                        <Check className="w-10 h-10 text-white" />
+                      </motion.div>
+
+                      <h3 className="text-xl font-semibold text-white mb-2">Ready to Launch!</h3>
+                      <p className="text-sm text-slate-400 mb-4">
+                        Your chatbot is configured and ready to go.
+                      </p>
+
+                      <div className="text-left space-y-2 text-sm text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-emerald-400" />
+                          <span>Test with real conversations</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-emerald-400" />
+                          <span>Embed on your website</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-emerald-400" />
+                          <span>Track usage analytics</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-white/10 bg-white/5 flex justify-between">
+              <button
+                onClick={handlePrevious}
+                disabled={currentStep === 1 || loading}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+
+              {currentStep < 3 ? (
+                <button
+                  onClick={handleNext}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-medium hover:opacity-90 transition-opacity shadow-lg shadow-violet-500/25"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-medium hover:opacity-90 transition-opacity shadow-lg shadow-violet-500/25 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      {existingChatbot ? 'Save Changes' : 'Create Chatbot'}
+                      <Check className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

@@ -1,11 +1,9 @@
-// Modern Registration form component with elegant styling
+// Modern Registration form component with dark theme styling
 
 import React, { useState, FormEvent, useMemo } from 'react';
-import { Mail, Lock, User, UserPlus, Sparkles, Check, X } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Bot, Check, X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { RegisterRequest } from '../../types';
-import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/Card';
 
 interface RegisterFormProps {
@@ -37,7 +35,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
   // Password strength checker
   const passwordStrength: PasswordStrength = useMemo(() => {
     const password = formData.password;
-    if (!password) return { score: 0, feedback: [], color: 'gray', label: '' };
+    if (!password) return { score: 0, feedback: [], color: 'slate', label: '' };
 
     let score = 0;
     const feedback: string[] = [];
@@ -66,13 +64,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       feedback.push('Include special characters');
     }
 
-    const colors = ['error', 'warning', 'warning', 'success', 'success'];
+    const colors = ['rose', 'amber', 'amber', 'emerald', 'emerald'];
     const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
 
     return {
       score,
       feedback,
-      color: colors[score] || 'gray',
+      color: colors[score] || 'slate',
       label: labels[score] || ''
     };
   }, [formData.password]);
@@ -103,7 +101,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       onSuccess?.();
     } catch (err: any) {
       console.error('Registration error:', err);
-      
+
       // Handle field-specific errors from API
       if (err.details && err.details.fieldErrors) {
         setFieldErrors(err.details.fieldErrors);
@@ -123,7 +121,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       ...prev,
       [fieldName]: e.target.value,
     }));
-    
+
     // Clear field error when user starts typing
     if (fieldErrors[fieldName]) {
       setFieldErrors(prev => {
@@ -144,41 +142,54 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     return !!(fieldErrors[fieldName] && fieldErrors[fieldName].length > 0);
   };
 
-  const passwordsMatch = formData.password && formData.password_confirm && 
+  const passwordsMatch = formData.password && formData.password_confirm &&
                         formData.password === formData.password_confirm;
-  const passwordsDontMatch = formData.password_confirm && 
+  const passwordsDontMatch = formData.password_confirm &&
                            formData.password !== formData.password_confirm;
+
+  // Get strength bar color class
+  const getStrengthBarColor = (level: number) => {
+    if (level > passwordStrength.score) return 'bg-white/10';
+    switch (passwordStrength.color) {
+      case 'rose': return 'bg-rose-500';
+      case 'amber': return 'bg-amber-500';
+      case 'emerald': return 'bg-emerald-500';
+      default: return 'bg-slate-500';
+    }
+  };
+
+  const getStrengthLabelColor = () => {
+    switch (passwordStrength.color) {
+      case 'rose': return 'text-rose-400';
+      case 'amber': return 'text-amber-400';
+      case 'emerald': return 'text-emerald-400';
+      default: return 'text-slate-400';
+    }
+  };
 
   return (
     <div className="w-full max-w-lg mx-auto animate-slide-up">
-      {/* Background Decorative Elements */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-gradient-to-br from-accent-500/15 to-primary-500/15 rounded-full blur-3xl animate-float" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-gradient-to-br from-primary-500/15 to-accent-500/15 rounded-full blur-3xl animate-float" style={{animationDelay: '1.5s'}} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-br from-primary-400/10 to-accent-400/10 rounded-full blur-2xl animate-pulse-gentle" />
-      </div>
-
-      <Card variant="elegant" size="lg" className="relative backdrop-blur-fix">
+      <Card variant="dark" size="lg" className="relative">
         <CardHeader className="text-center space-y-4">
           {/* Logo/Brand Icon */}
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-accent-500 to-primary-500 rounded-2xl flex items-center justify-center shadow-lg shadow-accent-500/25 animate-bounce-gentle">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/25">
+            <Bot className="w-8 h-8 text-white" />
           </div>
-          
-          <CardTitle className="text-3xl gradient-text-elegant">
-            Join Our Platform
+
+          <CardTitle className="text-3xl bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+            Create Account
           </CardTitle>
-          <CardDescription className="text-base">
-            Create your account and start your journey with us
+          <CardDescription className="text-base text-slate-400">
+            Join Chatava and start building AI-powered chatbots
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
           {/* Error Message */}
           {error && (
-            <div className="bg-gradient-to-r from-error-50 to-error-100 border border-error-200 text-error-700 px-4 py-3 rounded-xl animate-slide-down">
+            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-3 rounded-xl animate-slide-down">
               <div className="flex items-center space-x-2">
-                <X size={16} className="text-error-500" />
+                <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
                 <span className="text-sm font-medium">{error}</span>
               </div>
             </div>
@@ -188,47 +199,51 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Input
-                  type="text"
-                  name="first_name"
-                  label="First Name"
-                  placeholder="John"
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  variant="elegant"
-                  icon={<User size={18} />}
-                  required
-                  disabled={loading}
-                  error={hasFieldError('first_name')}
-                  className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
-                  data-testid="first-name"
-                />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">First Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <input
+                    type="text"
+                    name="first_name"
+                    placeholder="John"
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    required
+                    disabled={loading}
+                    className={`w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border ${
+                      hasFieldError('first_name') ? 'border-rose-500/50' : 'border-white/10'
+                    } text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all disabled:opacity-50`}
+                    data-testid="first-name"
+                  />
+                </div>
                 {hasFieldError('first_name') && (
-                  <p className="text-xs text-error-600 animate-slide-down">
+                  <p className="text-xs text-rose-400 animate-slide-down">
                     {getFieldError('first_name')}
                   </p>
                 )}
               </div>
-              
-              <div className="space-y-1">
-                <Input
-                  type="text"
-                  name="last_name"
-                  label="Last Name"
-                  placeholder="Doe"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  variant="elegant"
-                  icon={<User size={18} />}
-                  required
-                  disabled={loading}
-                  error={hasFieldError('last_name')}
-                  className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
-                  data-testid="last-name"
-                />
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Last Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <input
+                    type="text"
+                    name="last_name"
+                    placeholder="Doe"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    required
+                    disabled={loading}
+                    className={`w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border ${
+                      hasFieldError('last_name') ? 'border-rose-500/50' : 'border-white/10'
+                    } text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all disabled:opacity-50`}
+                    data-testid="last-name"
+                  />
+                </div>
                 {hasFieldError('last_name') && (
-                  <p className="text-xs text-error-600 animate-slide-down">
+                  <p className="text-xs text-rose-400 animate-slide-down">
                     {getFieldError('last_name')}
                   </p>
                 )}
@@ -236,24 +251,26 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             </div>
 
             {/* Email Field */}
-            <div className="space-y-1">
-              <Input
-                type="email"
-                name="email"
-                label="Email Address"
-                placeholder="john@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                variant="elegant"
-                icon={<Mail size={18} />}
-                required
-                disabled={loading}
-                error={hasFieldError('email')}
-                className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
-                data-testid="email"
-              />
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="john@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  className={`w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border ${
+                    hasFieldError('email') ? 'border-rose-500/50' : 'border-white/10'
+                  } text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all disabled:opacity-50`}
+                  data-testid="email"
+                />
+              </div>
               {hasFieldError('email') && (
-                <p className="text-xs text-error-600 animate-slide-down">
+                <p className="text-xs text-rose-400 animate-slide-down">
                   {getFieldError('email')}
                 </p>
               )}
@@ -261,62 +278,59 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
             {/* Password Field with Strength Indicator */}
             <div className="space-y-3">
-              <div className="space-y-1">
-                <Input
-                  type="password"
-                  name="password"
-                  label="Password"
-                  placeholder="Create a secure password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  onFocus={() => setFocusedField('password')}
-                  onBlur={() => setFocusedField(null)}
-                  variant="elegant"
-                  icon={<Lock size={18} />}
-                  showPasswordToggle
-                  required
-                  disabled={loading}
-                  error={hasFieldError('password')}
-                  className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
-                  data-testid="password"
-                />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="Create a secure password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField('password')}
+                    onBlur={() => setFocusedField(null)}
+                    required
+                    disabled={loading}
+                    className={`w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border ${
+                      hasFieldError('password') ? 'border-rose-500/50' : 'border-white/10'
+                    } text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all disabled:opacity-50`}
+                    data-testid="password"
+                  />
+                </div>
                 {hasFieldError('password') && (
-                  <p className="text-xs text-error-600 animate-slide-down">
+                  <p className="text-xs text-rose-400 animate-slide-down">
                     {getFieldError('password')}
                   </p>
                 )}
               </div>
-              
+
               {/* Password Strength Indicator */}
               {formData.password && (focusedField === 'password' || passwordStrength.score > 0) && (
                 <div className="space-y-2 animate-slide-down">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-600">Password Strength</span>
-                    <span className={`text-xs font-semibold text-${passwordStrength.color}-600`}>
+                    <span className="text-xs font-medium text-slate-500">Password Strength</span>
+                    <span className={`text-xs font-semibold ${getStrengthLabelColor()}`}>
                       {passwordStrength.label}
                     </span>
                   </div>
-                  
+
                   {/* Strength Bar */}
                   <div className="flex space-x-1">
                     {[1, 2, 3, 4].map((level) => (
                       <div
                         key={level}
-                        className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                          level <= passwordStrength.score 
-                            ? `bg-${passwordStrength.color}-500`
-                            : 'bg-gray-200'
-                        }`}
+                        className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${getStrengthBarColor(level)}`}
                       />
                     ))}
                   </div>
-                  
+
                   {/* Feedback */}
                   {passwordStrength.feedback.length > 0 && (
                     <div className="space-y-1">
                       {passwordStrength.feedback.map((tip, index) => (
-                        <div key={index} className="flex items-center space-x-2 text-xs text-gray-600">
-                          <div className="w-1 h-1 bg-gray-400 rounded-full" />
+                        <div key={index} className="flex items-center space-x-2 text-xs text-slate-500">
+                          <div className="w-1 h-1 bg-slate-600 rounded-full" />
                           <span>{tip}</span>
                         </div>
                       ))}
@@ -328,32 +342,33 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
             {/* Confirm Password Field */}
             <div className="space-y-2">
-              <Input
-                type="password"
-                name="password_confirm"
-                label="Confirm Password"
-                placeholder="Confirm your password"
-                value={formData.password_confirm}
-                onChange={handleChange}
-                variant="elegant"
-                icon={<Lock size={18} />}
-                showPasswordToggle
-                required
-                disabled={loading}
-                error={passwordsDontMatch ? true : undefined}
-                className="transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5"
-                data-testid="password-confirm"
-              />
-              
+              <label className="text-sm font-medium text-slate-300">Confirm Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input
+                  type="password"
+                  name="password_confirm"
+                  placeholder="Confirm your password"
+                  value={formData.password_confirm}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  className={`w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border ${
+                    passwordsDontMatch ? 'border-rose-500/50' : 'border-white/10'
+                  } text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all disabled:opacity-50`}
+                  data-testid="password-confirm"
+                />
+              </div>
+
               {/* Password Match Indicator */}
               {formData.password_confirm && (
                 <div className={`flex items-center space-x-2 text-xs animate-slide-down ${
-                  passwordsMatch ? 'text-success-600' : 'text-error-600'
+                  passwordsMatch ? 'text-emerald-400' : 'text-rose-400'
                 }`}>
                   {passwordsMatch ? (
-                    <Check size={14} className="text-success-500" />
+                    <Check size={14} className="text-emerald-400" />
                   ) : (
-                    <X size={14} className="text-error-500" />
+                    <X size={14} className="text-rose-400" />
                   )}
                   <span className="font-medium">
                     {passwordsMatch ? 'Passwords match' : 'Passwords do not match'}
@@ -363,18 +378,21 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             </div>
 
             {/* Submit Button */}
-            <Button
+            <button
               type="submit"
-              variant="gradient"
-              size="lg"
-              loading={loading}
-              icon={<UserPlus size={18} />}
-              className="w-full mt-8"
               disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-medium hover:opacity-90 transition-opacity shadow-lg shadow-violet-500/25 disabled:opacity-50 mt-6"
               data-testid="register-button"
             >
-              {loading ? 'Creating your account...' : 'Create Account'}
-            </Button>
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <UserPlus className="w-5 h-5" />
+                  Create Account
+                </>
+              )}
+            </button>
           </form>
         </CardContent>
 
@@ -384,40 +402,37 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             <div className="w-full text-center">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
+                  <div className="w-full border-t border-white/10" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500 font-medium">
+                  <span className="px-4 bg-transparent text-slate-500 font-medium">
                     Already have an account?
                   </span>
                 </div>
               </div>
-              
-              <Button
-                variant="ghost"
-                size="lg"
+
+              <button
                 onClick={onSwitchToLogin}
-                className="w-full mt-4 group"
                 disabled={loading}
+                className="w-full mt-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors disabled:opacity-50"
               >
-                <span className="gradient-text group-hover:from-primary-700 group-hover:to-accent-700">
+                <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
                   Sign in instead
                 </span>
-              </Button>
+              </button>
             </div>
           )}
         </CardFooter>
 
         {/* Decorative Elements */}
-        <div className="absolute -top-3 -right-3 w-5 h-5 bg-gradient-to-br from-accent-400 to-primary-400 rounded-full opacity-60 animate-pulse-gentle" />
-        <div className="absolute -bottom-3 -left-3 w-4 h-4 bg-gradient-to-br from-primary-400 to-accent-400 rounded-full opacity-40 animate-pulse-gentle" style={{animationDelay: '0.7s'}} />
-        <div className="absolute top-1/4 -left-2 w-2 h-2 bg-gradient-to-br from-accent-300 to-primary-300 rounded-full opacity-50 animate-bounce-gentle" style={{animationDelay: '1s'}} />
+        <div className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-to-br from-violet-400 to-fuchsia-400 rounded-full opacity-60 animate-pulse" />
+        <div className="absolute -bottom-2 -left-2 w-3 h-3 bg-gradient-to-br from-fuchsia-400 to-cyan-400 rounded-full opacity-40 animate-pulse" style={{animationDelay: '0.5s'}} />
       </Card>
 
       {/* Security Badge */}
       <div className="mt-6 text-center">
-        <div className="inline-flex items-center space-x-2 text-xs text-gray-500 bg-white/50 backdrop-blur-sm px-3 py-2 rounded-full border border-gray-200/50">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <div className="inline-flex items-center space-x-2 text-xs text-slate-500 bg-white/5 backdrop-blur-sm px-3 py-2 rounded-full border border-white/10">
+          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
           <span className="font-medium">Your data is protected with end-to-end encryption</span>
         </div>
       </div>

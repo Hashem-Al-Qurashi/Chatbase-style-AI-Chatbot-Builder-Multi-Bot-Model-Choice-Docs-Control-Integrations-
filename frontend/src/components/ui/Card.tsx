@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'glass' | 'elegant' | 'glow';
+  variant?: 'default' | 'glass' | 'elegant' | 'glow' | 'dark';
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -44,6 +44,14 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
             'border-primary-200/50',
             'shadow-glow hover:shadow-glow-lg',
             'hover:border-primary-300/50',
+          ],
+
+          variant === 'dark' && [
+            'bg-white/5 border-white/10',
+            'shadow-xl shadow-violet-500/5',
+            'backdrop-blur-sm',
+            'hover:bg-white/10',
+            'hover:border-white/20',
           ],
           
           // Sizes
