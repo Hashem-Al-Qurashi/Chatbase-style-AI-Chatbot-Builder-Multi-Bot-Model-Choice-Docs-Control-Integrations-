@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { Loader2, Sparkles, Bot, Zap, Shield, Users } from 'lucide-react'
 import { AuthProvider, useAuth } from './hooks/useAuth'
@@ -10,6 +10,8 @@ import { ButtonTest } from './components/test/ButtonTest'
 import { StandaloneWidget } from './components/widget/StandaloneWidget'
 import ChatbotSaaSLanding from './components/landing/ChatbotSaaSLanding'
 import SubscriptionUpgradeExact from './components/billing/SubscriptionUpgradeExact'
+import { apiService } from './services/api'
+import { Chatbot } from './types'
 
 function LoadingScreen() {
   return (
@@ -171,15 +173,67 @@ function AuthPage() {
 // Chat page component with chatbot ID from URL
 function ChatPage() {
   const { chatbotId } = useParams<{ chatbotId: string }>()
-  
+  const [chatbot, setChatbot] = useState<Chatbot | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (chatbotId) {
+      loadChatbot(chatbotId)
+    }
+  }, [chatbotId])
+
+  const loadChatbot = async (id: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await apiService.getChatbot(id)
+      setChatbot(data)
+    } catch (err: any) {
+      console.error('Failed to load chatbot:', err)
+      setError(err.message || 'Failed to load chatbot')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (!chatbotId) {
     return <Navigate to="/dashboard" replace />
   }
 
+  if (loading) {
+    return (
+      <div className="h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 text-violet-500 animate-spin mx-auto" />
+          <p className="text-slate-400">Loading chatbot...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !chatbot) {
+    return (
+      <div className="h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Bot className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="text-xl font-semibold text-white">Chatbot Not Found</h2>
+          <p className="text-slate-400">{error || 'The chatbot could not be loaded.'}</p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-screen">
-      <ChatInterface 
-        chatbot={{ id: chatbotId, name: `Chatbot ${chatbotId}` }}
+      <ChatInterface
+        chatbot={chatbot}
         onClose={() => window.history.back()}
       />
     </div>
