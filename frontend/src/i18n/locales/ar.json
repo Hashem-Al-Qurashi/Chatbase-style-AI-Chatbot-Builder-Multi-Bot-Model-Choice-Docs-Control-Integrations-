@@ -1,0 +1,616 @@
+{
+  "common": {
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "search": "بحث",
+    "submit": "إرسال",
+    "back": "رجوع",
+    "next": "التالي",
+    "yes": "نعم",
+    "no": "لا",
+    "or": "أو",
+    "and": "و"
+  },
+  "nav": {
+    "features": "المميزات",
+    "demo": "عرض توضيحي",
+    "pricing": "الأسعار",
+    "getStarted": "ابدأ مجاناً",
+    "dashboard": "لوحة التحكم",
+    "logout": "تسجيل الخروج",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب"
+  },
+  "landing": {
+    "hero": {
+      "badge": "+2,500 شركة تثق بروبوتات المحادثة لدينا",
+      "title": "حوّل مستنداتك إلى روبوتات محادثة ذكية",
+      "subtitle": "قم بتحميل قاعدة معرفتك وإنشاء روبوتات محادثة ذكية توفر إجابات فورية ودقيقة. لا حاجة للبرمجة.",
+      "cta": "أنشئ روبوت المحادثة الأول",
+      "watchDemo": "شاهد العرض التوضيحي",
+      "trustedBy": "موثوق من قبل الشركات الرائدة"
+    },
+    "demo": {
+      "aiPowered": "مدعوم بالذكاء الاصطناعي",
+      "instantSetup": "إعداد فوري",
+      "aiAssistant": "مساعد الذكاء الاصطناعي",
+      "online": "متصل",
+      "askAnything": "اسألني أي شيء...",
+      "source": "المصدر"
+    },
+    "features": {
+      "setup": "إعداد في 5 دقائق",
+      "setupDesc": "جاهز فوراً",
+      "private": "خصوصية 100%",
+      "privateDesc": "بياناتك آمنة",
+      "embed": "أي موقع",
+      "embedDesc": "تضمين في أي مكان"
+    },
+    "benefits": {
+      "title": "كل ما يحتاجه عملك",
+      "subtitle": "مصمم للشركات الحقيقية التي تحتاج دعم عملاء موثوق وذكي",
+      "rag": {
+        "title": "تقنية RAG الذكية",
+        "desc": "يضمن التوليد المعزز بالاسترجاع المتقدم أن روبوت المحادثة الخاص بك يقدم إجابات دقيقة وسياقية من مستنداتك المحددة."
+      },
+      "integration": {
+        "title": "تكامل بنقرة واحدة",
+        "desc": "انسخ كود التضمين وسيكون روبوت المحادثة الخاص بك مباشراً. يعمل مع WordPress و Shopify و React أو أي موقع."
+      },
+      "analytics": {
+        "title": "تحليلات عميقة",
+        "desc": "شاهد ما يسأله العملاء، وتتبع الرضا، وحسّن أداء روبوت المحادثة الخاص بك برؤى مفصلة.",
+        "satisfaction": "رضا",
+        "questions": "سؤال"
+      }
+    },
+    "enterprise": {
+      "text": "هل تحتاج حدوداً مخصصة أو ميزات للمؤسسات؟",
+      "link": "تواصل معنا لأسعار المؤسسات"
+    },
+    "pricing": {
+      "title": "أسعار بسيطة وشفافة",
+      "subtitle": "اختر الخطة المثالية لاحتياجات روبوت المحادثة الذكي الخاص بك",
+      "monthly": "شهري",
+      "yearly": "سنوي",
+      "save": "وفر 20%",
+      "free": {
+        "name": "مجاني",
+        "price": "$0",
+        "period": "/شهر",
+        "desc": "مثالي للاختبار والمشاريع الشخصية",
+        "features": ["50 رصيد رسالة", "1 وكيل ذكاء اصطناعي", "400 كيلوبايت لكل وكيل"],
+        "note": "يتم حذف الوكلاء بعد 14 يوماً من عدم النشاط"
+      },
+      "hobby": {
+        "name": "هواية",
+        "price": "$40",
+        "period": "/شهر",
+        "desc": "للمؤسسين الفرديين والمشاريع الصغيرة",
+        "features": ["2 ألف رصيد رسالة", "1 وكيل ذكاء اصطناعي", "40 ميجابايت لكل وكيل", "5 إجراءات ذكاء اصطناعي لكل وكيل"],
+        "popular": "الأكثر شعبية"
+      },
+      "standard": {
+        "name": "قياسي",
+        "price": "$150",
+        "period": "/شهر",
+        "desc": "للفرق الصغيرة والشركات النامية",
+        "features": ["12 ألف رصيد رسالة", "2 وكيل ذكاء اصطناعي", "33 ميجابايت لكل وكيل", "10 إجراءات ذكاء اصطناعي لكل وكيل", "3 مقاعد"]
+      },
+      "pro": {
+        "name": "احترافي",
+        "price": "$500",
+        "period": "/شهر",
+        "desc": "للشركات التي تحتاج ميزات متقدمة",
+        "features": ["40 ألف رصيد رسالة", "3 وكلاء ذكاء اصطناعي", "33 ميجابايت لكل وكيل", "15 إجراء ذكاء اصطناعي لكل وكيل", "5 مقاعد"]
+      },
+      "upgrade": "الترقية إلى {{plan}}",
+      "getStarted": "ابدأ الآن",
+      "metrics": {
+        "messageCredits": "{{value}} رصيد رسالة",
+        "aiAgents": "{{count}} وكيل ذكاء اصطناعي",
+        "aiAgents_plural": "{{count}} وكلاء ذكاء اصطناعي",
+        "perAgent": "{{size}} لكل وكيل",
+        "aiActions": "{{count}} إجراء ذكاء اصطناعي لكل وكيل",
+        "seats": "{{count}} مقاعد"
+      },
+      "featuresList": {
+        "embedUnlimited": "تضمين على مواقع غير محدودة",
+        "apiAccess": "الوصول إلى API",
+        "noApiAccess": "لا يوجد وصول إلى API",
+        "unlimitedTraining": "روابط تدريب غير محدودة",
+        "basicIntegrations": "تكاملات أساسية",
+        "multipleAgents": "وكلاء متعددون",
+        "teamCollab": "تعاون الفريق",
+        "moreActions": "المزيد من إجراءات الذكاء الاصطناعي",
+        "advancedAnalytics": "تحليلات متقدمة",
+        "prioritySupport": "دعم ذو أولوية",
+        "largerTeams": "فرق أكبر"
+      }
+    },
+    "addons": {
+      "title": "الإضافات والميزات الإضافية",
+      "subtitle": "عزز خطتك بميزات وموارد إضافية",
+      "credits": {
+        "title": "أرصدة رسائل إضافية",
+        "desc": "1,000 رصيد رسالة إضافي شهرياً"
+      },
+      "autoRecharge": {
+        "title": "إعادة الشحن التلقائي",
+        "desc": "يضيف تلقائياً 1,000 رصيد عند انخفاض الرصيد"
+      },
+      "agent": {
+        "title": "وكيل ذكاء اصطناعي إضافي",
+        "desc": "أضف وكيل ذكاء اصطناعي آخر لحسابك"
+      },
+      "branding": {
+        "title": "إزالة العلامة التجارية",
+        "desc": "إزالة \"مدعوم من [العلامة التجارية]\" من روبوتات المحادثة"
+      },
+      "domain": {
+        "title": "نطاق مخصص",
+        "desc": "استخدم نطاقك الخاص لأدوات المحادثة"
+      },
+      "add": "إضافة"
+    },
+    "cta": {
+      "title": "هل أنت مستعد لتحويل دعم العملاء الخاص بك؟",
+      "subtitle": "انضم إلى آلاف الشركات التي تستخدم روبوتات المحادثة الذكية لتوفير تجارب عملاء أفضل.",
+      "primary": "ابدأ البناء مجاناً",
+      "secondary": "شاهد قصص النجاح",
+      "noCreditCard": "لا حاجة لبطاقة ائتمان",
+      "quickSetup": "إعداد في 5 دقائق",
+      "cancelAnytime": "إلغاء في أي وقت"
+    },
+    "footer": {
+      "tagline": "حوّل مستنداتك إلى روبوتات محادثة ذكية تساعد عملاءك فعلاً.",
+      "product": "المنتج",
+      "support": "الدعم",
+      "company": "الشركة",
+      "helpCenter": "مركز المساعدة",
+      "contact": "اتصل بنا",
+      "status": "الحالة",
+      "about": "من نحن",
+      "privacy": "الخصوصية",
+      "apiDocs": "وثائق API",
+      "copyright": "© 2024 Chatava. جميع الحقوق محفوظة."
+    }
+  },
+  "auth": {
+    "brand": {
+      "tagline": "منصة دعم العملاء المدعومة بالذكاء الاصطناعي",
+      "description": "حوّل دعم عملائك باستخدام روبوتات محادثة ذكية تتعلم وتتكيف وتقدم تجارب استثنائية على مدار الساعة.",
+      "realtime": "محادثة فورية",
+      "realtimeDesc": "رسائل فورية بتقنية WebSocket",
+      "secure": "آمن وخاص",
+      "secureDesc": "أمان على مستوى المؤسسات",
+      "automation": "أتمتة ذكية",
+      "automationDesc": "إدارة المحادثات بالذكاء الاصطناعي",
+      "collaboration": "تعاون الفريق",
+      "collaborationDesc": "مراقبة المحادثات المباشرة",
+      "activeUsers": "مستخدم نشط",
+      "uptime": "وقت التشغيل",
+      "support": "دعم"
+    },
+    "login": {
+      "title": "مرحباً بعودتك",
+      "subtitle": "سجل الدخول إلى حسابك لمتابعة رحلتك",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "أدخل بريدك الإلكتروني",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أدخل كلمة المرور",
+      "forgotPassword": "نسيت كلمة المرور؟",
+      "signIn": "تسجيل الدخول",
+      "noAccount": "جديد على منصتنا؟",
+      "createAccount": "أنشئ حسابك",
+      "secured": "مؤمن بتشفير على مستوى المؤسسات"
+    },
+    "register": {
+      "title": "إنشاء حساب",
+      "subtitle": "ابدأ رحلتك معنا اليوم",
+      "name": "الاسم الكامل",
+      "namePlaceholder": "أدخل اسمك",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "أدخل بريدك الإلكتروني",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أنشئ كلمة مرور",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "confirmPlaceholder": "أكد كلمة المرور",
+      "signUp": "إنشاء حساب",
+      "hasAccount": "لديك حساب بالفعل؟",
+      "signIn": "تسجيل الدخول"
+    }
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcome": "مرحباً بعودتك",
+    "greeting": {
+      "morning": "صباح الخير",
+      "afternoon": "مساء الخير",
+      "evening": "مساء الخير"
+    },
+    "subtitle": "إليك ما يحدث مع روبوتات المحادثة الخاصة بك اليوم.",
+    "newChatbot": "روبوت جديد",
+    "stats": {
+      "totalChatbots": "إجمالي الروبوتات",
+      "totalConversations": "إجمالي المحادثات",
+      "messagesThisMonth": "رسائل هذا الشهر",
+      "creditsRemaining": "الرصيد المتبقي",
+      "maxAllowed": "{{count}} الحد الأقصى",
+      "thisBillingCycle": "دورة الفوترة هذه",
+      "runningLow": "الرصيد منخفض!",
+      "chatbots": "روبوتات المحادثة",
+      "conversations": "المحادثات",
+      "messages": "الرسائل",
+      "knowledge": "مصادر المعرفة"
+    },
+    "yourChatbots": "روبوتاتك",
+    "chatbotsCount": "{{filtered}} من {{total}} روبوت",
+    "searchChatbots": "البحث عن روبوتات...",
+    "noResults": "لا توجد نتائج",
+    "tryAdjusting": "حاول تعديل بحثك",
+    "tryAgain": "حاول مرة أخرى",
+    "quickActions": {
+      "title": "إجراءات سريعة",
+      "subtitle": "المهام الشائعة في متناول يدك",
+      "createChatbot": "إنشاء روبوت",
+      "createChatbotDesc": "بناء مساعد ذكاء اصطناعي جديد",
+      "uploadDocs": "رفع مستندات",
+      "uploadDocsDesc": "إضافة إلى قاعدة المعرفة",
+      "addUrl": "إضافة رابط موقع",
+      "addUrlDesc": "زحف محتوى الموقع",
+      "getEmbed": "الحصول على كود التضمين",
+      "getEmbedDesc": "إضافة الروبوت لموقعك",
+      "uploadKnowledge": "رفع المعرفة",
+      "viewAnalytics": "عرض التحليلات"
+    },
+    "activity": {
+      "title": "النشاط الأخير",
+      "subtitle": "أحدث إجراءاتك وأحداثك",
+      "viewAll": "عرض الكل",
+      "noActivity": "لا يوجد نشاط حديث",
+      "actionsWillAppear": "ستظهر إجراءاتك الأخيرة هنا",
+      "messages": "رسائل",
+      "newConversation": "بدأت محادثة جديدة",
+      "customerInquiry": "استفسار العميل حول خطط الأسعار",
+      "knowledgeUpdated": "تم تحديث قاعدة المعرفة",
+      "addedDocuments": "تمت إضافة 3 مستندات جديدة إلى مصادر الأسئلة الشائعة",
+      "trainingCompleted": "اكتمل تدريب الروبوت",
+      "readyToUse": "{{name}} جاهز للاستخدام الآن",
+      "creditsLow": "الرصيد منخفض",
+      "creditsRemaining": "لديك {{count}} رصيد متبقي هذا الشهر",
+      "highRating": "تقييم رضا عالي",
+      "ratedStars": "قيّم المستخدم المحادثة بـ 5 نجوم",
+      "minutesAgo": "منذ {{count}} دقائق",
+      "hourAgo": "منذ ساعة",
+      "hoursAgo": "منذ {{count}} ساعات"
+    },
+    "upgrade": {
+      "title": "الترقية إلى Pro",
+      "description": "احصل على روبوتات غير محدودة وتحليلات متقدمة ودعم ذو أولوية.",
+      "viewPlans": "عرض الخطط"
+    },
+    "recentActivity": "النشاط الأخير",
+    "noChatbots": "لا توجد روبوتات محادثة بعد",
+    "createFirst": "أنشئ روبوت المحادثة الأول للبدء",
+    "emptyState": {
+      "title": "أنشئ أول روبوت محادثة",
+      "description": "ابنِ مساعدين ذكيين يفهمون محتواك ويقدمون إجابات فورية ودقيقة لعملائك.",
+      "getStarted": "ابدأ الآن"
+    }
+  },
+  "chatbot": {
+    "settings": "إعدادات روبوت المحادثة",
+    "overview": "نظرة عامة",
+    "knowledge": "المعرفة",
+    "analytics": "التحليلات",
+    "embed": "التضمين",
+    "integrations": "التكاملات",
+    "testChat": "اختبار المحادثة",
+    "status": {
+      "active": "نشط",
+      "ready": "جاهز",
+      "training": "قيد التدريب",
+      "processing": "قيد المعالجة",
+      "pending": "قيد الانتظار",
+      "error": "خطأ",
+      "draft": "مسودة"
+    },
+    "stats": {
+      "conversations": "المحادثات",
+      "messages": "الرسائل",
+      "knowledge": "المعرفة",
+      "chats": "محادثات"
+    },
+    "actions": {
+      "startChat": "بدء المحادثة",
+      "openChat": "فتح المحادثة",
+      "getEmbedCode": "الحصول على كود التضمين",
+      "delete": "حذف"
+    },
+    "noDescription": "لا يوجد وصف",
+    "created": "تم الإنشاء {{date}}",
+    "config": {
+      "title": "إعدادات روبوت المحادثة",
+      "subtitle": "إعدادات نموذج الذكاء الاصطناعي والمعاملات",
+      "model": "النموذج",
+      "temperature": "درجة الحرارة",
+      "maxTokens": "الحد الأقصى للرموز",
+      "citations": "الاستشهادات",
+      "enabled": "مفعّل",
+      "disabled": "معطّل",
+      "editConfig": "تعديل الإعدادات"
+    },
+    "publicAccess": {
+      "title": "الوصول العام",
+      "subtitle": "رابط الأداة القابل للمشاركة",
+      "publicUrl": "الرابط العام",
+      "getEmbed": "الحصول على كود التضمين"
+    },
+    "analyticsComingSoon": {
+      "title": "التحليلات قادمة قريباً",
+      "desc": "ستتوفر هنا تحليلات المحادثات المفصلة ومقاييس الأداء.",
+      "badge": "قيد التطوير"
+    },
+    "embedWidget": {
+      "title": "تضمين روبوت المحادثة",
+      "subtitle": "أضف روبوت المحادثة هذا إلى أي موقع",
+      "widgetUrl": "رابط الأداة"
+    }
+  },
+  "chat": {
+    "placeholder": "اكتب رسالتك...",
+    "send": "إرسال",
+    "thinking": "جاري التفكير...",
+    "online": "متصل",
+    "readyToHelp": "جاهز للمساعدة",
+    "sources": "{{count}} مصدر",
+    "sources_plural": "{{count}} مصادر",
+    "uploadSuccess": "تم تحميل \"{{name}}\" بنجاح. تمت معالجة المستند وهو متاح الآن للأسئلة!",
+    "uploadError": "فشل تحميل \"{{name}}\": {{error}}",
+    "dropFiles": "أسقط الملفات هنا أو",
+    "browse": "تصفح",
+    "supportedFiles": "ملفات PDF و DOC و TXT مدعومة",
+    "aiDisclaimer": "الذكاء الاصطناعي قد يخطئ. تحقق من المعلومات المهمة.",
+    "loadingConversation": "جاري تحميل المحادثة..."
+  },
+  "integrations": {
+    "title": "ربط أدواتك",
+    "subtitle": "إرسال العملاء المحتملين وبيانات المحادثات تلقائياً إلى أدوات عملك.",
+    "hubspot": {
+      "title": "تكامل HubSpot",
+      "desc": "إرسال العملاء المحتملين مباشرة إلى HubSpot CRM",
+      "formUrl": "رابط نموذج HubSpot",
+      "formUrlPlaceholder": "https://forms.hubspot.com/uploads/form/v2/...",
+      "formUrlHint": "الصق رابط تقديم نموذج HubSpot من إعدادات النماذج الخاصة بك",
+      "whenToSend": "متى يتم إرسال العملاء المحتملين",
+      "onEmail": "عند التقاط البريد الإلكتروني في المحادثة",
+      "allConversations": "إرسال جميع المحادثات (قريباً)",
+      "testConnection": "اختبار الاتصال",
+      "saveSettings": "حفظ الإعدادات",
+      "notConfigured": "غير مهيأ"
+    },
+    "comingSoon": "قريباً",
+    "status": "الحالة"
+  },
+  "sidebar": {
+    "dashboard": "لوحة التحكم",
+    "chatbots": "روبوتات المحادثة",
+    "conversations": "المحادثات",
+    "knowledgeBase": "قاعدة المعرفة",
+    "analytics": "التحليلات",
+    "integrations": "التكاملات",
+    "settings": "الإعدادات",
+    "billing": "الفواتير",
+    "logout": "تسجيل الخروج",
+    "new": "جديد",
+    "searchPlaceholder": "بحث... (⌘K)",
+    "notifications": "الإشعارات",
+    "newConversation": "بدأت محادثة جديدة",
+    "minutesAgo": "منذ {{count}} دقائق",
+    "hourAgo": "منذ ساعة",
+    "trainingComplete": "اكتمل تدريب روبوت المحادثة",
+    "profile": "الملف الشخصي",
+    "documentation": "الوثائق",
+    "freePlan": "الخطة المجانية",
+    "credits": "{{count}} رصيد"
+  },
+  "wizard": {
+    "createChatbot": "إنشاء روبوت محادثة",
+    "editChatbot": "تعديل روبوت المحادثة",
+    "step": "الخطوة {{current}} من {{total}}",
+    "steps": {
+      "basics": "الأساسيات",
+      "knowledge": "المعرفة",
+      "review": "المراجعة"
+    },
+    "basics": {
+      "name": "اسم روبوت المحادثة",
+      "nameRequired": "يرجى إدخال اسم لروبوت المحادثة",
+      "namePlaceholder": "مثال: روبوت دعم العملاء",
+      "description": "الوصف",
+      "descriptionPlaceholder": "ما الذي يساعد فيه روبوت المحادثة؟",
+      "welcomeMessage": "رسالة الترحيب",
+      "welcomePlaceholder": "مرحباً! كيف يمكنني مساعدتك؟",
+      "personality": "الشخصية",
+      "professional": "احترافي",
+      "professionalDesc": "نبرة رسمية",
+      "casual": "ودود",
+      "casualDesc": "نبرة ودية",
+      "customInstructions": "تعليمات مخصصة",
+      "instructionsPlaceholder": "أضف تعليمات مخصصة لروبوت المحادثة...\n\nأمثلة:\n• أنت وكيل دعم مفيد لـ [الشركة]\n• كن دائماً مهذباً ومحترفاً\n• ركز على المساعدة في [المواضيع]"
+    },
+    "knowledge": {
+      "uploadDocuments": "رفع المستندات",
+      "dragDrop": "اسحب وأفلت الملفات هنا",
+      "fileTypes": "PDF, DOCX, TXT (الحد الأقصى 10 ميجابايت)",
+      "browseFiles": "تصفح الملفات",
+      "addUrls": "إضافة روابط",
+      "urlPlaceholder": "أدخل الروابط (رابط لكل سطر)\nhttps://example.com/about",
+      "addUrlsBtn": "إضافة الروابط",
+      "knowledgeSources": "مصادر المعرفة",
+      "sourceCount": "{{count}} مصدر",
+      "sourceCount_plural": "{{count}} مصادر",
+      "noSources": "لم تتم إضافة مصادر بعد",
+      "noSourcesDesc": "ارفع ملفات أو أضف روابط لتدريب روبوت المحادثة",
+      "citable": "قابل للاقتباس",
+      "citableDesc": "يمكن اقتباسه",
+      "learnOnly": "للتعلم فقط",
+      "learnOnlyDesc": "خاص"
+    },
+    "review": {
+      "noDescription": "لا يوجد وصف",
+      "welcomeMessage": "رسالة الترحيب",
+      "personality": "الشخصية",
+      "customInstructions": "تعليمات مخصصة",
+      "knowledgeSummary": "مصادر المعرفة",
+      "citable": "قابل للاقتباس",
+      "private": "خاص",
+      "readyTitle": "جاهز للإطلاق!",
+      "readyDesc": "روبوت المحادثة مهيأ وجاهز للعمل.",
+      "feature1": "اختبر بمحادثات حقيقية",
+      "feature2": "ضمّن في موقعك",
+      "feature3": "تتبع تحليلات الاستخدام"
+    },
+    "buttons": {
+      "previous": "السابق",
+      "next": "التالي",
+      "creating": "جاري الإنشاء...",
+      "create": "إنشاء روبوت المحادثة",
+      "saveChanges": "حفظ التغييرات"
+    },
+    "errors": {
+      "fileNotSupported": "نوع الملف {{type}} غير مدعوم. استخدم PDF أو DOCX أو TXT.",
+      "fileTooLarge": "الملف \"{{name}}\" كبير جداً. الحد الأقصى 10 ميجابايت.",
+      "invalidUrl": "رابط غير صالح: {{url}}",
+      "nameRequired": "يرجى إدخال اسم لروبوت المحادثة"
+    }
+  },
+  "knowledge": {
+    "title": "مصادر المعرفة",
+    "subtitle": "إدارة الملفات والروابط التي يتعلم منها روبوت المحادثة",
+    "addSources": "إضافة مصادر",
+    "loading": "جاري تحميل مصادر المعرفة...",
+    "noSources": "لا توجد مصادر معرفة بعد",
+    "noSourcesDesc": "ارفع مستندات أو أضف روابط مواقع لتحسين استجابات روبوت المحادثة",
+    "addFirst": "أضف أول مصدر",
+    "generateEmbeddings": "توليد التضمينات",
+    "training": "جاري معالجة مصادر المعرفة...",
+    "trainingSuccess": "تم توليد التضمينات بنجاح!",
+    "trainDesc": "درّب روبوت المحادثة على المحتوى المرفوع",
+    "trainNow": "تدريب الآن",
+    "trainingBtn": "جاري التدريب...",
+    "done": "تم!",
+    "added": "أُضيف {{date}}",
+    "citable": "قابل للاقتباس",
+    "learnOnly": "للتعلم فقط",
+    "openUrl": "فتح الرابط",
+    "downloadFile": "تحميل الملف",
+    "deleteSource": "حذف المصدر",
+    "privacyTitle": "إعدادات الخصوصية:",
+    "privacyCitable": "قابل للاقتباس - يمكن اقتباس المحتوى وعرضه للمستخدمين",
+    "privacyLearn": "للتعلم فقط - يُستخدم للسياق ولا يُكشف للمستخدمين أبداً",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف مصدر المعرفة هذا؟",
+    "deleteFailed": "فشل حذف مصدر المعرفة. يرجى المحاولة مرة أخرى."
+  },
+  "deleteModal": {
+    "title": "حذف روبوت المحادثة",
+    "confirmText": "هل أنت متأكد أنك تريد حذف",
+    "warning": "لا يمكن التراجع عن هذا الإجراء.",
+    "allDataDeleted": "سيتم حذف جميع المحادثات والتحليلات والإعدادات المرتبطة بروبوت المحادثة هذا نهائياً.",
+    "deleting": "جاري الحذف...",
+    "deleteBtn": "حذف روبوت المحادثة"
+  },
+  "chatbotModal": {
+    "createTitle": "إنشاء روبوت محادثة جديد",
+    "editTitle": "تعديل روبوت المحادثة",
+    "basicInfo": "المعلومات الأساسية",
+    "chatbotName": "اسم روبوت المحادثة *",
+    "namePlaceholder": "مثال: روبوت دعم العملاء",
+    "description": "الوصف",
+    "descPlaceholder": "وصف مختصر لغرض روبوت المحادثة...",
+    "appearance": "المظهر",
+    "welcomeMessage": "رسالة الترحيب",
+    "welcomePlaceholder": "مرحباً! كيف يمكنني مساعدتك اليوم؟",
+    "inputPlaceholder": "نص حقل الإدخال",
+    "inputPlaceholderValue": "اكتب رسالتك...",
+    "themeColor": "لون السمة",
+    "aiConfig": "إعدادات الذكاء الاصطناعي",
+    "model": "النموذج",
+    "temperature": "درجة الحرارة",
+    "precise": "دقيق",
+    "creative": "إبداعي",
+    "maxTokens": "الحد الأقصى لطول الرد (رموز)",
+    "enableCitations": "تفعيل الاستشهادات المصدرية في الردود",
+    "enableDataCollection": "تفعيل جمع بيانات المحادثات للتحسينات",
+    "creating": "جاري الإنشاء...",
+    "saving": "جاري الحفظ...",
+    "createBtn": "إنشاء روبوت المحادثة",
+    "saveBtn": "حفظ التغييرات",
+    "error": "خطأ"
+  },
+  "chatSidebar": {
+    "quickActions": "إجراءات سريعة",
+    "hubspotIntegration": "تكامل HubSpot",
+    "hubspotDesc": "إرسال العملاء المحتملين تلقائياً إلى CRM الخاص بك.",
+    "enableCrm": "تفعيل CRM",
+    "hubspotFormUrl": "رابط نموذج HubSpot",
+    "apiKey": "مفتاح API (اختياري)",
+    "apiKeyPlaceholder": "مفتاح API اختياري",
+    "test": "اختبار",
+    "testing": "جاري الاختبار...",
+    "save": "حفظ",
+    "connected": "متصل",
+    "notConfigured": "غير مهيأ",
+    "embedWidget": "أداة التضمين",
+    "embedWidgetDesc": "أضف روبوت المحادثة هذا إلى أي موقع.",
+    "widgetUrl": "رابط الأداة",
+    "embedType": "نوع التضمين",
+    "code": "الكود",
+    "quickSettings": "إعدادات سريعة",
+    "settingsDesc": "عرض إعدادات روبوت المحادثة.",
+    "botName": "اسم الروبوت",
+    "settingsNote": "لتعديل الإعدادات، انتقل إلى لوحة التحكم ← إعدادات روبوت المحادثة",
+    "liveStats": "إحصائيات مباشرة",
+    "statsDesc": "مقاييس الأداء في الوقت الفعلي.",
+    "conversations": "المحادثات",
+    "messages": "الرسائل",
+    "active": "نشط",
+    "knowledgeBase": "قاعدة المعرفة",
+    "knowledgeDesc": "المستندات والمصادر المتاحة.",
+    "knowledgeSources": "مصادر المعرفة",
+    "none": "لا يوجد",
+    "knowledgeNote": "لإدارة مصادر المعرفة، انتقل إلى لوحة التحكم ← مصادر المعرفة"
+  },
+  "embedModal": {
+    "title": "تضمين روبوت المحادثة",
+    "chooseType": "اختر نوع التضمين",
+    "chatBubble": "فقاعة المحادثة",
+    "chatBubbleDesc": "فقاعة عائمة في زاوية موقعك",
+    "inlineFrame": "إطار مدمج",
+    "inlineFrameDesc": "مضمّن مباشرة في صفحتك",
+    "instructions": "تعليمات التثبيت",
+    "step1": "انسخ الكود أدناه",
+    "step2bubble": "الصقه في HTML موقعك (يفضل قبل وسم الإغلاق </body>)",
+    "step2inline": "الصقه في HTML موقعك حيث تريد ظهور المحادثة",
+    "step3": "احفظ وانشر التغييرات",
+    "step4": "روبوت المحادثة الآن مباشر! 🎉",
+    "embedCode": "كود التضمين",
+    "copyCode": "نسخ الكود",
+    "copied": "تم النسخ!",
+    "previewTitle": "المعاينة والتخصيص",
+    "previewBubble": "ستظهر فقاعة المحادثة في الزاوية السفلية اليمنى من موقعك. يمكن للمستخدمين النقر عليها لبدء المحادثة.",
+    "previewInline": "ستُضمّن واجهة المحادثة مباشرة في صفحتك. يمكنك تعديل قيم العرض والارتفاع في الكود.",
+    "mobileResponsive": "متجاوب مع الجوال ✓",
+    "secureConnection": "اتصال آمن ✓",
+    "noSetup": "لا حاجة للإعداد ✓",
+    "needHelp": "هل تحتاج مساعدة في التكامل؟",
+    "viewDocs": "عرض الوثائق",
+    "contactSupport": "اتصل بالدعم"
+  }
+}

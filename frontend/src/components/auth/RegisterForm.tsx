@@ -1,6 +1,7 @@
 // Modern Registration form component with dark theme styling
 
 import React, { useState, FormEvent, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mail, Lock, User, UserPlus, Bot, Check, X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { RegisterRequest } from '../../types';
@@ -19,6 +20,7 @@ interface PasswordStrength {
 }
 
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
+  const { t } = useTranslation();
   const { register } = useAuth();
   const [formData, setFormData] = useState<RegisterRequest>({
     email: '',
@@ -177,10 +179,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           </div>
 
           <CardTitle className="text-3xl bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-            Create Account
+            {t('auth.register.title')}
           </CardTitle>
           <CardDescription className="text-base text-slate-400">
-            Join Chatava and start building AI-powered chatbots
+            {t('auth.register.subtitle')}
           </CardDescription>
         </CardHeader>
 
@@ -200,7 +202,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">First Name</label>
+                <label className="text-sm font-medium text-slate-300">{t('auth.register.name')}</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                   <input
@@ -252,7 +254,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
             {/* Email Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">Email Address</label>
+              <label className="text-sm font-medium text-slate-300">{t('auth.register.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
@@ -279,7 +281,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             {/* Password Field with Strength Indicator */}
             <div className="space-y-3">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Password</label>
+                <label className="text-sm font-medium text-slate-300">{t('auth.register.password')}</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                   <input
@@ -342,7 +344,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
             {/* Confirm Password Field */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">Confirm Password</label>
+              <label className="text-sm font-medium text-slate-300">{t('auth.register.confirmPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
@@ -389,7 +391,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               ) : (
                 <>
                   <UserPlus className="w-5 h-5" />
-                  Create Account
+                  {t('auth.register.signUp')}
                 </>
               )}
             </button>
@@ -406,7 +408,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="px-4 bg-transparent text-slate-500 font-medium">
-                    Already have an account?
+                    {t('auth.register.hasAccount')}
                   </span>
                 </div>
               </div>
@@ -417,7 +419,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 className="w-full mt-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors disabled:opacity-50"
               >
                 <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                  Sign in instead
+                  {t('auth.register.signIn')}
                 </span>
               </button>
             </div>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Loader2, Sparkles, Bot, Zap, Shield, Users } from 'lucide-react'
+import { LanguageToggle } from './components/ui/LanguageToggle'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { LoginForm } from './components/auth/LoginForm'
 import { RegisterForm } from './components/auth/RegisterForm'
@@ -30,6 +32,7 @@ function LoadingScreen() {
 }
 
 function AuthPage() {
+  const { t } = useTranslation()
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
 
   return (
@@ -49,6 +52,11 @@ function AuthPage() {
           backgroundSize: '50px 50px'
         }}
       />
+
+      {/* Language Toggle - Top Right */}
+      <div className="fixed top-6 right-6 z-50">
+        <LanguageToggle />
+      </div>
 
       {/* Content */}
       <div className="relative z-10 min-h-screen">
@@ -72,74 +80,72 @@ function AuthPage() {
                 </div>
 
                 <h2 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
-                  AI-Powered Customer Support{' '}
                   <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
-                    Platform
+                    {t('auth.brand.tagline')}
                   </span>
                 </h2>
 
                 <p className="text-xl text-slate-400 leading-relaxed max-w-lg">
-                  Transform your customer support with intelligent chatbots that learn,
-                  adapt, and deliver exceptional experiences 24/7.
+                  {t('auth.brand.description')}
                 </p>
               </div>
 
               {/* Feature Highlights */}
               <div className="grid sm:grid-cols-2 gap-6">
-                <div className="flex items-start space-x-3 group">
+                <div className="flex items-start space-x-3 rtl:space-x-reverse group">
                   <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center group-hover:bg-violet-500/30 transition-colors duration-200">
                     <Zap className="w-5 h-5 text-violet-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">Real-time Chat</h3>
-                    <p className="text-sm text-slate-500">WebSocket-powered instant messaging</p>
+                    <h3 className="font-semibold text-white">{t('auth.brand.realtime')}</h3>
+                    <p className="text-sm text-slate-500">{t('auth.brand.realtimeDesc')}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 group">
+                <div className="flex items-start space-x-3 rtl:space-x-reverse group">
                   <div className="w-10 h-10 bg-fuchsia-500/20 rounded-xl flex items-center justify-center group-hover:bg-fuchsia-500/30 transition-colors duration-200">
                     <Shield className="w-5 h-5 text-fuchsia-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">Secure & Private</h3>
-                    <p className="text-sm text-slate-500">Enterprise-grade security</p>
+                    <h3 className="font-semibold text-white">{t('auth.brand.secure')}</h3>
+                    <p className="text-sm text-slate-500">{t('auth.brand.secureDesc')}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 group">
+                <div className="flex items-start space-x-3 rtl:space-x-reverse group">
                   <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors duration-200">
                     <Bot className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">Smart Automation</h3>
-                    <p className="text-sm text-slate-500">AI-driven conversation management</p>
+                    <h3 className="font-semibold text-white">{t('auth.brand.automation')}</h3>
+                    <p className="text-sm text-slate-500">{t('auth.brand.automationDesc')}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 group">
+                <div className="flex items-start space-x-3 rtl:space-x-reverse group">
                   <div className="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors duration-200">
                     <Users className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">Team Collaboration</h3>
-                    <p className="text-sm text-slate-500">Live conversation monitoring</p>
+                    <h3 className="font-semibold text-white">{t('auth.brand.collaboration')}</h3>
+                    <p className="text-sm text-slate-500">{t('auth.brand.collaborationDesc')}</p>
                   </div>
                 </div>
               </div>
 
               {/* Social Proof */}
-              <div className="flex items-center space-x-8 pt-8">
+              <div className="flex items-center space-x-8 rtl:space-x-reverse pt-8">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">10k+</div>
-                  <div className="text-sm text-slate-500">Active Users</div>
+                  <div className="text-sm text-slate-500">{t('auth.brand.activeUsers')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">99.9%</div>
-                  <div className="text-sm text-slate-500">Uptime</div>
+                  <div className="text-sm text-slate-500">{t('auth.brand.uptime')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">24/7</div>
-                  <div className="text-sm text-slate-500">Support</div>
+                  <div className="text-sm text-slate-500">{t('auth.brand.support')}</div>
                 </div>
               </div>
             </div>

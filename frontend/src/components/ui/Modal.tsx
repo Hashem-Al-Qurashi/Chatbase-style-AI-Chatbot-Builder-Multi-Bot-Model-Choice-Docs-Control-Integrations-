@@ -62,34 +62,40 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+      {/* Backdrop with blur */}
+      <div
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-md animate-fade-in"
         onClick={handleOverlayClick}
       />
-      
+
       {/* Modal */}
       <div className={`relative w-full ${sizeClasses[size]} mx-4 animate-scale-in ${className}`}>
-        <div className="bg-white rounded-2xl shadow-elegant overflow-hidden">
+        {/* Ambient glow effects */}
+        <div className="absolute -inset-4 pointer-events-none overflow-hidden">
+          <div className="absolute -top-20 -left-20 w-40 h-40 bg-violet-500/20 rounded-full blur-[80px]" />
+          <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-fuchsia-500/20 rounded-full blur-[80px]" />
+        </div>
+
+        <div className="relative bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-slate-950/50 border border-white/10 overflow-hidden">
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <div className="px-6 py-4 border-b border-white/10 bg-gradient-to-r from-white/5 via-white/[0.07] to-white/5">
               <div className="flex items-center justify-between">
                 <div>
                   {title && (
-                    <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                    <h3 className="text-lg font-semibold text-white">{title}</h3>
                   )}
                   {description && (
-                    <p className="text-sm text-gray-600 mt-1">{description}</p>
+                    <p className="text-sm text-slate-400 mt-1">{description}</p>
                   )}
                 </div>
-                
+
                 {showCloseButton && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={onClose}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </Button>
@@ -103,10 +109,6 @@ export function Modal({
             {children}
           </div>
         </div>
-
-        {/* Decorative elements */}
-        <div className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-to-br from-primary-400 to-accent-400 rounded-full opacity-60 animate-pulse-gentle" />
-        <div className="absolute -bottom-2 -left-2 w-3 h-3 bg-gradient-to-br from-accent-400 to-primary-400 rounded-full opacity-40 animate-bounce-gentle" />
       </div>
     </div>
   )

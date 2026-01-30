@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
   Bot,
@@ -24,6 +25,7 @@ import {
   Rocket
 } from 'lucide-react'
 import { checkoutService } from '../../services/checkout'
+import { LanguageToggle } from '../ui/LanguageToggle'
 
 interface ChatMessage {
   role: 'bot' | 'user'
@@ -32,6 +34,7 @@ interface ChatMessage {
 }
 
 const ChatbotSaaSLanding = () => {
+  const { t } = useTranslation()
   const [isTyping, setIsTyping] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [demoInput, setDemoInput] = useState('')
@@ -124,17 +127,18 @@ const ChatbotSaaSLanding = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Features</a>
-              <a href="#demo" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Demo</a>
-              <a href="#pricing" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Pricing</a>
+            <nav className="hidden md:flex items-center gap-6">
+              <a href="#features" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">{t('nav.features')}</a>
+              <a href="#demo" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">{t('nav.demo')}</a>
+              <a href="#pricing" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">{t('nav.pricing')}</a>
+              <LanguageToggle variant="compact" />
               <motion.a
                 href="/login"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-lg shadow-violet-500/25"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Get Started Free
+                {t('nav.getStarted')}
                 <ArrowRight className="w-4 h-4" />
               </motion.a>
             </nav>
@@ -159,15 +163,16 @@ const ChatbotSaaSLanding = () => {
                 className="md:hidden absolute top-full left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-b border-white/10 z-50"
               >
                 <nav className="px-6 py-6 space-y-4">
-                  <a href="#features" className="block text-lg font-medium text-slate-300 hover:text-white transition-colors">Features</a>
-                  <a href="#demo" className="block text-lg font-medium text-slate-300 hover:text-white transition-colors">Demo</a>
-                  <a href="#pricing" className="block text-lg font-medium text-slate-300 hover:text-white transition-colors">Pricing</a>
-                  <div className="pt-4 border-t border-white/10">
+                  <a href="#features" className="block text-lg font-medium text-slate-300 hover:text-white transition-colors">{t('nav.features')}</a>
+                  <a href="#demo" className="block text-lg font-medium text-slate-300 hover:text-white transition-colors">{t('nav.demo')}</a>
+                  <a href="#pricing" className="block text-lg font-medium text-slate-300 hover:text-white transition-colors">{t('nav.pricing')}</a>
+                  <div className="pt-4 border-t border-white/10 space-y-4">
+                    <LanguageToggle variant="compact" className="w-full justify-center" />
                     <a
                       href="/login"
                       className="block w-full text-center px-5 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-medium"
                     >
-                      Get Started Free
+                      {t('nav.getStarted')}
                     </a>
                   </div>
                 </nav>
@@ -191,7 +196,7 @@ const ChatbotSaaSLanding = () => {
               >
                 {/* Social Proof */}
                 <motion.div variants={itemVariants} className="flex items-center gap-4 mb-8">
-                  <div className="flex -space-x-3">
+                  <div className="flex -space-x-3 rtl:space-x-reverse">
                     {['S', 'M', 'A', 'J', 'K'].map((letter, i) => (
                       <div
                         key={i}
@@ -202,7 +207,7 @@ const ChatbotSaaSLanding = () => {
                     ))}
                   </div>
                   <div className="text-sm text-slate-400">
-                    <span className="font-semibold text-white">2,500+</span> businesses trust our chatbots
+                    {t('landing.hero.badge')}
                   </div>
                 </motion.div>
 
@@ -211,15 +216,11 @@ const ChatbotSaaSLanding = () => {
                   variants={itemVariants}
                   className="text-4xl lg:text-6xl font-bold leading-tight mb-8"
                 >
-                  Turn your docs into{' '}
-                  <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
-                    smart chatbots
-                  </span>
+                  {t('landing.hero.title')}
                 </motion.h1>
 
                 <motion.p variants={itemVariants} className="text-xl text-slate-400 leading-relaxed mb-10">
-                  Upload your knowledge base and create intelligent chatbots that provide instant, accurate answers.
-                  <span className="font-semibold text-white"> No coding required.</span>
+                  {t('landing.hero.subtitle')}
                 </motion.p>
 
                 {/* Value Props */}
@@ -229,8 +230,8 @@ const ChatbotSaaSLanding = () => {
                       <Clock className="w-5 h-5 text-violet-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-white">5 min setup</p>
-                      <p className="text-sm text-slate-500">Ready instantly</p>
+                      <p className="font-semibold text-white">{t('landing.features.setup')}</p>
+                      <p className="text-sm text-slate-500">{t('landing.features.setupDesc')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 group">
@@ -238,8 +239,8 @@ const ChatbotSaaSLanding = () => {
                       <Shield className="w-5 h-5 text-fuchsia-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-white">100% Private</p>
-                      <p className="text-sm text-slate-500">Your data stays safe</p>
+                      <p className="font-semibold text-white">{t('landing.features.private')}</p>
+                      <p className="text-sm text-slate-500">{t('landing.features.privateDesc')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 group">
@@ -247,8 +248,8 @@ const ChatbotSaaSLanding = () => {
                       <Globe className="w-5 h-5 text-cyan-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-white">Any website</p>
-                      <p className="text-sm text-slate-500">Embed anywhere</p>
+                      <p className="font-semibold text-white">{t('landing.features.embed')}</p>
+                      <p className="text-sm text-slate-500">{t('landing.features.embedDesc')}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -272,7 +273,7 @@ const ChatbotSaaSLanding = () => {
                     ) : (
                       <>
                         <Sparkles className="w-5 h-5" />
-                        Create Your First Chatbot
+                        {t('landing.hero.cta')}
                       </>
                     )}
                   </motion.button>
@@ -282,13 +283,13 @@ const ChatbotSaaSLanding = () => {
                     whileTap={{ scale: 0.98 }}
                   >
                     <Play className="w-5 h-5" />
-                    Watch 2-min Demo
+                    {t('landing.hero.watchDemo')}
                   </motion.button>
                 </motion.div>
 
                 {/* Trust Indicators */}
                 <motion.div variants={itemVariants} className="mt-12">
-                  <p className="text-sm text-slate-500 mb-4">Trusted by leading companies</p>
+                  <p className="text-sm text-slate-500 mb-4">{t('landing.hero.trustedBy')}</p>
                   <div className="flex items-center gap-8 opacity-40">
                     <div className="text-lg font-bold text-slate-400">OPENAI</div>
                     <div className="text-lg font-bold text-slate-400">STRIPE</div>
@@ -328,10 +329,10 @@ const ChatbotSaaSLanding = () => {
                         <Bot className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white">AI Assistant</h3>
+                        <h3 className="font-semibold text-white">{t('landing.demo.aiAssistant')}</h3>
                         <p className="text-sm text-emerald-400 flex items-center gap-1">
                           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                          Online
+                          {t('landing.demo.online')}
                         </p>
                       </div>
                     </div>
@@ -357,7 +358,7 @@ const ChatbotSaaSLanding = () => {
                                 {message.source && (
                                   <div className="text-xs text-slate-500 px-2 flex items-center gap-1">
                                     <FileText className="w-3 h-3" />
-                                    Source: {message.source}
+                                    {t('landing.demo.source')}: {message.source}
                                   </div>
                                 )}
                               </div>
@@ -396,7 +397,7 @@ const ChatbotSaaSLanding = () => {
                     <form onSubmit={handleDemoSubmit} className="mt-4 flex gap-2">
                       <input
                         type="text"
-                        placeholder="Ask me anything..."
+                        placeholder={t('landing.demo.askAnything')}
                         value={demoInput}
                         onChange={(e) => setDemoInput(e.target.value)}
                         className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all"
@@ -424,7 +425,7 @@ const ChatbotSaaSLanding = () => {
                     transition={{ duration: 2, repeat: Infinity }}
                   >
                     <Sparkles className="w-3 h-3" />
-                    AI-Powered
+                    {t('landing.demo.aiPowered')}
                   </motion.div>
                   <motion.div
                     className="absolute -bottom-3 -left-3 px-3 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-medium flex items-center gap-1"
@@ -432,7 +433,7 @@ const ChatbotSaaSLanding = () => {
                     transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                   >
                     <Rocket className="w-3 h-3" />
-                    Instant Setup
+                    {t('landing.demo.instantSetup')}
                   </motion.div>
                 </div>
               </motion.div>
@@ -450,10 +451,10 @@ const ChatbotSaaSLanding = () => {
               viewport={{ once: true }}
             >
               <h2 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-                Everything your business needs
+                {t('landing.benefits.title')}
               </h2>
               <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-                Built for real businesses who need reliable, intelligent customer support
+                {t('landing.benefits.subtitle')}
               </p>
             </motion.div>
 
@@ -469,9 +470,9 @@ const ChatbotSaaSLanding = () => {
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <Brain className="w-8 h-8 text-violet-400" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Smart RAG Technology</h3>
+                <h3 className="text-2xl font-bold mb-4 text-white">{t('landing.benefits.rag.title')}</h3>
                 <p className="text-slate-400 leading-relaxed mb-6">
-                  Advanced retrieval-augmented generation ensures your chatbot gives accurate, contextual answers from your specific documents.
+                  {t('landing.benefits.rag.desc')}
                 </p>
               </motion.div>
 
@@ -487,9 +488,9 @@ const ChatbotSaaSLanding = () => {
                 <div className="w-16 h-16 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <Code className="w-8 h-8 text-cyan-400" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">One-Click Integration</h3>
+                <h3 className="text-2xl font-bold mb-4 text-white">{t('landing.benefits.integration.title')}</h3>
                 <p className="text-slate-400 leading-relaxed mb-6">
-                  Copy our embed code and your chatbot is live. Works with WordPress, Shopify, React, or any website.
+                  {t('landing.benefits.integration.desc')}
                 </p>
                 <div className="bg-slate-900/50 rounded-lg p-3 text-xs font-mono text-slate-400 border border-white/5">
                   &lt;script src="chatbot.js"&gt;&lt;/script&gt;
@@ -508,18 +509,18 @@ const ChatbotSaaSLanding = () => {
                 <div className="w-16 h-16 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <BarChart3 className="w-8 h-8 text-emerald-400" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Deep Analytics</h3>
+                <h3 className="text-2xl font-bold mb-4 text-white">{t('landing.benefits.analytics.title')}</h3>
                 <p className="text-slate-400 leading-relaxed mb-6">
-                  See what customers ask, track satisfaction, and optimize your chatbot's performance with detailed insights.
+                  {t('landing.benefits.analytics.desc')}
                 </p>
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full" />
-                    <span className="text-slate-400">95% satisfaction</span>
+                    <span className="text-slate-400">95% {t('landing.benefits.analytics.satisfaction')}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-cyan-500 rounded-full" />
-                    <span className="text-slate-400">1.2k questions</span>
+                    <span className="text-slate-400">1.2k {t('landing.benefits.analytics.questions')}</span>
                   </div>
                 </div>
               </motion.div>
@@ -538,22 +539,22 @@ const ChatbotSaaSLanding = () => {
             >
               <h2 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
                 <span className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-                  Simple, Transparent Pricing
+                  {t('landing.pricing.title')}
                 </span>
               </h2>
               <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-                Choose the perfect plan for your AI chatbot needs
+                {t('landing.pricing.subtitle')}
               </p>
 
               {/* Billing Toggle */}
-              <div className="flex items-center justify-center space-x-4 mt-8">
-                <span className="text-slate-400 font-medium">Monthly</span>
+              <div className="flex items-center justify-center space-x-4 rtl:space-x-reverse mt-8">
+                <span className="text-slate-400 font-medium">{t('landing.pricing.monthly')}</span>
                 <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-white/10 border border-white/10 transition-all hover:bg-white/15">
                   <span className="inline-block h-4 w-4 transform rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 shadow transition-transform translate-x-1" />
                 </button>
-                <span className="text-slate-400 font-medium">Yearly</span>
+                <span className="text-slate-400 font-medium">{t('landing.pricing.yearly')}</span>
                 <span className="text-sm bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-full font-medium border border-emerald-500/30">
-                  Save 20%
+                  {t('landing.pricing.save')}
                 </span>
               </div>
             </motion.div>
@@ -568,46 +569,46 @@ const ChatbotSaaSLanding = () => {
                 whileHover={{ y: -4 }}
               >
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold mb-2 text-white">Free</h3>
+                  <h3 className="text-2xl font-bold mb-2 text-white">{t('landing.pricing.free.name')}</h3>
                   <div className="flex items-baseline justify-center gap-1 mb-4">
-                    <span className="text-4xl font-bold text-white">$0</span>
-                    <span className="text-slate-500">/month</span>
+                    <span className="text-4xl font-bold text-white">{t('landing.pricing.free.price')}</span>
+                    <span className="text-slate-500">{t('landing.pricing.free.period')}</span>
                   </div>
-                  <p className="text-slate-500 text-sm">Perfect for testing and personal projects</p>
+                  <p className="text-slate-500 text-sm">{t('landing.pricing.free.desc')}</p>
                 </div>
 
                 {/* Key Metrics */}
                 <div className="space-y-3 mb-6 text-sm">
                   <div className="flex items-center text-slate-300">
-                    <Zap className="w-4 h-4 mr-2 text-cyan-400" />
-                    <span className="font-medium">50 message credits</span>
+                    <Zap className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-cyan-400" />
+                    <span className="font-medium">{t('landing.pricing.metrics.messageCredits', { value: 50 })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Settings className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>1 AI agent</span>
+                    <Settings className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.metrics.aiAgents', { count: 1 })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Database className="w-4 h-4 mr-2 text-violet-400" />
-                    <span>400KB per agent</span>
+                    <Database className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-violet-400" />
+                    <span>{t('landing.pricing.metrics.perAgent', { size: '400KB' })}</span>
                   </div>
                 </div>
 
                 {/* Features */}
                 <ul className="space-y-2 mb-6 text-sm">
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>Embed on unlimited websites</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.embedUnlimited')}</span>
                   </li>
                   <li className="flex items-center text-slate-500">
-                    <X className="w-4 h-4 mr-2 text-slate-600" />
-                    <span>API access</span>
+                    <X className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-slate-600" />
+                    <span>{t('landing.pricing.featuresList.apiAccess')}</span>
                   </li>
                 </ul>
 
                 {/* Warning */}
                 <div className="mb-6 text-sm text-amber-400/80 bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg flex items-start">
-                  <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>AI agents deleted after 14 days of inactivity</span>
+                  <AlertCircle className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 mt-0.5 flex-shrink-0" />
+                  <span>{t('landing.pricing.free.note')}</span>
                 </div>
 
                 <motion.button
@@ -616,7 +617,7 @@ const ChatbotSaaSLanding = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Get Started
+                  {t('landing.pricing.getStarted')}
                 </motion.button>
               </motion.div>
 
@@ -634,51 +635,51 @@ const ChatbotSaaSLanding = () => {
                   transition={{ duration: 2, repeat: Infinity }}
                 >
                   <Crown className="w-4 h-4" />
-                  Most Popular
+                  {t('landing.pricing.hobby.popular')}
                 </motion.div>
 
                 <div className="text-center mb-6 mt-2">
-                  <h3 className="text-2xl font-bold mb-2 text-white">Hobby</h3>
+                  <h3 className="text-2xl font-bold mb-2 text-white">{t('landing.pricing.hobby.name')}</h3>
                   <div className="flex items-baseline justify-center gap-1 mb-4">
-                    <span className="text-4xl font-bold text-white">$40</span>
-                    <span className="text-slate-500">/month</span>
+                    <span className="text-4xl font-bold text-white">{t('landing.pricing.hobby.price')}</span>
+                    <span className="text-slate-500">{t('landing.pricing.hobby.period')}</span>
                   </div>
-                  <p className="text-slate-500 text-sm">For solo founders and small projects</p>
+                  <p className="text-slate-500 text-sm">{t('landing.pricing.hobby.desc')}</p>
                 </div>
 
                 {/* Key Metrics */}
                 <div className="space-y-3 mb-6 text-sm">
                   <div className="flex items-center text-slate-300">
-                    <Zap className="w-4 h-4 mr-2 text-cyan-400" />
-                    <span className="font-medium">2K message credits</span>
+                    <Zap className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-cyan-400" />
+                    <span className="font-medium">{t('landing.pricing.metrics.messageCredits', { value: '2K' })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Settings className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>1 AI agent</span>
+                    <Settings className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.metrics.aiAgents', { count: 1 })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Database className="w-4 h-4 mr-2 text-violet-400" />
-                    <span>40MB per agent</span>
+                    <Database className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-violet-400" />
+                    <span>{t('landing.pricing.metrics.perAgent', { size: '40MB' })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Zap className="w-4 h-4 mr-2 text-amber-400" />
-                    <span>5 AI Actions per agent</span>
+                    <Zap className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-amber-400" />
+                    <span>{t('landing.pricing.metrics.aiActions', { count: 5 })}</span>
                   </div>
                 </div>
 
                 {/* Features */}
                 <ul className="space-y-2 mb-6 text-sm">
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>Unlimited training links</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.unlimitedTraining')}</span>
                   </li>
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>API access</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.apiAccess')}</span>
                   </li>
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>Basic integrations</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.basicIntegrations')}</span>
                   </li>
                 </ul>
 
@@ -688,7 +689,7 @@ const ChatbotSaaSLanding = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Upgrade to Hobby
+                  {t('landing.pricing.upgrade', { plan: t('landing.pricing.hobby.name') })}
                 </motion.button>
               </motion.div>
 
@@ -702,51 +703,51 @@ const ChatbotSaaSLanding = () => {
                 whileHover={{ y: -4 }}
               >
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold mb-2 text-white">Standard</h3>
+                  <h3 className="text-2xl font-bold mb-2 text-white">{t('landing.pricing.standard.name')}</h3>
                   <div className="flex items-baseline justify-center gap-1 mb-4">
-                    <span className="text-4xl font-bold text-white">$150</span>
-                    <span className="text-slate-500">/month</span>
+                    <span className="text-4xl font-bold text-white">{t('landing.pricing.standard.price')}</span>
+                    <span className="text-slate-500">{t('landing.pricing.standard.period')}</span>
                   </div>
-                  <p className="text-slate-500 text-sm">For small teams and growing businesses</p>
+                  <p className="text-slate-500 text-sm">{t('landing.pricing.standard.desc')}</p>
                 </div>
 
                 {/* Key Metrics */}
                 <div className="space-y-3 mb-6 text-sm">
                   <div className="flex items-center text-slate-300">
-                    <Zap className="w-4 h-4 mr-2 text-cyan-400" />
-                    <span className="font-medium">12K message credits</span>
+                    <Zap className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-cyan-400" />
+                    <span className="font-medium">{t('landing.pricing.metrics.messageCredits', { value: '12K' })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Settings className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>2 AI agents</span>
+                    <Settings className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.metrics.aiAgents_plural', { count: 2 })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Database className="w-4 h-4 mr-2 text-violet-400" />
-                    <span>33MB per agent</span>
+                    <Database className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-violet-400" />
+                    <span>{t('landing.pricing.metrics.perAgent', { size: '33MB' })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Zap className="w-4 h-4 mr-2 text-amber-400" />
-                    <span>10 AI Actions per agent</span>
+                    <Zap className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-amber-400" />
+                    <span>{t('landing.pricing.metrics.aiActions', { count: 10 })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Users className="w-4 h-4 mr-2 text-indigo-400" />
-                    <span>3 seats</span>
+                    <Users className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-indigo-400" />
+                    <span>{t('landing.pricing.metrics.seats', { count: 3 })}</span>
                   </div>
                 </div>
 
                 {/* Features */}
                 <ul className="space-y-2 mb-6 text-sm">
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>Multiple agents</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.multipleAgents')}</span>
                   </li>
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>Team collaboration</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.teamCollab')}</span>
                   </li>
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>More AI actions</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.moreActions')}</span>
                   </li>
                 </ul>
 
@@ -756,7 +757,7 @@ const ChatbotSaaSLanding = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Upgrade to Standard
+                  {t('landing.pricing.upgrade', { plan: t('landing.pricing.standard.name') })}
                 </motion.button>
               </motion.div>
 
@@ -770,51 +771,51 @@ const ChatbotSaaSLanding = () => {
                 whileHover={{ y: -4 }}
               >
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold mb-2 text-white">Pro</h3>
+                  <h3 className="text-2xl font-bold mb-2 text-white">{t('landing.pricing.pro.name')}</h3>
                   <div className="flex items-baseline justify-center gap-1 mb-4">
-                    <span className="text-4xl font-bold text-white">$500</span>
-                    <span className="text-slate-500">/month</span>
+                    <span className="text-4xl font-bold text-white">{t('landing.pricing.pro.price')}</span>
+                    <span className="text-slate-500">{t('landing.pricing.pro.period')}</span>
                   </div>
-                  <p className="text-slate-500 text-sm">For businesses needing advanced features</p>
+                  <p className="text-slate-500 text-sm">{t('landing.pricing.pro.desc')}</p>
                 </div>
 
                 {/* Key Metrics */}
                 <div className="space-y-3 mb-6 text-sm">
                   <div className="flex items-center text-slate-300">
-                    <Zap className="w-4 h-4 mr-2 text-cyan-400" />
-                    <span className="font-medium">40K message credits</span>
+                    <Zap className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-cyan-400" />
+                    <span className="font-medium">{t('landing.pricing.metrics.messageCredits', { value: '40K' })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Settings className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>3 AI agents</span>
+                    <Settings className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.metrics.aiAgents_plural', { count: 3 })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Database className="w-4 h-4 mr-2 text-violet-400" />
-                    <span>33MB per agent</span>
+                    <Database className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-violet-400" />
+                    <span>{t('landing.pricing.metrics.perAgent', { size: '33MB' })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Zap className="w-4 h-4 mr-2 text-amber-400" />
-                    <span>15 AI Actions per agent</span>
+                    <Zap className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-amber-400" />
+                    <span>{t('landing.pricing.metrics.aiActions', { count: 15 })}</span>
                   </div>
                   <div className="flex items-center text-slate-400">
-                    <Users className="w-4 h-4 mr-2 text-indigo-400" />
-                    <span>5 seats</span>
+                    <Users className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-indigo-400" />
+                    <span>{t('landing.pricing.metrics.seats', { count: 5 })}</span>
                   </div>
                 </div>
 
                 {/* Features */}
                 <ul className="space-y-2 mb-6 text-sm">
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>Advanced analytics</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.advancedAnalytics')}</span>
                   </li>
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>Priority support</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.prioritySupport')}</span>
                   </li>
                   <li className="flex items-center text-slate-400">
-                    <Check className="w-4 h-4 mr-2 text-emerald-400" />
-                    <span>Larger teams</span>
+                    <Check className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 text-emerald-400" />
+                    <span>{t('landing.pricing.featuresList.largerTeams')}</span>
                   </li>
                 </ul>
 
@@ -824,7 +825,7 @@ const ChatbotSaaSLanding = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Upgrade to Pro
+                  {t('landing.pricing.upgrade', { plan: t('landing.pricing.pro.name') })}
                 </motion.button>
               </motion.div>
             </div>
@@ -839,21 +840,21 @@ const ChatbotSaaSLanding = () => {
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold mb-4">
                   <span className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-                    Add-ons & Extras
+                    {t('landing.addons.title')}
                   </span>
                 </h2>
                 <p className="text-slate-400">
-                  Enhance your plan with additional features and resources
+                  {t('landing.addons.subtitle')}
                 </p>
               </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
-                  { title: 'Extra Message Credits', desc: '1,000 additional message credits per month', price: '$12/month' },
-                  { title: 'Auto-recharge Credits', desc: 'Automatically adds 1,000 credits when you run low', price: '$14/month' },
-                  { title: 'Additional AI Agent', desc: 'Add one more AI agent to your account', price: '$7/month' },
-                  { title: 'Remove Branding', desc: 'Remove "Powered by [Brand]" from chatbots', price: '$39/month' },
-                  { title: 'Custom Domain', desc: 'Use your own domain for chat widgets', price: '$59/month' }
+                  { title: t('landing.addons.credits.title'), desc: t('landing.addons.credits.desc'), price: '$12/month' },
+                  { title: t('landing.addons.autoRecharge.title'), desc: t('landing.addons.autoRecharge.desc'), price: '$14/month' },
+                  { title: t('landing.addons.agent.title'), desc: t('landing.addons.agent.desc'), price: '$7/month' },
+                  { title: t('landing.addons.branding.title'), desc: t('landing.addons.branding.desc'), price: '$39/month' },
+                  { title: t('landing.addons.domain.title'), desc: t('landing.addons.domain.desc'), price: '$59/month' }
                 ].map((addon, index) => (
                   <motion.div
                     key={index}
@@ -869,7 +870,7 @@ const ChatbotSaaSLanding = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        Add
+                        {t('landing.addons.add')}
                       </motion.button>
                     </div>
                   </motion.div>
@@ -880,9 +881,9 @@ const ChatbotSaaSLanding = () => {
             {/* Enterprise CTA */}
             <div className="text-center mt-12">
               <p className="text-slate-400">
-                Need custom limits or enterprise features?{' '}
+                {t('landing.enterprise.text')}{' '}
                 <a href="#" className="text-violet-400 hover:text-violet-300 font-medium">
-                  Contact us for Enterprise pricing
+                  {t('landing.enterprise.link')}
                 </a>
               </p>
             </div>
@@ -916,10 +917,10 @@ const ChatbotSaaSLanding = () => {
             viewport={{ once: true }}
           >
             <h2 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-              Ready to transform your customer support?
+              {t('landing.cta.title')}
             </h2>
             <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto">
-              Join thousands of businesses using intelligent chatbots to provide better customer experiences.
+              {t('landing.cta.subtitle')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
@@ -930,7 +931,7 @@ const ChatbotSaaSLanding = () => {
                 whileTap={{ scale: 0.98 }}
               >
                 <Sparkles className="w-5 h-5" />
-                Start Building for Free
+                {t('landing.cta.primary')}
               </motion.button>
               <motion.button
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white/10 border border-white/20 text-white font-medium hover:bg-white/20 transition-colors"
@@ -938,22 +939,22 @@ const ChatbotSaaSLanding = () => {
                 whileTap={{ scale: 0.98 }}
               >
                 <Play className="w-5 h-5" />
-                Watch Success Stories
+                {t('landing.cta.secondary')}
               </motion.button>
             </div>
 
-            <div className="mt-12 flex items-center justify-center gap-6 text-slate-400 text-sm">
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-slate-400 text-sm">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-400" />
-                No credit card required
+                {t('landing.cta.noCreditCard')}
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-400" />
-                5-minute setup
+                {t('landing.cta.quickSetup')}
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-400" />
-                Cancel anytime
+                {t('landing.cta.cancelAnytime')}
               </div>
             </div>
           </motion.div>
@@ -972,40 +973,40 @@ const ChatbotSaaSLanding = () => {
                 <span className="text-xl font-bold text-white">Chatava</span>
               </div>
               <p className="text-slate-500 leading-relaxed">
-                Transform your documents into intelligent chatbots that actually help your customers.
+                {t('landing.footer.tagline')}
               </p>
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
+              <h4 className="font-semibold text-white mb-4">{t('landing.footer.product')}</h4>
               <ul className="space-y-3 text-slate-500">
-                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API Docs</a></li>
+                <li><a href="#features" className="hover:text-white transition-colors">{t('nav.features')}</a></li>
+                <li><a href="#pricing" className="hover:text-white transition-colors">{t('nav.pricing')}</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.apiDocs')}</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-4">Support</h4>
+              <h4 className="font-semibold text-white mb-4">{t('landing.footer.support')}</h4>
               <ul className="space-y-3 text-slate-500">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.helpCenter')}</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.contact')}</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.status')}</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
+              <h4 className="font-semibold text-white mb-4">{t('landing.footer.company')}</h4>
               <ul className="space-y-3 text-slate-500">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.about')}</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.privacy')}</a></li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center">
             <p className="text-slate-500 text-sm">
-              © 2024 Chatava. All rights reserved.
+              {t('landing.footer.copyright')}
             </p>
           </div>
         </div>

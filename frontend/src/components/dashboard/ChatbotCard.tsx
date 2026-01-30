@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   Bot,
   MessageSquare,
@@ -84,7 +85,23 @@ export function ChatbotCard({
   onDelete,
   index = 0
 }: ChatbotCardProps) {
+  const { t } = useTranslation()
   const [showMenu, setShowMenu] = useState(false)
+
+  // Get translated status labels
+  const getStatusLabel = (statusKey: string) => {
+    const statusLabels: Record<string, string> = {
+      active: t('chatbot.status.active'),
+      completed: t('chatbot.status.ready'),
+      training: t('chatbot.status.training'),
+      processing: t('chatbot.status.processing'),
+      pending: t('chatbot.status.pending'),
+      draft: t('chatbot.status.draft'),
+      error: t('chatbot.status.error')
+    }
+    return statusLabels[statusKey] || statusLabels.draft
+  }
+
   const status = statusConfig[chatbot.status] || statusConfig.draft
   const StatusIcon = status.icon
 
@@ -133,7 +150,7 @@ export function ChatbotCard({
               </h3>
               <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${status.bg} ${status.text} text-xs font-medium`}>
                 <StatusIcon className="w-3 h-3" />
-                {status.label}
+                {getStatusLabel(chatbot.status)}
               </div>
             </div>
           </div>
@@ -157,28 +174,28 @@ export function ChatbotCard({
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="absolute right-0 top-full mt-1 w-48 py-1 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-20"
+                  className="absolute right-0 rtl:right-auto rtl:left-0 top-full mt-1 w-48 py-1 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-20"
                 >
                   <button
                     onClick={() => { onChat?.(); setShowMenu(false); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <Play className="w-4 h-4" />
-                    Start Chat
+                    {t('chatbot.actions.startChat')}
                   </button>
                   <button
                     onClick={() => { onSettings?.(); setShowMenu(false); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <Settings className="w-4 h-4" />
-                    Settings
+                    {t('chatbot.settings')}
                   </button>
                   <button
                     onClick={() => { onEmbed?.(); setShowMenu(false); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <Code className="w-4 h-4" />
-                    Get Embed Code
+                    {t('chatbot.actions.getEmbedCode')}
                   </button>
                   <div className="border-t border-white/10 my-1" />
                   <button
@@ -186,7 +203,7 @@ export function ChatbotCard({
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
+                    {t('chatbot.actions.delete')}
                   </button>
                 </motion.div>
               </>
@@ -196,7 +213,7 @@ export function ChatbotCard({
 
         {/* Description */}
         <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-[40px]">
-          {chatbot.description || 'No description provided'}
+          {chatbot.description || t('chatbot.noDescription')}
         </p>
 
         {/* Stats */}
@@ -204,13 +221,13 @@ export function ChatbotCard({
           <div className="flex items-center gap-1.5 text-slate-400">
             <MessageSquare className="w-4 h-4" />
             <span className="text-sm">{chatbot.total_conversations || 0}</span>
-            <span className="text-xs text-slate-500">chats</span>
+            <span className="text-xs text-slate-500">{t('chatbot.stats.chats')}</span>
           </div>
           {chatbot.total_messages && (
             <div className="flex items-center gap-1.5 text-slate-400">
               <Zap className="w-4 h-4" />
               <span className="text-sm">{chatbot.total_messages}</span>
-              <span className="text-xs text-slate-500">messages</span>
+              <span className="text-xs text-slate-500">{t('chatbot.stats.messages')}</span>
             </div>
           )}
         </div>
@@ -224,14 +241,14 @@ export function ChatbotCard({
             whileTap={{ scale: 0.98 }}
           >
             <Play className="w-4 h-4" />
-            Open Chat
+            {t('chatbot.actions.openChat')}
           </motion.button>
           <motion.button
             onClick={onEmbed}
             className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            title="Get Embed Code"
+            title={t('chatbot.actions.getEmbedCode')}
           >
             <Code className="w-4 h-4" />
           </motion.button>
@@ -240,7 +257,7 @@ export function ChatbotCard({
             className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            title="Settings"
+            title={t('sidebar.settings')}
           >
             <Settings className="w-4 h-4" />
           </motion.button>
@@ -281,6 +298,8 @@ interface EmptyStateProps {
 }
 
 export function ChatbotsEmptyState({ onCreateChatbot }: EmptyStateProps) {
+  const { t } = useTranslation()
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -310,10 +329,10 @@ export function ChatbotsEmptyState({ onCreateChatbot }: EmptyStateProps) {
       </motion.div>
 
       <h3 className="text-xl font-semibold text-white mb-2">
-        Create Your First Chatbot
+        {t('dashboard.emptyState.title')}
       </h3>
       <p className="text-slate-500 text-center max-w-md mb-6">
-        Build intelligent AI assistants that understand your content and provide instant, accurate answers to your customers.
+        {t('dashboard.emptyState.description')}
       </p>
 
       <motion.button
@@ -323,7 +342,7 @@ export function ChatbotsEmptyState({ onCreateChatbot }: EmptyStateProps) {
         whileTap={{ scale: 0.95 }}
       >
         <Zap className="w-5 h-5" />
-        Get Started
+        {t('dashboard.emptyState.getStarted')}
       </motion.button>
     </motion.div>
   )

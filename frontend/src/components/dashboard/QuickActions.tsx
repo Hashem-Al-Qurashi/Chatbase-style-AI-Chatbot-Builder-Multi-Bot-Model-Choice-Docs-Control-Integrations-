@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   Plus,
   Upload,
@@ -18,32 +19,32 @@ interface QuickAction {
   isNew?: boolean
 }
 
-const defaultActions: QuickAction[] = [
+const getDefaultActions = (t: (key: string) => string): QuickAction[] => [
   {
     id: 'create-chatbot',
-    title: 'Create Chatbot',
-    description: 'Build a new AI assistant',
+    title: t('dashboard.quickActions.createChatbot'),
+    description: t('dashboard.quickActions.createChatbotDesc'),
     icon: Plus,
     color: 'violet'
   },
   {
     id: 'upload-docs',
-    title: 'Upload Documents',
-    description: 'Add to knowledge base',
+    title: t('dashboard.quickActions.uploadDocs'),
+    description: t('dashboard.quickActions.uploadDocsDesc'),
     icon: Upload,
     color: 'fuchsia'
   },
   {
     id: 'add-url',
-    title: 'Add Website URL',
-    description: 'Crawl website content',
+    title: t('dashboard.quickActions.addUrl'),
+    description: t('dashboard.quickActions.addUrlDesc'),
     icon: Link,
     color: 'cyan'
   },
   {
     id: 'get-embed',
-    title: 'Get Embed Code',
-    description: 'Add chatbot to your site',
+    title: t('dashboard.quickActions.getEmbed'),
+    description: t('dashboard.quickActions.getEmbedDesc'),
     icon: Code,
     color: 'emerald'
   }
@@ -86,12 +87,15 @@ interface QuickActionsProps {
 }
 
 export function QuickActions({
-  actions = defaultActions,
+  actions,
   onCreateChatbot,
   onUploadDocs,
   onAddUrl,
   onGetEmbed
 }: QuickActionsProps) {
+  const { t } = useTranslation()
+  const defaultActions = getDefaultActions(t)
+  const displayActions = actions || defaultActions
   const handleClick = (actionId: string) => {
     switch (actionId) {
       case 'create-chatbot':
@@ -133,8 +137,8 @@ export function QuickActions({
     >
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
-          <p className="text-sm text-slate-500">Common tasks at your fingertips</p>
+          <h3 className="text-lg font-semibold text-white">{t('dashboard.quickActions.title')}</h3>
+          <p className="text-sm text-slate-500">{t('dashboard.quickActions.subtitle')}</p>
         </div>
         <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20">
           <Sparkles className="w-4 h-4 text-violet-400" />
@@ -147,7 +151,7 @@ export function QuickActions({
         animate="visible"
         className="grid grid-cols-2 gap-3"
       >
-        {actions.map((action) => {
+        {displayActions.map((action) => {
           const colors = colorClasses[action.color]
           const Icon = action.icon
 

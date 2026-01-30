@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Bot, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -16,6 +17,7 @@ interface ChatbotModalProps {
 }
 
 export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: ChatbotModalProps) {
+  const { t } = useTranslation()
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -108,12 +110,12 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-xl font-semibold text-gray-900">
-                  {mode === 'create' ? 'Create New Chatbot' : 'Edit Chatbot'}
+                  {mode === 'create' ? t('chatbotModal.createTitle') : t('chatbotModal.editTitle')}
                 </h2>
               </div>
               <button
@@ -128,10 +130,10 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {error && (
-              <div className="p-4 bg-error-50 border border-error-200 rounded-lg flex items-start space-x-3">
+              <div className="p-4 bg-error-50 border border-error-200 rounded-lg flex items-start space-x-3 rtl:space-x-reverse">
                 <AlertCircle className="w-5 h-5 text-error-500 mt-0.5" />
                 <div>
-                  <p className="font-medium text-error-900">Error</p>
+                  <p className="font-medium text-error-900">{t('chatbotModal.error')}</p>
                   <p className="text-sm text-error-700">{error}</p>
                 </div>
               </div>
@@ -139,29 +141,29 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
 
             {/* Basic Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
-              
+              <h3 className="text-lg font-medium text-gray-900">{t('chatbotModal.basicInfo')}</h3>
+
               <div>
-                <Label htmlFor="name">Chatbot Name *</Label>
+                <Label htmlFor="name">{t('chatbotModal.chatbotName')}</Label>
                 <Input
                   id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="e.g., Customer Support Bot"
+                  placeholder={t('chatbotModal.namePlaceholder')}
                   required
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('chatbotModal.description')}</Label>
                 <textarea
                   id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  placeholder="Brief description of your chatbot's purpose..."
+                  placeholder={t('chatbotModal.descPlaceholder')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   rows={3}
                   disabled={loading}
@@ -171,35 +173,35 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
 
             {/* Appearance Settings */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">Appearance</h3>
-              
+              <h3 className="text-lg font-medium text-gray-900">{t('chatbotModal.appearance')}</h3>
+
               <div>
-                <Label htmlFor="welcome_message">Welcome Message</Label>
+                <Label htmlFor="welcome_message">{t('chatbotModal.welcomeMessage')}</Label>
                 <Input
                   id="welcome_message"
                   name="welcome_message"
                   value={formData.welcome_message}
                   onChange={handleChange}
-                  placeholder="Hello! How can I help you today?"
+                  placeholder={t('chatbotModal.welcomePlaceholder')}
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <Label htmlFor="placeholder_text">Input Placeholder Text</Label>
+                <Label htmlFor="placeholder_text">{t('chatbotModal.inputPlaceholder')}</Label>
                 <Input
                   id="placeholder_text"
                   name="placeholder_text"
                   value={formData.placeholder_text}
                   onChange={handleChange}
-                  placeholder="Type your message..."
+                  placeholder={t('chatbotModal.inputPlaceholderValue')}
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <Label htmlFor="theme_color">Theme Color</Label>
-                <div className="flex items-center space-x-3">
+                <Label htmlFor="theme_color">{t('chatbotModal.themeColor')}</Label>
+                <div className="flex items-center space-x-3 rtl:space-x-reverse">
                   <Input
                     id="theme_color"
                     name="theme_color"
@@ -223,11 +225,11 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
 
             {/* AI Settings */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">AI Configuration</h3>
-              
+              <h3 className="text-lg font-medium text-gray-900">{t('chatbotModal.aiConfig')}</h3>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="model_name">Model</Label>
+                  <Label htmlFor="model_name">{t('chatbotModal.model')}</Label>
                   <select
                     id="model_name"
                     name="model_name"
@@ -244,7 +246,7 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
 
                 <div>
                   <Label htmlFor="temperature">
-                    Temperature: {formData.temperature}
+                    {t('chatbotModal.temperature')}: {formData.temperature}
                   </Label>
                   <input
                     id="temperature"
@@ -259,14 +261,14 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
                     disabled={loading}
                   />
                   <div className="flex justify-between text-xs text-gray-500">
-                    <span>Precise</span>
-                    <span>Creative</span>
+                    <span>{t('chatbotModal.precise')}</span>
+                    <span>{t('chatbotModal.creative')}</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="max_tokens">Max Response Length (tokens)</Label>
+                <Label htmlFor="max_tokens">{t('chatbotModal.maxTokens')}</Label>
                 <Input
                   id="max_tokens"
                   name="max_tokens"
@@ -281,7 +283,7 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
 
               {/* Feature Toggles */}
               <div className="space-y-3">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 rtl:space-x-reverse">
                   <input
                     id="enable_citations"
                     name="enable_citations"
@@ -292,11 +294,11 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
                     disabled={loading}
                   />
                   <Label htmlFor="enable_citations" className="cursor-pointer">
-                    Enable source citations in responses
+                    {t('chatbotModal.enableCitations')}
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 rtl:space-x-reverse">
                   <input
                     id="enable_data_collection"
                     name="enable_data_collection"
@@ -307,21 +309,21 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
                     disabled={loading}
                   />
                   <Label htmlFor="enable_data_collection" className="cursor-pointer">
-                    Enable conversation data collection for improvements
+                    {t('chatbotModal.enableDataCollection')}
                   </Label>
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div className="flex justify-end space-x-3 rtl:space-x-reverse pt-4 border-t border-gray-200">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={onClose}
                 disabled={loading}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -330,11 +332,11 @@ export function ChatbotModal({ isOpen, onClose, onSuccess, mode, chatbot }: Chat
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {mode === 'create' ? 'Creating...' : 'Saving...'}
+                    <Loader2 className="w-4 h-4 mr-2 rtl:mr-0 rtl:ml-2 animate-spin" />
+                    {mode === 'create' ? t('chatbotModal.creating') : t('chatbotModal.saving')}
                   </>
                 ) : (
-                  mode === 'create' ? 'Create Chatbot' : 'Save Changes'
+                  mode === 'create' ? t('chatbotModal.createBtn') : t('chatbotModal.saveBtn')
                 )}
               </Button>
             </div>

@@ -1,0 +1,616 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and"
+  },
+  "nav": {
+    "features": "Features",
+    "demo": "Demo",
+    "pricing": "Pricing",
+    "getStarted": "Get Started Free",
+    "dashboard": "Dashboard",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register"
+  },
+  "landing": {
+    "hero": {
+      "badge": "2,500+ businesses trust our chatbots",
+      "title": "Turn your docs into smart chatbots",
+      "subtitle": "Upload your knowledge base and create intelligent chatbots that provide instant, accurate answers. No coding required.",
+      "cta": "Create Your First Chatbot",
+      "watchDemo": "Watch 2-min Demo",
+      "trustedBy": "Trusted by leading companies"
+    },
+    "demo": {
+      "aiPowered": "AI-Powered",
+      "instantSetup": "Instant Setup",
+      "aiAssistant": "AI Assistant",
+      "online": "Online",
+      "askAnything": "Ask me anything...",
+      "source": "Source"
+    },
+    "features": {
+      "setup": "5 min setup",
+      "setupDesc": "Ready instantly",
+      "private": "100% Private",
+      "privateDesc": "Your data stays safe",
+      "embed": "Any website",
+      "embedDesc": "Embed anywhere"
+    },
+    "benefits": {
+      "title": "Everything your business needs",
+      "subtitle": "Built for real businesses who need reliable, intelligent customer support",
+      "rag": {
+        "title": "Smart RAG Technology",
+        "desc": "Advanced retrieval-augmented generation ensures your chatbot gives accurate, contextual answers from your specific documents."
+      },
+      "integration": {
+        "title": "One-Click Integration",
+        "desc": "Copy our embed code and your chatbot is live. Works with WordPress, Shopify, React, or any website."
+      },
+      "analytics": {
+        "title": "Deep Analytics",
+        "desc": "See what customers ask, track satisfaction, and optimize your chatbot's performance with detailed insights.",
+        "satisfaction": "satisfaction",
+        "questions": "questions"
+      }
+    },
+    "enterprise": {
+      "text": "Need custom limits or enterprise features?",
+      "link": "Contact us for Enterprise pricing"
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "subtitle": "Choose the perfect plan for your AI chatbot needs",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "save": "Save 20%",
+      "free": {
+        "name": "Free",
+        "price": "$0",
+        "period": "/month",
+        "desc": "Perfect for testing and personal projects",
+        "features": ["50 message credits", "1 AI agent", "400KB per agent"],
+        "note": "AI agents deleted after 14 days of inactivity"
+      },
+      "hobby": {
+        "name": "Hobby",
+        "price": "$40",
+        "period": "/month",
+        "desc": "For solo founders and small projects",
+        "features": ["2K message credits", "1 AI agent", "40MB per agent", "5 AI Actions per agent"],
+        "popular": "Most Popular"
+      },
+      "standard": {
+        "name": "Standard",
+        "price": "$150",
+        "period": "/month",
+        "desc": "For small teams and growing businesses",
+        "features": ["12K message credits", "2 AI agents", "33MB per agent", "10 AI Actions per agent", "3 seats"]
+      },
+      "pro": {
+        "name": "Pro",
+        "price": "$500",
+        "period": "/month",
+        "desc": "For businesses needing advanced features",
+        "features": ["40K message credits", "3 AI agents", "33MB per agent", "15 AI Actions per agent", "5 seats"]
+      },
+      "upgrade": "Upgrade to {{plan}}",
+      "getStarted": "Get Started",
+      "metrics": {
+        "messageCredits": "{{value}} message credits",
+        "aiAgents": "{{count}} AI agent",
+        "aiAgents_plural": "{{count}} AI agents",
+        "perAgent": "{{size}} per agent",
+        "aiActions": "{{count}} AI Actions per agent",
+        "seats": "{{count}} seats"
+      },
+      "featuresList": {
+        "embedUnlimited": "Embed on unlimited websites",
+        "apiAccess": "API access",
+        "noApiAccess": "No API access",
+        "unlimitedTraining": "Unlimited training links",
+        "basicIntegrations": "Basic integrations",
+        "multipleAgents": "Multiple agents",
+        "teamCollab": "Team collaboration",
+        "moreActions": "More AI actions",
+        "advancedAnalytics": "Advanced analytics",
+        "prioritySupport": "Priority support",
+        "largerTeams": "Larger teams"
+      }
+    },
+    "addons": {
+      "title": "Add-ons & Extras",
+      "subtitle": "Enhance your plan with additional features and resources",
+      "credits": {
+        "title": "Extra Message Credits",
+        "desc": "1,000 additional message credits per month"
+      },
+      "autoRecharge": {
+        "title": "Auto-recharge Credits",
+        "desc": "Automatically adds 1,000 credits when you run low"
+      },
+      "agent": {
+        "title": "Additional AI Agent",
+        "desc": "Add one more AI agent to your account"
+      },
+      "branding": {
+        "title": "Remove Branding",
+        "desc": "Remove \"Powered by [Brand]\" from chatbots"
+      },
+      "domain": {
+        "title": "Custom Domain",
+        "desc": "Use your own domain for chat widgets"
+      },
+      "add": "Add"
+    },
+    "cta": {
+      "title": "Ready to transform your customer support?",
+      "subtitle": "Join thousands of businesses using intelligent chatbots to provide better customer experiences.",
+      "primary": "Start Building for Free",
+      "secondary": "Watch Success Stories",
+      "noCreditCard": "No credit card required",
+      "quickSetup": "5-minute setup",
+      "cancelAnytime": "Cancel anytime"
+    },
+    "footer": {
+      "tagline": "Transform your documents into intelligent chatbots that actually help your customers.",
+      "product": "Product",
+      "support": "Support",
+      "company": "Company",
+      "helpCenter": "Help Center",
+      "contact": "Contact",
+      "status": "Status",
+      "about": "About",
+      "privacy": "Privacy",
+      "apiDocs": "API Docs",
+      "copyright": "© 2024 Chatava. All rights reserved."
+    }
+  },
+  "auth": {
+    "brand": {
+      "tagline": "AI-Powered Customer Support Platform",
+      "description": "Transform your customer support with intelligent chatbots that learn, adapt, and deliver exceptional experiences 24/7.",
+      "realtime": "Real-time Chat",
+      "realtimeDesc": "WebSocket-powered instant messaging",
+      "secure": "Secure & Private",
+      "secureDesc": "Enterprise-grade security",
+      "automation": "Smart Automation",
+      "automationDesc": "AI-driven conversation management",
+      "collaboration": "Team Collaboration",
+      "collaborationDesc": "Live conversation monitoring",
+      "activeUsers": "Active Users",
+      "uptime": "Uptime",
+      "support": "Support"
+    },
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account to continue your journey",
+      "email": "Email Address",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "forgotPassword": "Forgot password?",
+      "signIn": "Sign In",
+      "noAccount": "New to our platform?",
+      "createAccount": "Create your account",
+      "secured": "Secured with enterprise-grade encryption"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Start your journey with us today",
+      "name": "Full Name",
+      "namePlaceholder": "Enter your name",
+      "email": "Email Address",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Create a password",
+      "confirmPassword": "Confirm Password",
+      "confirmPlaceholder": "Confirm your password",
+      "signUp": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "subtitle": "Here's what's happening with your chatbots today.",
+    "newChatbot": "New Chatbot",
+    "stats": {
+      "totalChatbots": "Total Chatbots",
+      "totalConversations": "Total Conversations",
+      "messagesThisMonth": "Messages This Month",
+      "creditsRemaining": "Credits Remaining",
+      "maxAllowed": "{{count}} max allowed",
+      "thisBillingCycle": "This billing cycle",
+      "runningLow": "Running low!",
+      "chatbots": "Chatbots",
+      "conversations": "Conversations",
+      "messages": "Messages",
+      "knowledge": "Knowledge Sources"
+    },
+    "yourChatbots": "Your Chatbots",
+    "chatbotsCount": "{{filtered}} of {{total}} chatbots",
+    "searchChatbots": "Search chatbots...",
+    "noResults": "No results found",
+    "tryAdjusting": "Try adjusting your search query",
+    "tryAgain": "Try Again",
+    "quickActions": {
+      "title": "Quick Actions",
+      "subtitle": "Common tasks at your fingertips",
+      "createChatbot": "Create Chatbot",
+      "createChatbotDesc": "Build a new AI assistant",
+      "uploadDocs": "Upload Documents",
+      "uploadDocsDesc": "Add to knowledge base",
+      "addUrl": "Add Website URL",
+      "addUrlDesc": "Crawl website content",
+      "getEmbed": "Get Embed Code",
+      "getEmbedDesc": "Add chatbot to your site",
+      "uploadKnowledge": "Upload Knowledge",
+      "viewAnalytics": "View Analytics"
+    },
+    "activity": {
+      "title": "Recent Activity",
+      "subtitle": "Your latest actions and events",
+      "viewAll": "View all",
+      "noActivity": "No recent activity",
+      "actionsWillAppear": "Your recent actions will appear here",
+      "messages": "messages",
+      "newConversation": "New conversation started",
+      "customerInquiry": "Customer inquiry about pricing plans",
+      "knowledgeUpdated": "Knowledge base updated",
+      "addedDocuments": "Added 3 new documents to FAQ sources",
+      "trainingCompleted": "Chatbot training completed",
+      "readyToUse": "{{name}} is now ready to use",
+      "creditsLow": "Credits running low",
+      "creditsRemaining": "You have {{count}} credits remaining this month",
+      "highRating": "High satisfaction rating",
+      "ratedStars": "User rated conversation 5 stars",
+      "minutesAgo": "{{count}} minutes ago",
+      "hourAgo": "1 hour ago",
+      "hoursAgo": "{{count}} hours ago"
+    },
+    "upgrade": {
+      "title": "Upgrade to Pro",
+      "description": "Get unlimited chatbots, advanced analytics, and priority support.",
+      "viewPlans": "View Plans"
+    },
+    "recentActivity": "Recent Activity",
+    "noChatbots": "No chatbots yet",
+    "createFirst": "Create your first chatbot to get started",
+    "emptyState": {
+      "title": "Create Your First Chatbot",
+      "description": "Build intelligent AI assistants that understand your content and provide instant, accurate answers to your customers.",
+      "getStarted": "Get Started"
+    }
+  },
+  "chatbot": {
+    "settings": "Chatbot Settings",
+    "overview": "Overview",
+    "knowledge": "Knowledge",
+    "analytics": "Analytics",
+    "embed": "Embed",
+    "integrations": "Integrations",
+    "testChat": "Test Chat",
+    "status": {
+      "active": "Active",
+      "ready": "Ready",
+      "training": "Training",
+      "processing": "Processing",
+      "pending": "Pending",
+      "error": "Error",
+      "draft": "Draft"
+    },
+    "stats": {
+      "conversations": "Conversations",
+      "messages": "Messages",
+      "knowledge": "Knowledge",
+      "chats": "chats"
+    },
+    "actions": {
+      "startChat": "Start Chat",
+      "openChat": "Open Chat",
+      "getEmbedCode": "Get Embed Code",
+      "delete": "Delete"
+    },
+    "noDescription": "No description provided",
+    "created": "Created {{date}}",
+    "config": {
+      "title": "Chatbot Configuration",
+      "subtitle": "AI model settings and parameters",
+      "model": "Model",
+      "temperature": "Temperature",
+      "maxTokens": "Max Tokens",
+      "citations": "Citations",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "editConfig": "Edit Configuration"
+    },
+    "publicAccess": {
+      "title": "Public Access",
+      "subtitle": "Shareable widget URL",
+      "publicUrl": "Public URL",
+      "getEmbed": "Get Embed Code"
+    },
+    "analyticsComingSoon": {
+      "title": "Analytics Coming Soon",
+      "desc": "Detailed conversation analytics and performance metrics will be available here.",
+      "badge": "In Development"
+    },
+    "embedWidget": {
+      "title": "Embed Your Chatbot",
+      "subtitle": "Add this chatbot to any website",
+      "widgetUrl": "Widget URL"
+    }
+  },
+  "chat": {
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "thinking": "Thinking...",
+    "online": "Online",
+    "readyToHelp": "Ready to help",
+    "sources": "{{count}} source",
+    "sources_plural": "{{count}} sources",
+    "uploadSuccess": "Successfully uploaded \"{{name}}\". The document has been processed and is now available for questions!",
+    "uploadError": "Failed to upload \"{{name}}\": {{error}}",
+    "dropFiles": "Drop files here or",
+    "browse": "browse",
+    "supportedFiles": "PDF, DOC, TXT files supported",
+    "aiDisclaimer": "AI can make mistakes. Verify important information.",
+    "loadingConversation": "Loading conversation..."
+  },
+  "integrations": {
+    "title": "Connect Your Tools",
+    "subtitle": "Automatically send leads and conversation data to your business tools.",
+    "hubspot": {
+      "title": "HubSpot Integration",
+      "desc": "Send leads directly to HubSpot CRM",
+      "formUrl": "HubSpot Form URL",
+      "formUrlPlaceholder": "https://forms.hubspot.com/uploads/form/v2/...",
+      "formUrlHint": "Paste your HubSpot form submission URL from your forms settings",
+      "whenToSend": "When to Send Leads",
+      "onEmail": "When email is captured in conversation",
+      "allConversations": "Send all conversations (Coming Soon)",
+      "testConnection": "Test Connection",
+      "saveSettings": "Save Settings",
+      "notConfigured": "Not configured"
+    },
+    "comingSoon": "Coming Soon",
+    "status": "Status"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "chatbots": "Chatbots",
+    "conversations": "Conversations",
+    "knowledgeBase": "Knowledge Base",
+    "analytics": "Analytics",
+    "integrations": "Integrations",
+    "settings": "Settings",
+    "billing": "Billing",
+    "logout": "Logout",
+    "new": "New",
+    "searchPlaceholder": "Search... (⌘K)",
+    "notifications": "Notifications",
+    "newConversation": "New conversation started",
+    "minutesAgo": "{{count}} minutes ago",
+    "hourAgo": "1 hour ago",
+    "trainingComplete": "Chatbot training complete",
+    "profile": "Profile",
+    "documentation": "Documentation",
+    "freePlan": "Free Plan",
+    "credits": "{{count}} credits"
+  },
+  "wizard": {
+    "createChatbot": "Create Chatbot",
+    "editChatbot": "Edit Chatbot",
+    "step": "Step {{current}} of {{total}}",
+    "steps": {
+      "basics": "Basics",
+      "knowledge": "Knowledge",
+      "review": "Review"
+    },
+    "basics": {
+      "name": "Chatbot Name",
+      "nameRequired": "Please enter a name for your chatbot",
+      "namePlaceholder": "e.g., Customer Support Bot",
+      "description": "Description",
+      "descriptionPlaceholder": "What does your chatbot help with?",
+      "welcomeMessage": "Welcome Message",
+      "welcomePlaceholder": "Hello! How can I help you?",
+      "personality": "Personality",
+      "professional": "Professional",
+      "professionalDesc": "Formal tone",
+      "casual": "Casual",
+      "casualDesc": "Friendly tone",
+      "customInstructions": "Custom Instructions",
+      "instructionsPlaceholder": "Add custom instructions for your chatbot...\n\nExamples:\n• You are a helpful support agent for [Company]\n• Always be polite and professional\n• Focus on helping with [topics]"
+    },
+    "knowledge": {
+      "uploadDocuments": "Upload Documents",
+      "dragDrop": "Drag & drop files here",
+      "fileTypes": "PDF, DOCX, TXT (max 10MB)",
+      "browseFiles": "Browse Files",
+      "addUrls": "Add URLs",
+      "urlPlaceholder": "Enter URLs (one per line)\nhttps://example.com/about",
+      "addUrlsBtn": "Add URLs",
+      "knowledgeSources": "Knowledge Sources",
+      "sourceCount": "{{count}} source",
+      "sourceCount_plural": "{{count}} sources",
+      "noSources": "No sources added yet",
+      "noSourcesDesc": "Upload files or add URLs to train your chatbot",
+      "citable": "Citable",
+      "citableDesc": "Can be quoted",
+      "learnOnly": "Learn Only",
+      "learnOnlyDesc": "Private"
+    },
+    "review": {
+      "noDescription": "No description",
+      "welcomeMessage": "Welcome Message",
+      "personality": "Personality",
+      "customInstructions": "Custom Instructions",
+      "knowledgeSummary": "Knowledge Sources",
+      "citable": "Citable",
+      "private": "Private",
+      "readyTitle": "Ready to Launch!",
+      "readyDesc": "Your chatbot is configured and ready to go.",
+      "feature1": "Test with real conversations",
+      "feature2": "Embed on your website",
+      "feature3": "Track usage analytics"
+    },
+    "buttons": {
+      "previous": "Previous",
+      "next": "Next",
+      "creating": "Creating...",
+      "create": "Create Chatbot",
+      "saveChanges": "Save Changes"
+    },
+    "errors": {
+      "fileNotSupported": "File type {{type}} not supported. Use PDF, DOCX, or TXT.",
+      "fileTooLarge": "File \"{{name}}\" is too large. Max 10MB.",
+      "invalidUrl": "Invalid URL: {{url}}",
+      "nameRequired": "Please enter a name for your chatbot"
+    }
+  },
+  "knowledge": {
+    "title": "Knowledge Sources",
+    "subtitle": "Manage files and URLs that your chatbot learns from",
+    "addSources": "Add Sources",
+    "loading": "Loading knowledge sources...",
+    "noSources": "No knowledge sources yet",
+    "noSourcesDesc": "Upload documents or add website URLs to improve your chatbot's responses",
+    "addFirst": "Add Your First Source",
+    "generateEmbeddings": "Generate Embeddings",
+    "training": "Processing your knowledge sources...",
+    "trainingSuccess": "Embeddings generated successfully!",
+    "trainDesc": "Train your chatbot on the uploaded content",
+    "trainNow": "Train Now",
+    "trainingBtn": "Training...",
+    "done": "Done!",
+    "added": "Added {{date}}",
+    "citable": "Citable",
+    "learnOnly": "Learn Only",
+    "openUrl": "Open URL",
+    "downloadFile": "Download file",
+    "deleteSource": "Delete source",
+    "privacyTitle": "Privacy Settings:",
+    "privacyCitable": "Citable - Content can be quoted and shown to users",
+    "privacyLearn": "Learn Only - Used for context but never revealed to users",
+    "confirmDelete": "Are you sure you want to delete this knowledge source?",
+    "deleteFailed": "Failed to delete knowledge source. Please try again."
+  },
+  "deleteModal": {
+    "title": "Delete Chatbot",
+    "confirmText": "Are you sure you want to delete",
+    "warning": "This action cannot be undone.",
+    "allDataDeleted": "All conversations, analytics, and settings associated with this chatbot will be permanently deleted.",
+    "deleting": "Deleting...",
+    "deleteBtn": "Delete Chatbot"
+  },
+  "chatbotModal": {
+    "createTitle": "Create New Chatbot",
+    "editTitle": "Edit Chatbot",
+    "basicInfo": "Basic Information",
+    "chatbotName": "Chatbot Name *",
+    "namePlaceholder": "e.g., Customer Support Bot",
+    "description": "Description",
+    "descPlaceholder": "Brief description of your chatbot's purpose...",
+    "appearance": "Appearance",
+    "welcomeMessage": "Welcome Message",
+    "welcomePlaceholder": "Hello! How can I help you today?",
+    "inputPlaceholder": "Input Placeholder Text",
+    "inputPlaceholderValue": "Type your message...",
+    "themeColor": "Theme Color",
+    "aiConfig": "AI Configuration",
+    "model": "Model",
+    "temperature": "Temperature",
+    "precise": "Precise",
+    "creative": "Creative",
+    "maxTokens": "Max Response Length (tokens)",
+    "enableCitations": "Enable source citations in responses",
+    "enableDataCollection": "Enable conversation data collection for improvements",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "createBtn": "Create Chatbot",
+    "saveBtn": "Save Changes",
+    "error": "Error"
+  },
+  "chatSidebar": {
+    "quickActions": "Quick Actions",
+    "hubspotIntegration": "HubSpot Integration",
+    "hubspotDesc": "Automatically send leads to your CRM.",
+    "enableCrm": "Enable CRM",
+    "hubspotFormUrl": "HubSpot Form URL",
+    "apiKey": "API Key (Optional)",
+    "apiKeyPlaceholder": "Optional API key",
+    "test": "Test",
+    "testing": "Testing...",
+    "save": "Save",
+    "connected": "Connected",
+    "notConfigured": "Not configured",
+    "embedWidget": "Embed Widget",
+    "embedWidgetDesc": "Add this chatbot to any website.",
+    "widgetUrl": "Widget URL",
+    "embedType": "Embed Type",
+    "code": "Code",
+    "quickSettings": "Quick Settings",
+    "settingsDesc": "View chatbot configuration.",
+    "botName": "Bot Name",
+    "settingsNote": "To edit settings, go to Dashboard → Chatbot Settings",
+    "liveStats": "Live Stats",
+    "statsDesc": "Real-time performance metrics.",
+    "conversations": "Conversations",
+    "messages": "Messages",
+    "active": "Active",
+    "knowledgeBase": "Knowledge Base",
+    "knowledgeDesc": "Documents and sources available.",
+    "knowledgeSources": "Knowledge Sources",
+    "none": "None",
+    "knowledgeNote": "To manage knowledge sources, go to Dashboard → Knowledge Sources"
+  },
+  "embedModal": {
+    "title": "Embed Your Chatbot",
+    "chooseType": "Choose Embed Type",
+    "chatBubble": "Chat Bubble",
+    "chatBubbleDesc": "Floating bubble in corner of your website",
+    "inlineFrame": "Inline Frame",
+    "inlineFrameDesc": "Embedded directly in your page",
+    "instructions": "Installation Instructions",
+    "step1": "Copy the code below",
+    "step2bubble": "Paste it into your website's HTML (preferably before the closing </body> tag)",
+    "step2inline": "Paste it into your website's HTML where you want the chat to appear",
+    "step3": "Save and publish your changes",
+    "step4": "Your chatbot is now live! 🎉",
+    "embedCode": "Embed Code",
+    "copyCode": "Copy Code",
+    "copied": "Copied!",
+    "previewTitle": "Preview & Customization",
+    "previewBubble": "The chat bubble will appear in the bottom-right corner of your website. Users can click it to start chatting.",
+    "previewInline": "The chat interface will be embedded directly into your page. You can adjust the width and height values in the code.",
+    "mobileResponsive": "Mobile Responsive ✓",
+    "secureConnection": "Secure Connection ✓",
+    "noSetup": "No Setup Required ✓",
+    "needHelp": "Need help with integration?",
+    "viewDocs": "View documentation",
+    "contactSupport": "contact support"
+  }
+}

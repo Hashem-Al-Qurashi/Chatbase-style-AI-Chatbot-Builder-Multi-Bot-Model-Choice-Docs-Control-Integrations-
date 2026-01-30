@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bot,
@@ -25,6 +26,7 @@ import { ChatbotWizard } from '../chatbot/ChatbotWizard'
 import { ChatbotDetailsModal } from '../chatbot/ChatbotDetailsModal'
 
 export function Dashboard() {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -126,9 +128,9 @@ export function Dashboard() {
   // Get greeting based on time
   const getGreeting = () => {
     const hour = new Date().getHours()
-    if (hour < 12) return 'Good morning'
-    if (hour < 18) return 'Good afternoon'
-    return 'Good evening'
+    if (hour < 12) return t('dashboard.greeting.morning')
+    if (hour < 18) return t('dashboard.greeting.afternoon')
+    return t('dashboard.greeting.evening')
   }
 
   return (
@@ -145,7 +147,7 @@ export function Dashboard() {
               {getGreeting()}, {user?.first_name || user?.email?.split('@')[0] || 'there'}
             </h1>
             <p className="text-slate-500">
-              Here's what's happening with your chatbots today.
+              {t('dashboard.subtitle')}
             </p>
           </div>
 
@@ -156,7 +158,7 @@ export function Dashboard() {
             whileTap={{ scale: 0.98 }}
           >
             <Plus className="w-5 h-5" />
-            New Chatbot
+            {t('dashboard.newChatbot')}
           </motion.button>
         </motion.div>
 
@@ -172,16 +174,16 @@ export function Dashboard() {
           ) : (
             <>
               <StatCard
-                title="Total Chatbots"
+                title={t('dashboard.stats.totalChatbots')}
                 value={chatbots.length}
                 icon={Bot}
                 color="violet"
                 trend={{ value: 12, isPositive: true }}
                 delay={0}
-                description={`${userPlan?.max_ai_agents || 1} max allowed`}
+                description={t('dashboard.stats.maxAllowed', { count: userPlan?.max_ai_agents || 1 })}
               />
               <StatCard
-                title="Total Conversations"
+                title={t('dashboard.stats.totalConversations')}
                 value={totalConversations}
                 icon={MessageSquare}
                 color="fuchsia"
@@ -189,7 +191,7 @@ export function Dashboard() {
                 delay={0.1}
               />
               <StatCard
-                title="Messages This Month"
+                title={t('dashboard.stats.messagesThisMonth')}
                 value={totalMessages}
                 icon={Zap}
                 color="cyan"
@@ -197,13 +199,13 @@ export function Dashboard() {
                 delay={0.2}
               />
               <StatCard
-                title="Credits Remaining"
+                title={t('dashboard.stats.creditsRemaining')}
                 value={creditsRemaining}
                 suffix={` / ${creditsTotal}`}
                 icon={CreditCard}
                 color={creditsRemaining < 10 ? 'rose' : 'emerald'}
                 delay={0.3}
-                description={creditsRemaining < 10 ? 'Running low!' : 'This billing cycle'}
+                description={creditsRemaining < 10 ? t('dashboard.stats.runningLow') : t('dashboard.stats.thisBillingCycle')}
               />
             </>
           )}
@@ -216,22 +218,22 @@ export function Dashboard() {
             {/* Chatbots Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-white">Your Chatbots</h2>
+                <h2 className="text-xl font-semibold text-white">{t('dashboard.yourChatbots')}</h2>
                 <p className="text-sm text-slate-500">
-                  {filteredChatbots.length} of {chatbots.length} chatbots
+                  {t('dashboard.chatbotsCount', { filtered: filteredChatbots.length, total: chatbots.length })}
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
                 {/* Search */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Search className="absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <input
                     type="text"
-                    placeholder="Search chatbots..."
+                    placeholder={t('dashboard.searchChatbots')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-48 pl-9 pr-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all"
+                    className="w-48 pl-9 rtl:pl-4 rtl:pr-9 pr-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all"
                   />
                 </div>
 
@@ -280,7 +282,7 @@ export function Dashboard() {
                   onClick={loadChatbots}
                   className="px-4 py-2 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition-colors"
                 >
-                  Try Again
+                  {t('dashboard.tryAgain')}
                 </button>
               </motion.div>
             ) : filteredChatbots.length === 0 && chatbots.length === 0 ? (
@@ -292,9 +294,9 @@ export function Dashboard() {
                 className="rounded-2xl bg-white/5 border border-white/10 p-8 text-center"
               >
                 <Search className="w-8 h-8 text-slate-500 mx-auto mb-3" />
-                <h3 className="text-white font-medium mb-1">No results found</h3>
+                <h3 className="text-white font-medium mb-1">{t('dashboard.noResults')}</h3>
                 <p className="text-slate-500 text-sm">
-                  Try adjusting your search query
+                  {t('dashboard.tryAdjusting')}
                 </p>
               </motion.div>
             ) : (
@@ -329,10 +331,10 @@ export function Dashboard() {
             {/* Upgrade Banner (for free users) */}
             {userPlan?.tier === 'free' && (
               <FeaturedAction
-                title="Upgrade to Pro"
-                description="Get unlimited chatbots, advanced analytics, and priority support."
+                title={t('dashboard.upgrade.title')}
+                description={t('dashboard.upgrade.description')}
                 icon={Sparkles}
-                buttonText="View Plans"
+                buttonText={t('dashboard.upgrade.viewPlans')}
                 onClick={() => navigate('/#pricing')}
                 gradient="from-amber-500 to-orange-500"
               />

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence, Variants } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   Send,
   Bot,
@@ -85,6 +86,7 @@ export function ChatInterface({
   isMinimized,
   onToggleMinimize
 }: ChatInterfaceProps) {
+  const { t } = useTranslation()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -261,7 +263,7 @@ export function ChatInterface({
         const successMessage: ChatMessage = {
           id: (Date.now() + i).toString(),
           role: 'assistant',
-          content: `Successfully uploaded "${file.name}". The document has been processed and is now available for questions!`,
+          content: t('chat.uploadSuccess', { name: file.name }),
           timestamp: new Date()
         }
         setMessages(prev => [...prev, successMessage])
@@ -280,7 +282,7 @@ export function ChatInterface({
         const errorMessage: ChatMessage = {
           id: (Date.now() + i + 1000).toString(),
           role: 'assistant',
-          content: `Failed to upload "${file.name}": ${error.message || 'Upload failed'}`,
+          content: t('chat.uploadError', { name: file.name, error: error.message || 'Upload failed' }),
           timestamp: new Date()
         }
         setMessages(prev => [...prev, errorMessage])
@@ -438,10 +440,10 @@ export function ChatInterface({
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                    Online
+                    {t('chat.online')}
                   </span>
                   <span className="text-slate-600">•</span>
-                  <span className="text-xs text-slate-500">Ready to help</span>
+                  <span className="text-xs text-slate-500">{t('chat.readyToHelp')}</span>
                 </div>
               </div>
             </div>
@@ -491,7 +493,7 @@ export function ChatInterface({
                 <div className="flex items-center justify-center py-8">
                   <div className="flex items-center gap-3">
                     <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
-                    <span className="text-slate-500">Loading conversation...</span>
+                    <span className="text-slate-500">{t('chat.loadingConversation')}</span>
                   </div>
                 </div>
               )}
@@ -555,7 +557,7 @@ export function ChatInterface({
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-500/10 text-xs text-violet-400 hover:bg-violet-500/15 transition-colors"
                           >
                             <Sparkles className="w-3 h-3" />
-                            <span>{message.sources.length} source{message.sources.length > 1 ? 's' : ''}</span>
+                            <span>{t('chat.sources', { count: message.sources.length })}</span>
                             <motion.span
                               animate={{ rotate: expandedSources.has(message.id) ? 180 : 0 }}
                               transition={{ duration: 0.2 }}
@@ -643,7 +645,7 @@ export function ChatInterface({
                           animate={{ opacity: [1, 0.5, 1] }}
                           transition={{ duration: 1.5, repeat: Infinity }}
                         >
-                          Thinking...
+                          {t('chat.thinking')}
                         </motion.span>
                       </span>
                     </div>
@@ -673,9 +675,9 @@ export function ChatInterface({
                 >
                   <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragOver ? 'text-violet-400' : 'text-slate-500'}`} />
                   <p className="text-sm text-slate-400 mb-1">
-                    Drop files here or <span className="text-violet-400 font-medium">browse</span>
+                    {t('chat.dropFiles')} <span className="text-violet-400 font-medium">{t('chat.browse')}</span>
                   </p>
-                  <p className="text-xs text-slate-600">PDF, DOC, TXT files supported</p>
+                  <p className="text-xs text-slate-600">{t('chat.supportedFiles')}</p>
                 </div>
 
                 <input
@@ -748,11 +750,11 @@ export function ChatInterface({
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500/0 via-violet-500/0 to-fuchsia-500/0 rounded-xl blur opacity-0 group-focus-within:opacity-50 group-focus-within:from-violet-500/30 group-focus-within:to-fuchsia-500/30 transition-all duration-300" />
                     <input
                       type="text"
-                      placeholder="Type your message..."
+                      placeholder={t('chat.placeholder')}
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       disabled={isLoading}
-                      className="relative w-full px-5 py-3.5 pr-14 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all duration-200 disabled:opacity-50"
+                      className="relative w-full px-5 py-3.5 pr-14 rtl:pr-5 rtl:pl-14 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all duration-200 disabled:opacity-50"
                     />
 
                     <motion.button
@@ -775,7 +777,7 @@ export function ChatInterface({
               <div className="flex items-center justify-center gap-2 mt-3">
                 <div className="w-1 h-1 rounded-full bg-slate-700" />
                 <p className="text-[10px] text-slate-600 font-medium">
-                  AI can make mistakes. Verify important information.
+                  {t('chat.aiDisclaimer')}
                 </p>
                 <div className="w-1 h-1 rounded-full bg-slate-700" />
               </div>
@@ -809,8 +811,8 @@ export function ChatInterface({
               <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Upload className="w-8 h-8 text-white" />
               </div>
-              <p className="font-semibold text-white mb-1">Drop files to upload</p>
-              <p className="text-sm text-slate-400">Add knowledge to your chatbot</p>
+              <p className="font-semibold text-white mb-1">{t('chat.dropFiles')}</p>
+              <p className="text-sm text-slate-400">{t('knowledge.subtitle')}</p>
             </div>
           </motion.div>
         )}

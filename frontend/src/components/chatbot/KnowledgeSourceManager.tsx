@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   FileText,
@@ -16,9 +17,6 @@ import {
   Brain,
   Zap
 } from 'lucide-react'
-import { Button } from '../ui/Button'
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
-import { Badge } from '../ui/Badge'
 import { apiService } from '../../services/api'
 import { Chatbot } from '../../types'
 
@@ -43,6 +41,7 @@ interface KnowledgeSourceManagerProps {
 }
 
 export function KnowledgeSourceManager({ chatbot, onUploadRequested }: KnowledgeSourceManagerProps) {
+  const { t } = useTranslation()
   const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSource[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -105,7 +104,7 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
   }
 
   const handleDelete = async (sourceId: string) => {
-    if (!confirm('Are you sure you want to delete this knowledge source?')) {
+    if (!confirm(t('knowledge.confirmDelete'))) {
       return
     }
 
@@ -122,7 +121,7 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
 
     } catch (err: any) {
       console.error('Failed to delete knowledge source:', err)
-      alert('Failed to delete knowledge source. Please try again.')
+      alert(t('knowledge.deleteFailed'))
     } finally {
       setDeletingId(null)
     }
@@ -176,21 +175,6 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      ready: 'success' as const,
-      processing: 'warning' as const,
-      error: 'error' as const,
-      pending: 'secondary' as const
-    }
-    
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>
-        {status}
-      </Badge>
-    )
-  }
-
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return ''
     const mb = bytes / (1024 * 1024)
@@ -206,7 +190,7 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
       <div className="bg-slate-900/50 rounded-2xl border border-white/10 p-6">
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
-          <span className="ml-3 text-slate-400">Loading knowledge sources...</span>
+          <span className="ml-3 rtl:mr-3 rtl:ml-0 text-slate-400">{t('knowledge.loading')}</span>
         </div>
       </div>
     )
@@ -220,10 +204,10 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
           <div>
             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
               <Brain className="w-5 h-5 text-violet-400" />
-              Knowledge Sources
+              {t('knowledge.title')}
             </h3>
             <p className="text-sm text-slate-500 mt-1">
-              Manage files and URLs that your chatbot learns from
+              {t('knowledge.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -234,7 +218,7 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 border border-white/10 text-sm text-white hover:bg-white/20 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Add Sources
+              {t('knowledge.addSources')}
             </motion.button>
           </div>
         </div>
@@ -263,10 +247,10 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
               <Upload className="w-8 h-8 text-violet-400" />
             </div>
             <h3 className="text-lg font-medium text-white mb-2">
-              No knowledge sources yet
+              {t('knowledge.noSources')}
             </h3>
             <p className="text-sm text-slate-500 mb-6 max-w-sm mx-auto">
-              Upload documents or add website URLs to improve your chatbot's responses
+              {t('knowledge.noSourcesDesc')}
             </p>
             <motion.button
               onClick={onUploadRequested}
@@ -275,7 +259,7 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-medium shadow-lg shadow-violet-500/25 hover:opacity-90 transition-opacity"
             >
               <Plus className="w-4 h-4" />
-              Add Your First Source
+              {t('knowledge.addFirst')}
             </motion.button>
           </div>
         ) : (
@@ -304,13 +288,13 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
                     )}
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-white">Generate Embeddings</h4>
+                    <h4 className="text-sm font-medium text-white">{t('knowledge.generateEmbeddings')}</h4>
                     <p className="text-xs text-slate-500">
                       {trainingStatus === 'training'
-                        ? 'Processing your knowledge sources...'
+                        ? t('knowledge.training')
                         : trainingStatus === 'success'
-                        ? 'Embeddings generated successfully!'
-                        : 'Train your chatbot on the uploaded content'}
+                        ? t('knowledge.trainingSuccess')
+                        : t('knowledge.trainDesc')}
                     </p>
                   </div>
                 </div>
@@ -328,17 +312,17 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
                   {training ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Training...
+                      {t('knowledge.trainingBtn')}
                     </>
                   ) : trainingStatus === 'success' ? (
                     <>
                       <CheckCircle className="w-4 h-4" />
-                      Done!
+                      {t('knowledge.done')}
                     </>
                   ) : (
                     <>
                       <Zap className="w-4 h-4" />
-                      Train Now
+                      {t('knowledge.trainNow')}
                     </>
                   )}
                 </motion.button>
@@ -382,19 +366,19 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
                             ? 'bg-rose-500/20 text-rose-400'
                             : 'bg-slate-500/20 text-slate-400'
                         }`}>
-                          {source.status}
+                          {t(`chatbot.status.${source.status}`)}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-4 mt-1 text-xs text-slate-500">
-                        <span>Added {formatDate(source.created_at)}</span>
+                        <span>{t('knowledge.added', { date: formatDate(source.created_at) })}</span>
                         {source.size && <span>{formatFileSize(source.size)}</span>}
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                           source.is_citable
                             ? 'bg-emerald-500/10 text-emerald-400'
                             : 'bg-amber-500/10 text-amber-400'
                         }`}>
-                          {source.is_citable ? 'Citable' : 'Learn Only'}
+                          {source.is_citable ? t('knowledge.citable') : t('knowledge.learnOnly')}
                         </span>
                       </div>
 
@@ -410,7 +394,7 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
                       <button
                         onClick={() => window.open(source.url, '_blank')}
                         className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
-                        title="Open URL"
+                        title={t('knowledge.openUrl')}
                       >
                         <Eye className="w-4 h-4" />
                       </button>
@@ -420,7 +404,7 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
                       <button
                         onClick={() => console.log('Download file:', source.file_path)}
                         className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
-                        title="Download file"
+                        title={t('knowledge.downloadFile')}
                       >
                         <Download className="w-4 h-4" />
                       </button>
@@ -430,7 +414,7 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
                       onClick={() => handleDelete(source.id)}
                       disabled={deletingId === source.id}
                       className="p-2 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
-                      title="Delete source"
+                      title={t('knowledge.deleteSource')}
                     >
                       {deletingId === source.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -448,9 +432,9 @@ export function KnowledgeSourceManager({ chatbot, onUploadRequested }: Knowledge
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-slate-500">
-                  <p className="font-medium text-slate-400 mb-1">Privacy Settings:</p>
-                  <p><span className="text-emerald-400">Citable</span> - Content can be quoted and shown to users</p>
-                  <p><span className="text-amber-400">Learn Only</span> - Used for context but never revealed to users</p>
+                  <p className="font-medium text-slate-400 mb-1">{t('knowledge.privacyTitle')}</p>
+                  <p><span className="text-emerald-400">{t('knowledge.citable')}</span> - {t('knowledge.privacyCitable').split(' - ')[1]}</p>
+                  <p><span className="text-amber-400">{t('knowledge.learnOnly')}</span> - {t('knowledge.privacyLearn').split(' - ')[1]}</p>
                 </div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   X, Bot, ChevronRight, ChevronLeft, Upload, Link,
   FileText, Globe, Lock, Unlock, Check, AlertCircle,
@@ -28,6 +29,7 @@ interface KnowledgeSource {
 }
 
 export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: ChatbotWizardProps) {
+  const { t } = useTranslation()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -263,9 +265,9 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
   if (!isOpen) return null
 
   const steps = [
-    { num: 1, label: 'Basics', icon: Bot },
-    { num: 2, label: 'Knowledge', icon: Brain },
-    { num: 3, label: 'Review', icon: Sparkles }
+    { num: 1, labelKey: 'wizard.steps.basics', icon: Bot },
+    { num: 2, labelKey: 'wizard.steps.knowledge', icon: Brain },
+    { num: 3, labelKey: 'wizard.steps.review', icon: Sparkles }
   ]
 
   return (
@@ -303,9 +305,9 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-white">
-                      {existingChatbot ? 'Edit Chatbot' : 'Create Chatbot'}
+                      {existingChatbot ? t('wizard.editChatbot') : t('wizard.createChatbot')}
                     </h2>
-                    <p className="text-xs text-slate-500">Step {currentStep} of 3</p>
+                    <p className="text-xs text-slate-500">{t('wizard.step', { current: currentStep, total: 3 })}</p>
                   </div>
                 </div>
 
@@ -328,7 +330,7 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                           <span className={`text-xs font-medium ${
                             isActive ? 'text-violet-300' :
                             isCompleted ? 'text-emerald-400' : 'text-slate-500'
-                          }`}>{step.label}</span>
+                          }`}>{t(step.labelKey)}</span>
                         </div>
                         {idx < steps.length - 1 && (
                           <ChevronRight className="w-4 h-4 text-slate-600 mx-1" />
@@ -378,24 +380,24 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Chatbot Name <span className="text-rose-400">*</span>
+                          {t('wizard.basics.name')} <span className="text-rose-400">*</span>
                         </label>
                         <input
                           value={chatbotData.name}
                           onChange={(e) => setChatbotData(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="e.g., Customer Support Bot"
+                          placeholder={t('wizard.basics.namePlaceholder')}
                           className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all text-sm"
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Description
+                          {t('wizard.basics.description')}
                         </label>
                         <textarea
                           value={chatbotData.description}
                           onChange={(e) => setChatbotData(prev => ({ ...prev, description: e.target.value }))}
-                          placeholder="What does your chatbot help with?"
+                          placeholder={t('wizard.basics.descriptionPlaceholder')}
                           className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all text-sm resize-none"
                           rows={2}
                         />
@@ -403,33 +405,33 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
 
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                          Welcome Message
+                          {t('wizard.basics.welcomeMessage')}
                         </label>
                         <div className="relative">
-                          <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                          <MessageSquare className="absolute left-3 rtl:left-auto rtl:right-3 top-3 w-4 h-4 text-slate-500" />
                           <input
                             value={chatbotData.welcome_message}
                             onChange={(e) => setChatbotData(prev => ({ ...prev, welcome_message: e.target.value }))}
-                            placeholder="Hello! How can I help you?"
-                            className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all text-sm"
+                            placeholder={t('wizard.basics.welcomePlaceholder')}
+                            className="w-full pl-10 pr-3 rtl:pl-3 rtl:pr-10 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all text-sm"
                           />
                         </div>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Personality
+                          {t('wizard.basics.personality')}
                         </label>
                         <div className="flex gap-3">
                           {[
-                            { value: 'professional', label: 'Professional', desc: 'Formal tone' },
-                            { value: 'casual', label: 'Casual', desc: 'Friendly tone' }
+                            { value: 'professional', labelKey: 'wizard.basics.professional', descKey: 'wizard.basics.professionalDesc' },
+                            { value: 'casual', labelKey: 'wizard.basics.casual', descKey: 'wizard.basics.casualDesc' }
                           ].map((option) => (
                             <button
                               key={option.value}
                               type="button"
                               onClick={() => setChatbotData(prev => ({ ...prev, personality: option.value }))}
-                              className={`flex-1 p-3 rounded-xl border transition-all text-left ${
+                              className={`flex-1 p-3 rounded-xl border transition-all text-left rtl:text-right ${
                                 chatbotData.personality === option.value
                                   ? 'bg-violet-500/20 border-violet-500/50 ring-1 ring-violet-500/30'
                                   : 'bg-white/5 border-white/10 hover:border-white/20'
@@ -437,8 +439,8 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                             >
                               <span className={`block text-sm font-medium ${
                                 chatbotData.personality === option.value ? 'text-violet-300' : 'text-white'
-                              }`}>{option.label}</span>
-                              <span className="text-xs text-slate-500">{option.desc}</span>
+                              }`}>{t(option.labelKey)}</span>
+                              <span className="text-xs text-slate-500">{t(option.descKey)}</span>
                             </button>
                           ))}
                         </div>
@@ -448,12 +450,12 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                     {/* Right Column */}
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                        Custom Instructions
+                        {t('wizard.basics.customInstructions')}
                       </label>
                       <textarea
                         value={chatbotData.system_prompt}
                         onChange={(e) => setChatbotData(prev => ({ ...prev, system_prompt: e.target.value }))}
-                        placeholder="Add custom instructions for your chatbot...&#10;&#10;Examples:&#10;• You are a helpful support agent for [Company]&#10;• Always be polite and professional&#10;• Focus on helping with [topics]"
+                        placeholder={t('wizard.basics.instructionsPlaceholder')}
                         className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all text-sm resize-none h-[calc(100%-2rem)]"
                         style={{ minHeight: '220px' }}
                       />
@@ -474,7 +476,7 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Upload Documents
+                          {t('wizard.knowledge.uploadDocuments')}
                         </label>
                         <div
                           className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all ${
@@ -489,10 +491,10 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                         >
                           <Upload className={`w-8 h-8 mx-auto mb-2 ${dragActive ? 'text-violet-400' : 'text-slate-500'}`} />
                           <p className="text-sm text-slate-400 mb-1">
-                            Drag & drop files here
+                            {t('wizard.knowledge.dragDrop')}
                           </p>
                           <p className="text-xs text-slate-500 mb-3">
-                            PDF, DOCX, TXT (max 10MB)
+                            {t('wizard.knowledge.fileTypes')}
                           </p>
                           <input
                             type="file"
@@ -506,20 +508,20 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                             onClick={() => document.getElementById('file-upload')?.click()}
                             className="px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-sm text-white hover:bg-white/20 transition-colors"
                           >
-                            Browse Files
+                            {t('wizard.knowledge.browseFiles')}
                           </button>
                         </div>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">
-                          Add URLs
+                          {t('wizard.knowledge.addUrls')}
                         </label>
                         <div className="space-y-2">
                           <textarea
                             value={urlInput}
                             onChange={(e) => setUrlInput(e.target.value)}
-                            placeholder="Enter URLs (one per line)&#10;https://example.com/about"
+                            placeholder={t('wizard.knowledge.urlPlaceholder')}
                             className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 text-sm resize-none"
                             rows={3}
                           />
@@ -529,7 +531,7 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-sm text-white hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Link className="w-4 h-4" />
-                            Add URLs
+                            {t('wizard.knowledge.addUrlsBtn')}
                           </button>
                         </div>
                       </div>
@@ -539,10 +541,10 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="text-sm font-medium text-slate-300">
-                          Knowledge Sources
+                          {t('wizard.knowledge.knowledgeSources')}
                         </label>
                         <span className="text-xs text-slate-500">
-                          {knowledgeSources.length} source{knowledgeSources.length !== 1 ? 's' : ''}
+                          {t('wizard.knowledge.sourceCount', { count: knowledgeSources.length })}
                         </span>
                       </div>
 
@@ -550,8 +552,8 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                         {knowledgeSources.length === 0 ? (
                           <div className="h-full flex flex-col items-center justify-center text-center p-6">
                             <Brain className="w-10 h-10 text-slate-600 mb-3" />
-                            <p className="text-sm text-slate-500">No sources added yet</p>
-                            <p className="text-xs text-slate-600 mt-1">Upload files or add URLs to train your chatbot</p>
+                            <p className="text-sm text-slate-500">{t('wizard.knowledge.noSources')}</p>
+                            <p className="text-xs text-slate-600 mt-1">{t('wizard.knowledge.noSourcesDesc')}</p>
                           </div>
                         ) : (
                           <div className="h-full overflow-y-auto p-2 space-y-2">
@@ -606,11 +608,11 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                       <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
                         <div className="flex items-center gap-1">
                           <Unlock className="w-3 h-3 text-emerald-400" />
-                          <span>Citable - Can be quoted</span>
+                          <span>{t('wizard.knowledge.citable')} - {t('wizard.knowledge.citableDesc')}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Lock className="w-3 h-3 text-amber-400" />
-                          <span>Learn Only - Private</span>
+                          <span>{t('wizard.knowledge.learnOnly')} - {t('wizard.knowledge.learnOnlyDesc')}</span>
                         </div>
                       </div>
                     </div>
@@ -635,7 +637,7 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                           </div>
                           <div>
                             <h3 className="text-lg font-semibold text-white">{chatbotData.name}</h3>
-                            <p className="text-sm text-slate-500">{chatbotData.description || 'No description'}</p>
+                            <p className="text-sm text-slate-500">{chatbotData.description || t('wizard.review.noDescription')}</p>
                           </div>
                         </div>
 
@@ -643,7 +645,7 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                           <div className="flex items-start gap-2">
                             <MessageSquare className="w-4 h-4 text-slate-500 mt-0.5" />
                             <div>
-                              <p className="text-xs text-slate-500">Welcome Message</p>
+                              <p className="text-xs text-slate-500">{t('wizard.review.welcomeMessage')}</p>
                               <p className="text-sm text-slate-300">{chatbotData.welcome_message}</p>
                             </div>
                           </div>
@@ -651,9 +653,9 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                           <div className="flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-slate-500" />
                             <div>
-                              <p className="text-xs text-slate-500">Personality</p>
+                              <p className="text-xs text-slate-500">{t('wizard.review.personality')}</p>
                               <p className="text-sm text-slate-300">
-                                {chatbotData.personality === 'casual' ? 'Casual' : 'Professional'}
+                                {chatbotData.personality === 'casual' ? t('wizard.basics.casual') : t('wizard.basics.professional')}
                               </p>
                             </div>
                           </div>
@@ -662,7 +664,7 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                             <div className="flex items-start gap-2">
                               <Brain className="w-4 h-4 text-slate-500 mt-0.5" />
                               <div>
-                                <p className="text-xs text-slate-500">Custom Instructions</p>
+                                <p className="text-xs text-slate-500">{t('wizard.review.customInstructions')}</p>
                                 <p className="text-sm text-slate-300 line-clamp-2">{chatbotData.system_prompt}</p>
                               </div>
                             </div>
@@ -672,19 +674,19 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
 
                       {/* Knowledge Summary */}
                       <div className="bg-white/5 rounded-xl border border-white/10 p-4">
-                        <h4 className="text-sm font-medium text-slate-300 mb-3">Knowledge Sources</h4>
+                        <h4 className="text-sm font-medium text-slate-300 mb-3">{t('wizard.review.knowledgeSummary')}</h4>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="bg-emerald-500/10 rounded-lg p-3 text-center">
                             <p className="text-2xl font-bold text-emerald-400">
                               {knowledgeSources.filter(s => s.is_citable).length}
                             </p>
-                            <p className="text-xs text-emerald-400/70">Citable</p>
+                            <p className="text-xs text-emerald-400/70">{t('wizard.review.citable')}</p>
                           </div>
                           <div className="bg-amber-500/10 rounded-lg p-3 text-center">
                             <p className="text-2xl font-bold text-amber-400">
                               {knowledgeSources.filter(s => !s.is_citable).length}
                             </p>
-                            <p className="text-xs text-amber-400/70">Private</p>
+                            <p className="text-xs text-amber-400/70">{t('wizard.review.private')}</p>
                           </div>
                         </div>
                       </div>
@@ -700,23 +702,23 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                         <Check className="w-10 h-10 text-white" />
                       </motion.div>
 
-                      <h3 className="text-xl font-semibold text-white mb-2">Ready to Launch!</h3>
+                      <h3 className="text-xl font-semibold text-white mb-2">{t('wizard.review.readyTitle')}</h3>
                       <p className="text-sm text-slate-400 mb-4">
-                        Your chatbot is configured and ready to go.
+                        {t('wizard.review.readyDesc')}
                       </p>
 
-                      <div className="text-left space-y-2 text-sm text-slate-400">
+                      <div className="text-left rtl:text-right space-y-2 text-sm text-slate-400">
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-emerald-400" />
-                          <span>Test with real conversations</span>
+                          <span>{t('wizard.review.feature1')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-emerald-400" />
-                          <span>Embed on your website</span>
+                          <span>{t('wizard.review.feature2')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-emerald-400" />
-                          <span>Track usage analytics</span>
+                          <span>{t('wizard.review.feature3')}</span>
                         </div>
                       </div>
                     </div>
@@ -733,7 +735,7 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Previous
+                {t('wizard.buttons.previous')}
               </button>
 
               {currentStep < 3 ? (
@@ -742,7 +744,7 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                   disabled={loading}
                   className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-medium hover:opacity-90 transition-opacity shadow-lg shadow-violet-500/25"
                 >
-                  Next
+                  {t('wizard.buttons.next')}
                   <ChevronRight className="w-4 h-4" />
                 </button>
               ) : (
@@ -754,11 +756,11 @@ export function ChatbotWizard({ isOpen, onClose, onSuccess, existingChatbot }: C
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Creating...
+                      {t('wizard.buttons.creating')}
                     </>
                   ) : (
                     <>
-                      {existingChatbot ? 'Save Changes' : 'Create Chatbot'}
+                      {existingChatbot ? t('wizard.buttons.saveChanges') : t('wizard.buttons.create')}
                       <Check className="w-4 h-4" />
                     </>
                   )}

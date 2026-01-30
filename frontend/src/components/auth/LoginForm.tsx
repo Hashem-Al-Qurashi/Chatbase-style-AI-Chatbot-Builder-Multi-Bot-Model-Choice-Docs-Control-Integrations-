@@ -1,6 +1,7 @@
 // Modern Login form component with dark theme styling
 
 import React, { useState, FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mail, Lock, LogIn, Bot } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/Card';
@@ -11,6 +12,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -51,10 +53,10 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           </div>
 
           <CardTitle className="text-3xl bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-            Welcome Back
+            {t('auth.login.title')}
           </CardTitle>
           <CardDescription className="text-base text-slate-400">
-            Sign in to your account to continue your journey
+            {t('auth.login.subtitle')}
           </CardDescription>
         </CardHeader>
 
@@ -74,48 +76,48 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
             <div className="space-y-4">
               {/* Email Field */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Email Address</label>
+                <label className="text-sm font-medium text-slate-300">{t('auth.login.email')}</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <Mail className="absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                   <input
                     type="email"
                     name="email"
-                    placeholder="Enter your email"
+                    placeholder={t('auth.login.emailPlaceholder')}
                     value={formData.email}
                     onChange={handleChange}
                     required
                     disabled={loading}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all disabled:opacity-50"
+                    className="w-full pl-10 rtl:pl-4 rtl:pr-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all disabled:opacity-50"
                   />
                 </div>
               </div>
 
               {/* Password Field */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Password</label>
+                <label className="text-sm font-medium text-slate-300">{t('auth.login.password')}</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                  <Lock className="absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                   <input
                     type="password"
                     name="password"
-                    placeholder="Enter your password"
+                    placeholder={t('auth.login.passwordPlaceholder')}
                     value={formData.password}
                     onChange={handleChange}
                     required
                     disabled={loading}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all disabled:opacity-50"
+                    className="w-full pl-10 rtl:pl-4 rtl:pr-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all disabled:opacity-50"
                   />
                 </div>
               </div>
             </div>
 
             {/* Forgot Password Link */}
-            <div className="flex justify-end">
+            <div className="flex justify-end rtl:justify-start">
               <button
                 type="button"
                 className="text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors focus:outline-none"
               >
-                Forgot password?
+                {t('auth.login.forgotPassword')}
               </button>
             </div>
 
@@ -130,7 +132,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
-                  Sign In
+                  {t('auth.login.signIn')}
                 </>
               )}
             </button>
@@ -147,7 +149,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="px-4 bg-transparent text-slate-500 font-medium">
-                    New to our platform?
+                    {t('auth.login.noAccount')}
                   </span>
                 </div>
               </div>
@@ -158,7 +160,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
                 className="w-full mt-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors disabled:opacity-50"
               >
                 <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                  Create your account
+                  {t('auth.login.createAccount')}
                 </span>
               </button>
             </div>
@@ -172,9 +174,9 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
 
       {/* Security Badge */}
       <div className="mt-6 text-center">
-        <div className="inline-flex items-center space-x-2 text-xs text-slate-500 bg-white/5 backdrop-blur-sm px-3 py-2 rounded-full border border-white/10">
+        <div className="inline-flex items-center space-x-2 rtl:space-x-reverse text-xs text-slate-500 bg-white/5 backdrop-blur-sm px-3 py-2 rounded-full border border-white/10">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="font-medium">Secured with enterprise-grade encryption</span>
+          <span className="font-medium">{t('auth.login.secured')}</span>
         </div>
       </div>
     </div>

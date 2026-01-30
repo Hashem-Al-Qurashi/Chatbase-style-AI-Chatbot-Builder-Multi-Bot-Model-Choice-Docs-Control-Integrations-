@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
   Bot,
@@ -23,28 +24,29 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { LanguageToggle } from '../ui/LanguageToggle'
 
 interface NavItem {
   id: string
-  label: string
+  labelKey: string
   icon: React.ElementType
   path: string
   badge?: number | string
   isNew?: boolean
 }
 
-const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { id: 'chatbots', label: 'Chatbots', icon: Bot, path: '/dashboard/chatbots' },
-  { id: 'conversations', label: 'Conversations', icon: MessageSquare, path: '/dashboard/conversations', badge: 5 },
-  { id: 'knowledge', label: 'Knowledge Base', icon: Database, path: '/dashboard/knowledge' },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/dashboard/analytics', isNew: true },
-  { id: 'integrations', label: 'Integrations', icon: Plug, path: '/dashboard/integrations' },
+const navItemsConfig: NavItem[] = [
+  { id: 'dashboard', labelKey: 'sidebar.dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { id: 'chatbots', labelKey: 'sidebar.chatbots', icon: Bot, path: '/dashboard/chatbots' },
+  { id: 'conversations', labelKey: 'sidebar.conversations', icon: MessageSquare, path: '/dashboard/conversations', badge: 5 },
+  { id: 'knowledge', labelKey: 'sidebar.knowledgeBase', icon: Database, path: '/dashboard/knowledge' },
+  { id: 'analytics', labelKey: 'sidebar.analytics', icon: BarChart3, path: '/dashboard/analytics', isNew: true },
+  { id: 'integrations', labelKey: 'sidebar.integrations', icon: Plug, path: '/dashboard/integrations' },
 ]
 
-const bottomNavItems: NavItem[] = [
-  { id: 'settings', label: 'Settings', icon: Settings, path: '/dashboard/settings' },
-  { id: 'billing', label: 'Billing', icon: CreditCard, path: '/dashboard/billing' },
+const bottomNavItemsConfig: NavItem[] = [
+  { id: 'settings', labelKey: 'sidebar.settings', icon: Settings, path: '/dashboard/settings' },
+  { id: 'billing', labelKey: 'sidebar.billing', icon: CreditCard, path: '/dashboard/billing' },
 ]
 
 interface DashboardLayoutProps {
@@ -53,6 +55,7 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, activeSection = 'dashboard' }: DashboardLayoutProps) {
+  const { t } = useTranslation()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -102,7 +105,7 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
       {isActive && (
         <motion.div
           layoutId="activeNav"
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-violet-400 to-fuchsia-400 rounded-full"
+          className="absolute left-0 rtl:left-auto rtl:right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-violet-400 to-fuchsia-400 rounded-full"
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         />
       )}
@@ -117,7 +120,7 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
             exit={{ opacity: 0, width: 0 }}
             className="text-sm font-medium whitespace-nowrap overflow-hidden"
           >
-            {item.label}
+            {t(item.labelKey)}
           </motion.span>
         )}
       </AnimatePresence>
@@ -127,7 +130,7 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
         <motion.span
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="ml-auto px-2 py-0.5 text-xs font-semibold bg-violet-500/20 text-violet-300 rounded-full"
+          className="ml-auto rtl:ml-0 rtl:mr-auto px-2 py-0.5 text-xs font-semibold bg-violet-500/20 text-violet-300 rounded-full"
         >
           {item.badge}
         </motion.span>
@@ -138,16 +141,16 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
         <motion.span
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="ml-auto px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-full uppercase tracking-wide"
+          className="ml-auto rtl:ml-0 rtl:mr-auto px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-full uppercase tracking-wide"
         >
-          New
+          {t('sidebar.new')}
         </motion.span>
       )}
 
       {/* Tooltip for collapsed state */}
       {collapsed && (
-        <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-          {item.label}
+        <div className="absolute left-full rtl:left-auto rtl:right-full ml-2 rtl:ml-0 rtl:mr-2 px-2 py-1 bg-slate-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+          {t(item.labelKey)}
         </div>
       )}
     </motion.button>
@@ -201,7 +204,7 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
 
         {/* Main Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
+          {navItemsConfig.map((item) => (
             <NavLink
               key={item.id}
               item={item}
@@ -212,7 +215,7 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
 
         {/* Bottom Navigation */}
         <div className="p-3 space-y-1 border-t border-white/5">
-          {bottomNavItems.map((item) => (
+          {bottomNavItemsConfig.map((item) => (
             <NavLink
               key={item.id}
               item={item}
@@ -236,7 +239,7 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
                   exit={{ opacity: 0 }}
                   className="text-sm font-medium"
                 >
-                  Logout
+                  {t('sidebar.logout')}
                 </motion.span>
               )}
             </AnimatePresence>
@@ -262,14 +265,14 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
         <header className="sticky top-0 z-30 h-16 px-6 flex items-center justify-between border-b border-white/5 bg-slate-950/80 backdrop-blur-xl">
           {/* Search */}
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <Search className="absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
-              placeholder="Search... (⌘K)"
+              placeholder={t('sidebar.searchPlaceholder')}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               className={`
-                w-full pl-10 pr-4 py-2 rounded-xl text-sm
+                w-full pl-10 pr-4 rtl:pl-4 rtl:pr-10 py-2 rounded-xl text-sm
                 bg-white/5 border transition-all duration-200
                 placeholder:text-slate-500 text-white
                 ${searchFocused
@@ -283,6 +286,9 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
+            {/* Language Toggle */}
+            <LanguageToggle variant="compact" />
+
             {/* Theme Toggle */}
             <motion.button
               onClick={() => setDarkMode(!darkMode)}
@@ -317,17 +323,17 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-2 w-80 p-4 bg-slate-900 border border-white/10 rounded-xl shadow-2xl"
+                    className="absolute right-0 rtl:right-auto rtl:left-0 top-full mt-2 w-80 p-4 bg-slate-900 border border-white/10 rounded-xl shadow-2xl"
                   >
-                    <h3 className="text-sm font-semibold text-white mb-3">Notifications</h3>
+                    <h3 className="text-sm font-semibold text-white mb-3">{t('sidebar.notifications')}</h3>
                     <div className="space-y-3">
                       <div className="flex gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
                         <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                           <MessageSquare className="w-4 h-4 text-emerald-400" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm text-white">New conversation started</p>
-                          <p className="text-xs text-slate-500">2 minutes ago</p>
+                          <p className="text-sm text-white">{t('sidebar.newConversation')}</p>
+                          <p className="text-xs text-slate-500">{t('sidebar.minutesAgo', { count: 2 })}</p>
                         </div>
                       </div>
                       <div className="flex gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
@@ -335,8 +341,8 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
                           <Bot className="w-4 h-4 text-violet-400" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm text-white">Chatbot training complete</p>
-                          <p className="text-xs text-slate-500">1 hour ago</p>
+                          <p className="text-sm text-white">{t('sidebar.trainingComplete')}</p>
+                          <p className="text-xs text-slate-500">{t('sidebar.hourAgo')}</p>
                         </div>
                       </div>
                     </div>
@@ -352,17 +358,17 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
             <div className="relative">
               <motion.button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-white/5 transition-colors"
+                className="flex items-center gap-3 p-1.5 pr-3 rtl:pr-1.5 rtl:pl-3 rounded-xl hover:bg-white/5 transition-colors"
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
                 </div>
-                <div className="text-left hidden sm:block">
+                <div className="text-left rtl:text-right hidden sm:block">
                   <p className="text-sm font-medium text-white">
                     {user?.first_name || user?.email?.split('@')[0] || 'User'}
                   </p>
-                  <p className="text-xs text-slate-500">Free Plan</p>
+                  <p className="text-xs text-slate-500">{t('sidebar.freePlan')}</p>
                 </div>
               </motion.button>
 
@@ -372,23 +378,23 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-2 w-56 p-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl"
+                    className="absolute right-0 rtl:right-auto rtl:left-0 top-full mt-2 w-56 p-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl"
                   >
                     <div className="px-3 py-2 border-b border-white/10 mb-2">
                       <p className="text-sm font-medium text-white">{user?.email}</p>
-                      <p className="text-xs text-slate-500">Free Plan · 50 credits</p>
+                      <p className="text-xs text-slate-500">{t('sidebar.freePlan')} · {t('sidebar.credits', { count: 50 })}</p>
                     </div>
                     <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                       <User className="w-4 h-4" />
-                      Profile
+                      {t('sidebar.profile')}
                     </button>
                     <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                       <Settings className="w-4 h-4" />
-                      Settings
+                      {t('sidebar.settings')}
                     </button>
                     <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                       <ExternalLink className="w-4 h-4" />
-                      Documentation
+                      {t('sidebar.documentation')}
                     </button>
                     <div className="border-t border-white/10 mt-2 pt-2">
                       <button
@@ -396,7 +402,7 @@ export function DashboardLayout({ children, activeSection = 'dashboard' }: Dashb
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
-                        Logout
+                        {t('sidebar.logout')}
                       </button>
                     </div>
                   </motion.div>

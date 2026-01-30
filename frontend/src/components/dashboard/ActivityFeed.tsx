@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   MessageSquare,
   Bot,
@@ -25,48 +26,48 @@ interface Activity {
   }
 }
 
-const mockActivities: Activity[] = [
+const getMockActivities = (t: (key: string, options?: any) => string): Activity[] => [
   {
     id: '1',
     type: 'conversation',
-    title: 'New conversation started',
-    description: 'Customer inquiry about pricing plans',
-    time: '2 minutes ago',
+    title: t('dashboard.activity.newConversation'),
+    description: t('dashboard.activity.customerInquiry'),
+    time: t('dashboard.activity.minutesAgo', { count: 2 }),
     status: 'success',
     metadata: { chatbotName: 'Support Bot', messageCount: 5 }
   },
   {
     id: '2',
     type: 'knowledge',
-    title: 'Knowledge base updated',
-    description: 'Added 3 new documents to FAQ sources',
-    time: '15 minutes ago',
+    title: t('dashboard.activity.knowledgeUpdated'),
+    description: t('dashboard.activity.addedDocuments'),
+    time: t('dashboard.activity.minutesAgo', { count: 15 }),
     status: 'success',
     metadata: { source: 'Manual upload' }
   },
   {
     id: '3',
     type: 'chatbot',
-    title: 'Chatbot training completed',
-    description: 'Sales Assistant is now ready to use',
-    time: '1 hour ago',
+    title: t('dashboard.activity.trainingCompleted'),
+    description: t('dashboard.activity.readyToUse', { name: 'Sales Assistant' }),
+    time: t('dashboard.activity.hourAgo'),
     status: 'success',
     metadata: { chatbotName: 'Sales Assistant' }
   },
   {
     id: '4',
     type: 'system',
-    title: 'Credits running low',
-    description: 'You have 12 credits remaining this month',
-    time: '2 hours ago',
+    title: t('dashboard.activity.creditsLow'),
+    description: t('dashboard.activity.creditsRemaining', { count: 12 }),
+    time: t('dashboard.activity.hoursAgo', { count: 2 }),
     status: 'warning'
   },
   {
     id: '5',
     type: 'conversation',
-    title: 'High satisfaction rating',
-    description: 'User rated conversation 5 stars',
-    time: '3 hours ago',
+    title: t('dashboard.activity.highRating'),
+    description: t('dashboard.activity.ratedStars'),
+    time: t('dashboard.activity.hoursAgo', { count: 3 }),
     status: 'success',
     metadata: { chatbotName: 'Support Bot' }
   }
@@ -119,12 +120,14 @@ interface ActivityFeedProps {
 }
 
 export function ActivityFeed({
-  activities = mockActivities,
+  activities,
   maxItems = 5,
   showViewAll = true,
   onViewAll
 }: ActivityFeedProps) {
-  const displayedActivities = activities.slice(0, maxItems)
+  const { t } = useTranslation()
+  const mockActivities = getMockActivities(t)
+  const displayedActivities = (activities || mockActivities).slice(0, maxItems)
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -151,8 +154,8 @@ export function ActivityFeed({
       {/* Header */}
       <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
-          <p className="text-sm text-slate-500">Your latest actions and events</p>
+          <h3 className="text-lg font-semibold text-white">{t('dashboard.activity.title')}</h3>
+          <p className="text-sm text-slate-500">{t('dashboard.activity.subtitle')}</p>
         </div>
         {showViewAll && (
           <motion.button
@@ -160,7 +163,7 @@ export function ActivityFeed({
             className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300 transition-colors"
             whileHover={{ x: 4 }}
           >
-            View all
+            {t('dashboard.activity.viewAll')}
             <ArrowRight className="w-4 h-4" />
           </motion.button>
         )}
@@ -211,7 +214,7 @@ export function ActivityFeed({
                       )}
                       {activity.metadata.messageCount && (
                         <span className="text-xs text-slate-500">
-                          {activity.metadata.messageCount} messages
+                          {activity.metadata.messageCount} {t('dashboard.activity.messages')}
                         </span>
                       )}
                     </div>
@@ -234,9 +237,9 @@ export function ActivityFeed({
           <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-4">
             <Clock className="w-6 h-6 text-slate-500" />
           </div>
-          <h4 className="text-sm font-medium text-white mb-1">No recent activity</h4>
+          <h4 className="text-sm font-medium text-white mb-1">{t('dashboard.activity.noActivity')}</h4>
           <p className="text-sm text-slate-500">
-            Your recent actions will appear here
+            {t('dashboard.activity.actionsWillAppear')}
           </p>
         </div>
       )}
